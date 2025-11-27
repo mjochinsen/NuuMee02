@@ -90,17 +90,17 @@
 
 | ID | Task | Status | Agent/Tool | Output | Notes |
 |----|------|--------|------------|--------|-------|
-| 1.9 | Review FromFigmaMake/ for login/signup designs | ⬜ | Manual | Design notes | Extract only needed screens |
-| 1.10 | Create lib/firebase.ts | ⬜ | `frontend-dev` | firebase.ts | Client SDK init |
-| 1.11 | Create lib/api.ts | ⬜ | `frontend-dev` | api.ts | API client with auth header |
-| 1.12 | Create components/AuthProvider.tsx | ⬜ | `frontend-dev` | AuthProvider.tsx | Auth context |
-| 1.13 | Create app/login/page.tsx | ⬜ | `frontend-dev` | page.tsx | From Figma design |
-| 1.14 | Create app/signup/page.tsx | ⬜ | `frontend-dev` | page.tsx | From Figma design |
-| 1.15 | Create components/Navbar.tsx | ⬜ | `frontend-dev` | Navbar.tsx | Shows user info |
-| 1.16 | Update app/layout.tsx with AuthProvider | ⬜ | `frontend-dev` | layout.tsx | Wrap app |
-| 1.17 | Deploy frontend to Firebase Hosting | ⬜ | `firebase deploy` | Live site | |
+| 1.9 | Review FromFigmaMake/ for login/signup designs | ✅ | Manual | Design notes | LoginPage.tsx reference |
+| 1.10 | Create lib/firebase.ts | ✅ | Manual | firebase.ts | Google/GitHub/Email auth |
+| 1.11 | Create lib/api.ts | ✅ | Manual | api.ts | Auth header, no 403 logout |
+| 1.12 | Create components/AuthProvider.tsx | ✅ | Manual | AuthProvider.tsx | Auth context |
+| 1.13 | Create app/login/page.tsx | ✅ | Manual | page.tsx | Login + forgot password |
+| 1.14 | Create app/signup/page.tsx | ✅ | Manual | page.tsx | With password strength |
+| 1.15 | Create components/Navbar.tsx | ✅ | Manual | Navbar.tsx | User menu, credits display |
+| 1.16 | Update app/layout.tsx with AuthProvider | ✅ | Manual | layout.tsx | Wrapped app |
+| 1.17 | Deploy frontend to Firebase Hosting | ⬜ | `firebase deploy` | Live site | Firebase CLI needs reauth |
 | 1.18 | Test full auth flow on live site | ⬜ | `deployment-validator` | Test results | Manual verification |
-| 1.19 | Commit and push Phase 1 | ⬜ | Git | Commit hash | "Phase 1: Auth complete" |
+| 1.19 | Commit and push Phase 1 | ✅ | Git | 396a77f | Frontend pushed |
 
 **Phase 1 Completion Criteria:**
 - [ ] Can signup at https://nuumee.ai/signup
@@ -351,7 +351,7 @@
 | Phase | Tasks | Completed | Status |
 |-------|-------|-----------|--------|
 | 0 - Foundation | 10 | 10 | ✅ |
-| 1 - Auth | 19 | 8 | 🔄 |
+| 1 - Auth | 19 | 17 | 🔄 |
 | 2 - Payments | 14 | 0 | ⬜ |
 | 3 - Uploads | 9 | 0 | ⬜ |
 | 4 - Jobs | 11 | 0 | ⬜ |
@@ -360,16 +360,16 @@
 | 7 - Subscriptions | 10 | 0 | ⬜ |
 | 8 - Referral | 11 | 0 | ⬜ |
 | 9 - Polish | 11 | 0 | ⬜ |
-| **TOTAL** | **111** | **18** | 🔄 |
+| **TOTAL** | **111** | **27** | 🔄 |
 
 ---
 
 ## CURRENT STATE
 
 **Current Phase:** 1
-**Current Task:** 1.9 (Frontend tasks)
-**Blockers:** None
-**Last Updated:** 2025-11-27 23:15
+**Current Task:** 1.17 (Deploy frontend to Firebase Hosting)
+**Blockers:** Firebase CLI needs `firebase login --reauth`
+**Last Updated:** 2025-11-27 23:30
 
 ---
 
