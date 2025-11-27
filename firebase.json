@@ -1,6 +1,5 @@
 {
   "hosting": {
-    "site": "nuumee-66a48",
     "public": "frontend/out",
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
     "rewrites": [

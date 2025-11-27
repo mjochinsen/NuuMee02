@@ -23,71 +23,75 @@ Invoke FIBY, the Agent Master, to get help with:
 
 ## Instructions
 
-When this command is invoked, use the Task tool to launch the `fiby-coordinator` agent with the user's request.
+When this command is invoked with `$ARGUMENTS`, parse the request and invoke FIBY with a structured payload.
 
-**Request:** $ARGUMENTS
+### Step 1: Parse Request Type
 
-### Process
+Analyze `$ARGUMENTS` to determine type:
+- Contains "create", "new", "build" → type: "create"
+- Contains "audit", "review", "check", "validate" → type: "audit"
+- Contains "which", "recommend", "improve", "best" → type: "recommend"
+- Otherwise → type: "question"
 
-1. **Parse Request**
-   - Identify request type: create | audit | recommend | question
-   - Extract target agent or topic
+### Step 2: Extract Target
 
-2. **Invoke FIBY**
-   Use the Task tool with:
-   ```
-   subagent_type: fiby-coordinator
-   prompt: |
-     KODY Request: $ARGUMENTS
+- For audit: extract agent name (e.g., "api-builder" from "audit the api-builder agent")
+- For create: extract purpose (e.g., "stripe webhook handling")
+- For recommend: extract task description
+- For question: use full query
 
-     Context:
-     - Project: NuuMee02
-     - Phase: Check TASK_TRACKER.md for current phase
-     - Agent Count: 39 agents in .claude/agents/
+### Step 3: Invoke FIBY
 
-     Instructions:
-     1. Read the request carefully
-     2. Determine request type (create/audit/recommend/question)
-     3. Execute appropriate workflow from your instructions
-     4. Write response to .claude/responses/ if creating files
-     5. Report back with summary and next steps
-   ```
+Use the Task tool with subagent_type `fiby-coordinator`:
 
-3. **Report Results**
-   After FIBY completes, summarize:
-   - What was done
-   - Files created/modified
-   - Recommended next steps
-
-## Request Types
-
-### Create Agent
 ```
-/ask-fiby create agent for {purpose}
-/ask-fiby new agent to handle {task}
-/ask-fiby build an agent that {description}
-```
+prompt: |
+  ## FIBY Request
 
-### Audit Agent
-```
-/ask-fiby audit {agent-name}
-/ask-fiby review all frontend agents
-/ask-fiby check api-builder quality
-```
+  **Type:** {type}
+  **Query:** $ARGUMENTS
+  **Target:** {extracted target or "none"}
 
-### Recommend Agent
-```
-/ask-fiby which agent for {task}
-/ask-fiby what agent handles {feature}
-/ask-fiby recommend agent for Phase {N}
+  ## Specific Files to Read (ONLY these)
+
+  {For audit: ".claude/agents/{target}.md"}
+  {For create: ".claude/agents/TEMPLATE.md"}
+  {For recommend: ".claude/agents/README.md"}
+  {For question: relevant agent file if mentioned, else README.md}
+
+  ## Instructions
+
+  1. Read ONLY the files listed above (token management critical)
+  2. Execute the {type} workflow from your instructions
+  3. If creating files, write to .claude/responses/
+  4. Report back with:
+     - Direct answer
+     - Files created/modified (if any)
+     - Recommended next steps
+
+  ## Constraints
+
+  - DO NOT read entire repository
+  - DO NOT glob all agents unless explicitly asked
+  - Stay under 50k tokens
+  - Be concise in response
 ```
 
-### Question
-```
-/ask-fiby how to use {agent-name}
-/ask-fiby when to invoke {agent}
-/ask-fiby explain {agent} workflow
-```
+### Step 4: Report Results
+
+After FIBY completes, summarize for the user:
+- What was done
+- Files created/modified
+- Recommended next steps
+
+## Request Type Reference
+
+| Type | Triggers | Target Extraction |
+|------|----------|-------------------|
+| create | "create", "new", "build" | Purpose description |
+| audit | "audit", "review", "check" | Agent name |
+| recommend | "which", "recommend", "improve" | Task/feature |
+| question | (default) | Full query |
 
 ## Output
 

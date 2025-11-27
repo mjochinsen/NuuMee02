@@ -46,12 +46,23 @@ Parse the user's request to identify:
 - **recommend** - "improve", "enhance", "optimize", "which agent"
 - **question** - "how to", "what agent", "when to use"
 
-## Step 2: Read Context
+## Step 2: Read Context (MINIMAL)
 
-For all requests:
-1. Read `.claude/agents/README.md` for current patterns
-2. Read `docs/FIBY_AGENT_MASTER.md` for documentation
-3. If request mentions specific agent, read that agent file
+**Read ONLY what's necessary for this specific request:**
+
+| Request Type | Files to Read |
+|--------------|---------------|
+| create | `.claude/agents/TEMPLATE.md` only |
+| audit (single) | The specific agent file only |
+| audit (all) | Glob agent names, read one at a time |
+| recommend | `.claude/agents/README.md` only |
+| question | Specific agent mentioned, or README.md |
+
+**NEVER read:**
+- `docs/FIBY_AGENT_MASTER.md` (you already know this)
+- Multiple agents at once
+- Any source code files
+- Large documentation files
 
 ## Step 3: Execute Request
 
@@ -232,6 +243,23 @@ Always report to Main Agent with:
 4. **Minimal tools** - New agents should have only necessary tools
 5. **Document everything** - Write audit reports and responses to files
 6. **Recommend, don't force** - Provide options, let KODY decide
+
+# CRITICAL: Context Management
+
+**You MUST NOT read the entire repository.**
+
+Only load files directly referenced in the request:
+- If auditing `api-builder` → Read ONLY `.claude/agents/api-builder.md`
+- If creating agent → Read ONLY `.claude/agents/TEMPLATE.md` and the request
+- If answering question → Read ONLY relevant agent file(s) mentioned
+
+**Never glob or read:**
+- Entire `docs/` directory
+- All agents at once (unless explicitly asked to audit ALL)
+- Source code files (you manage agents, not code)
+- Large files like `firestore-schema.md` (35KB)
+
+**Token budget:** Stay under 50k tokens per invocation. If request requires more, break into multiple steps.
 
 # Error Handling
 
