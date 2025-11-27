@@ -1,0 +1,2485 @@
+[
+  {
+    "text": "Examples & Gallery",
+    "name": "Examples & Gallery",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.9450980424880981,
+      "g": 0.9607843160629272,
+      "b": 0.9764705896377563,
+      "a": 1
+    },
+    "depth": 8
+  },
+  {
+    "text": "See what's possible with NewMe.AI",
+    "name": "See what's possible with NewMe.AI",
+    "fontSize": 20,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.5803921818733215,
+      "g": 0.6392157077789307,
+      "b": 0.7215686440467834,
+      "a": 1
+    },
+    "depth": 7
+  },
+  {
+    "text": "All",
+    "name": "All",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 1,
+      "g": 1,
+      "b": 1,
+      "a": 1
+    },
+    "depth": 7
+  },
+  {
+    "text": "Social Media",
+    "name": "Social Media",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.5803921818733215,
+      "g": 0.6392157077789307,
+      "b": 0.7215686440467834,
+      "a": 1
+    },
+    "depth": 7
+  },
+  {
+    "text": "E-commerce",
+    "name": "E-commerce",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.5803921818733215,
+      "g": 0.6392157077789307,
+      "b": 0.7215686440467834,
+      "a": 1
+    },
+    "depth": 7
+  },
+  {
+    "text": "Education",
+    "name": "Education",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.5803921818733215,
+      "g": 0.6392157077789307,
+      "b": 0.7215686440467834,
+      "a": 1
+    },
+    "depth": 7
+  },
+  {
+    "text": "Marketing",
+    "name": "Marketing",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.5803921818733215,
+      "g": 0.6392157077789307,
+      "b": 0.7215686440467834,
+      "a": 1
+    },
+    "depth": 7
+  },
+  {
+    "text": "Entertainment",
+    "name": "Entertainment",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.5803921818733215,
+      "g": 0.6392157077789307,
+      "b": 0.7215686440467834,
+      "a": 1
+    },
+    "depth": 7
+  },
+  {
+    "text": "What Works Best",
+    "name": "What Works Best",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.9450980424880981,
+      "g": 0.9607843160629272,
+      "b": 0.9764705896377563,
+      "a": 1
+    },
+    "depth": 7
+  },
+  {
+    "text": "Clear Front-Facing Photo",
+    "name": "Clear Front-Facing Photo",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.9450980424880981,
+      "g": 0.9607843160629272,
+      "b": 0.9764705896377563,
+      "a": 1
+    },
+    "depth": 8
+  },
+  {
+    "text": "High-quality reference photo produces excellent results",
+    "name": "High-quality reference photo produces excellent re",
+    "fontSize": 14,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.5803921818733215,
+      "g": 0.6392157077789307,
+      "b": 0.7215686440467834,
+      "a": 1
+    },
+    "depth": 8
+  },
+  {
+    "text": "High quality result",
+    "name": "High quality result",
+    "fontSize": 12,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.019870584830641747,
+      "g": 0.8753122687339783,
+      "b": 0.44850969314575195,
+      "a": 1
+    },
+    "depth": 8
+  },
+  {
+    "text": "20 credits",
+    "name": "20 credits",
+    "fontSize": 14,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.3921568691730499,
+      "g": 0.45490196347236633,
+      "b": 0.545098066329956,
+      "a": 1
+    },
+    "depth": 9
+  },
+  {
+    "text": "1.5 hours",
+    "name": "1.5 hours",
+    "fontSize": 14,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.3921568691730499,
+      "g": 0.45490196347236633,
+      "b": 0.545098066329956,
+      "a": 1
+    },
+    "depth": 9
+  },
+  {
+    "text": "Before",
+    "name": "Before",
+    "fontSize": 12,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.3921568691730499,
+      "g": 0.45490196347236633,
+      "b": 0.545098066329956,
+      "a": 1
+    },
+    "depth": 11
+  },
+  {
+    "text": "After",
+    "name": "After",
+    "fontSize": 12,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.3921568691730499,
+      "g": 0.45490196347236633,
+      "b": 0.545098066329956,
+      "a": 1
+    },
+    "depth": 11
+  },
+  {
+    "text": "Good Lighting Conditions",
+    "name": "Good Lighting Conditions",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.9450980424880981,
+      "g": 0.9607843160629272,
+      "b": 0.9764705896377563,
+      "a": 1
+    },
+    "depth": 8
+  },
+  {
+    "text": "Well-lit reference ensures clear face detection",
+    "name": "Well-lit reference ensures clear face detection",
+    "fontSize": 14,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.5803921818733215,
+      "g": 0.6392157077789307,
+      "b": 0.7215686440467834,
+      "a": 1
+    },
+    "depth": 8
+  },
+  {
+    "text": "Clear face detection",
+    "name": "Clear face detection",
+    "fontSize": 12,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.019870584830641747,
+      "g": 0.8753122687339783,
+      "b": 0.44850969314575195,
+      "a": 1
+    },
+    "depth": 8
+  },
+  {
+    "text": "20 credits",
+    "name": "20 credits",
+    "fontSize": 14,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.3921568691730499,
+      "g": 0.45490196347236633,
+      "b": 0.545098066329956,
+      "a": 1
+    },
+    "depth": 9
+  },
+  {
+    "text": "1.2 hours",
+    "name": "1.2 hours",
+    "fontSize": 14,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.3921568691730499,
+      "g": 0.45490196347236633,
+      "b": 0.545098066329956,
+      "a": 1
+    },
+    "depth": 9
+  },
+  {
+    "text": "Before",
+    "name": "Before",
+    "fontSize": 12,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.3921568691730499,
+      "g": 0.45490196347236633,
+      "b": 0.545098066329956,
+      "a": 1
+    },
+    "depth": 11
+  },
+  {
+    "text": "After",
+    "name": "After",
+    "fontSize": 12,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.3921568691730499,
+      "g": 0.45490196347236633,
+      "b": 0.545098066329956,
+      "a": 1
+    },
+    "depth": 11
+  },
+  {
+    "text": "Simple Background",
+    "name": "Simple Background",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.9450980424880981,
+      "g": 0.9607843160629272,
+      "b": 0.9764705896377563,
+      "a": 1
+    },
+    "depth": 8
+  },
+  {
+    "text": "Clean background prevents artifacts",
+    "name": "Clean background prevents artifacts",
+    "fontSize": 14,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.5803921818733215,
+      "g": 0.6392157077789307,
+      "b": 0.7215686440467834,
+      "a": 1
+    },
+    "depth": 8
+  },
+  {
+    "text": "No occlusion issues",
+    "name": "No occlusion issues",
+    "fontSize": 12,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.019870584830641747,
+      "g": 0.8753122687339783,
+      "b": 0.44850969314575195,
+      "a": 1
+    },
+    "depth": 8
+  },
+  {
+    "text": "20 credits",
+    "name": "20 credits",
+    "fontSize": 14,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.3921568691730499,
+      "g": 0.45490196347236633,
+      "b": 0.545098066329956,
+      "a": 1
+    },
+    "depth": 9
+  },
+  {
+    "text": "1.4 hours",
+    "name": "1.4 hours",
+    "fontSize": 14,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.3921568691730499,
+      "g": 0.45490196347236633,
+      "b": 0.545098066329956,
+      "a": 1
+    },
+    "depth": 9
+  },
+  {
+    "text": "Before",
+    "name": "Before",
+    "fontSize": 12,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.3921568691730499,
+      "g": 0.45490196347236633,
+      "b": 0.545098066329956,
+      "a": 1
+    },
+    "depth": 11
+  },
+  {
+    "text": "After",
+    "name": "After",
+    "fontSize": 12,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.3921568691730499,
+      "g": 0.45490196347236633,
+      "b": 0.545098066329956,
+      "a": 1
+    },
+    "depth": 11
+  },
+  {
+    "text": "Neutral Expression Match",
+    "name": "Neutral Expression Match",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.9450980424880981,
+      "g": 0.9607843160629272,
+      "b": 0.9764705896377563,
+      "a": 1
+    },
+    "depth": 8
+  },
+  {
+    "text": "Similar expressions between photo and video work best",
+    "name": "Similar expressions between photo and video work b",
+    "fontSize": 14,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.5803921818733215,
+      "g": 0.6392157077789307,
+      "b": 0.7215686440467834,
+      "a": 1
+    },
+    "depth": 8
+  },
+  {
+    "text": "Perfect match",
+    "name": "Perfect match",
+    "fontSize": 12,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.019870584830641747,
+      "g": 0.8753122687339783,
+      "b": 0.44850969314575195,
+      "a": 1
+    },
+    "depth": 8
+  },
+  {
+    "text": "20 credits",
+    "name": "20 credits",
+    "fontSize": 14,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.3921568691730499,
+      "g": 0.45490196347236633,
+      "b": 0.545098066329956,
+      "a": 1
+    },
+    "depth": 9
+  },
+  {
+    "text": "1.3 hours",
+    "name": "1.3 hours",
+    "fontSize": 14,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.3921568691730499,
+      "g": 0.45490196347236633,
+      "b": 0.545098066329956,
+      "a": 1
+    },
+    "depth": 9
+  },
+  {
+    "text": "Before",
+    "name": "Before",
+    "fontSize": 12,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.3921568691730499,
+      "g": 0.45490196347236633,
+      "b": 0.545098066329956,
+      "a": 1
+    },
+    "depth": 11
+  },
+  {
+    "text": "After",
+    "name": "After",
+    "fontSize": 12,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.3921568691730499,
+      "g": 0.45490196347236633,
+      "b": 0.545098066329956,
+      "a": 1
+    },
+    "depth": 11
+  },
+  {
+    "text": "Common Mistakes to Avoid",
+    "name": "Common Mistakes to Avoid",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.9450980424880981,
+      "g": 0.9607843160629272,
+      "b": 0.9764705896377563,
+      "a": 1
+    },
+    "depth": 7
+  },
+  {
+    "text": "Side Profile Photo",
+    "name": "Side Profile Photo",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.9450980424880981,
+      "g": 0.9607843160629272,
+      "b": 0.9764705896377563,
+      "a": 1
+    },
+    "depth": 8
+  },
+  {
+    "text": "Side angle photos don't work well",
+    "name": "Side angle photos don't work well",
+    "fontSize": 14,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.5803921818733215,
+      "g": 0.6392157077789307,
+      "b": 0.7215686440467834,
+      "a": 1
+    },
+    "depth": 8
+  },
+  {
+    "text": "Face not detected",
+    "name": "Face not detected",
+    "fontSize": 12,
+    "fontWeight": 400,
+    "color": {
+      "r": 1,
+      "g": 0.3921568691730499,
+      "b": 0.40392157435417175,
+      "a": 1
+    },
+    "depth": 8
+  },
+  {
+    "text": "Why it failed:",
+    "name": "Why it failed:",
+    "fontSize": 14,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.5803921818733215,
+      "g": 0.6392157077789307,
+      "b": 0.7215686440467834,
+      "a": 1
+    },
+    "depth": 9
+  },
+  {
+    "text": "Face detection requires front-facing view",
+    "name": "Face detection requires front-facing view",
+    "fontSize": 14,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.3921568691730499,
+      "g": 0.45490196347236633,
+      "b": 0.545098066329956,
+      "a": 1
+    },
+    "depth": 8
+  },
+  {
+    "text": "Poor Lighting",
+    "name": "Poor Lighting",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.9450980424880981,
+      "g": 0.9607843160629272,
+      "b": 0.9764705896377563,
+      "a": 1
+    },
+    "depth": 8
+  },
+  {
+    "text": "Dark shadows obscure facial features",
+    "name": "Dark shadows obscure facial features",
+    "fontSize": 14,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.5803921818733215,
+      "g": 0.6392157077789307,
+      "b": 0.7215686440467834,
+      "a": 1
+    },
+    "depth": 8
+  },
+  {
+    "text": "Detection fails",
+    "name": "Detection fails",
+    "fontSize": 12,
+    "fontWeight": 400,
+    "color": {
+      "r": 1,
+      "g": 0.3921568691730499,
+      "b": 0.40392157435417175,
+      "a": 1
+    },
+    "depth": 8
+  },
+  {
+    "text": "Why it failed:",
+    "name": "Why it failed:",
+    "fontSize": 14,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.5803921818733215,
+      "g": 0.6392157077789307,
+      "b": 0.7215686440467834,
+      "a": 1
+    },
+    "depth": 9
+  },
+  {
+    "text": "Insufficient lighting prevents accurate face mapping",
+    "name": "Insufficient lighting prevents accurate face mappi",
+    "fontSize": 14,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.3921568691730499,
+      "g": 0.45490196347236633,
+      "b": 0.545098066329956,
+      "a": 1
+    },
+    "depth": 8
+  },
+  {
+    "text": "Sunglasses Covering Face",
+    "name": "Sunglasses Covering Face",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.9450980424880981,
+      "g": 0.9607843160629272,
+      "b": 0.9764705896377563,
+      "a": 1
+    },
+    "depth": 8
+  },
+  {
+    "text": "Obscured facial features reduce accuracy",
+    "name": "Obscured facial features reduce accuracy",
+    "fontSize": 14,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.5803921818733215,
+      "g": 0.6392157077789307,
+      "b": 0.7215686440467834,
+      "a": 1
+    },
+    "depth": 8
+  },
+  {
+    "text": "Facial features obscured",
+    "name": "Facial features obscured",
+    "fontSize": 12,
+    "fontWeight": 400,
+    "color": {
+      "r": 1,
+      "g": 0.3921568691730499,
+      "b": 0.40392157435417175,
+      "a": 1
+    },
+    "depth": 8
+  },
+  {
+    "text": "Why it failed:",
+    "name": "Why it failed:",
+    "fontSize": 14,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.5803921818733215,
+      "g": 0.6392157077789307,
+      "b": 0.7215686440467834,
+      "a": 1
+    },
+    "depth": 9
+  },
+  {
+    "text": "Eyes and face structure need to be visible",
+    "name": "Eyes and face structure need to be visible",
+    "fontSize": 14,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.3921568691730499,
+      "g": 0.45490196347236633,
+      "b": 0.545098066329956,
+      "a": 1
+    },
+    "depth": 8
+  },
+  {
+    "text": "Multiple People",
+    "name": "Multiple People",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.9450980424880981,
+      "g": 0.9607843160629272,
+      "b": 0.9764705896377563,
+      "a": 1
+    },
+    "depth": 8
+  },
+  {
+    "text": "Multiple faces in frame cause confusion",
+    "name": "Multiple faces in frame cause confusion",
+    "fontSize": 14,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.5803921818733215,
+      "g": 0.6392157077789307,
+      "b": 0.7215686440467834,
+      "a": 1
+    },
+    "depth": 8
+  },
+  {
+    "text": "Wrong person detected",
+    "name": "Wrong person detected",
+    "fontSize": 12,
+    "fontWeight": 400,
+    "color": {
+      "r": 1,
+      "g": 0.3921568691730499,
+      "b": 0.40392157435417175,
+      "a": 1
+    },
+    "depth": 8
+  },
+  {
+    "text": "Why it failed:",
+    "name": "Why it failed:",
+    "fontSize": 14,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.5803921818733215,
+      "g": 0.6392157077789307,
+      "b": 0.7215686440467834,
+      "a": 1
+    },
+    "depth": 9
+  },
+  {
+    "text": "AI cannot determine which person to use",
+    "name": "AI cannot determine which person to use",
+    "fontSize": 14,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.3921568691730499,
+      "g": 0.45490196347236633,
+      "b": 0.545098066329956,
+      "a": 1
+    },
+    "depth": 8
+  },
+  {
+    "text": "Use Case Examples",
+    "name": "Use Case Examples",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.9450980424880981,
+      "g": 0.9607843160629272,
+      "b": 0.9764705896377563,
+      "a": 1
+    },
+    "depth": 7
+  },
+  {
+    "text": "Social Media Content",
+    "name": "Social Media Content",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.9450980424880981,
+      "g": 0.9607843160629272,
+      "b": 0.9764705896377563,
+      "a": 1
+    },
+    "depth": 8
+  },
+  {
+    "text": "Create viral content without being on camera",
+    "name": "Create viral content without being on camera",
+    "fontSize": 18,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.9450980424880981,
+      "g": 0.9607843160629272,
+      "b": 0.9764705896377563,
+      "a": 1
+    },
+    "depth": 8
+  },
+  {
+    "text": "Used by",
+    "name": "Used by",
+    "fontSize": 14,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.3921568691730499,
+      "g": 0.45490196347236633,
+      "b": 0.545098066329956,
+      "a": 1
+    },
+    "depth": 10
+  },
+  {
+    "text": "@CreatorName",
+    "name": "@CreatorName",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.9450980424880981,
+      "g": 0.9607843160629272,
+      "b": 0.9764705896377563,
+      "a": 1
+    },
+    "depth": 10
+  },
+  {
+    "text": "2.3M followers",
+    "name": "2.3M followers",
+    "fontSize": 14,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.5803921818733215,
+      "g": 0.6392157077789307,
+      "b": 0.7215686440467834,
+      "a": 1
+    },
+    "depth": 10
+  },
+  {
+    "text": "Video length",
+    "name": "Video length",
+    "fontSize": 14,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.3921568691730499,
+      "g": 0.45490196347236633,
+      "b": 0.545098066329956,
+      "a": 1
+    },
+    "depth": 10
+  },
+  {
+    "text": "15 seconds",
+    "name": "15 seconds",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.9450980424880981,
+      "g": 0.9607843160629272,
+      "b": 0.9764705896377563,
+      "a": 1
+    },
+    "depth": 10
+  },
+  {
+    "text": "Credits used",
+    "name": "Credits used",
+    "fontSize": 14,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.3921568691730499,
+      "g": 0.45490196347236633,
+      "b": 0.545098066329956,
+      "a": 1
+    },
+    "depth": 10
+  },
+  {
+    "text": "30",
+    "name": "30",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.9450980424880981,
+      "g": 0.9607843160629272,
+      "b": 0.9764705896377563,
+      "a": 1
+    },
+    "depth": 10
+  },
+  {
+    "text": "Processing time",
+    "name": "Processing time",
+    "fontSize": 14,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.3921568691730499,
+      "g": 0.45490196347236633,
+      "b": 0.545098066329956,
+      "a": 1
+    },
+    "depth": 10
+  },
+  {
+    "text": "45 minutes",
+    "name": "45 minutes",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.9450980424880981,
+      "g": 0.9607843160629272,
+      "b": 0.9764705896377563,
+      "a": 1
+    },
+    "depth": 10
+  },
+  {
+    "text": "Try This Template",
+    "name": "Try This Template",
+    "fontSize": 14,
+    "fontWeight": 400,
+    "color": {
+      "r": 1,
+      "g": 1,
+      "b": 1,
+      "a": 1
+    },
+    "depth": 9
+  },
+  {
+    "text": "Before",
+    "name": "Before",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.3921568691730499,
+      "g": 0.45490196347236633,
+      "b": 0.545098066329956,
+      "a": 1
+    },
+    "depth": 11
+  },
+  {
+    "text": "After",
+    "name": "After",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.3921568691730499,
+      "g": 0.45490196347236633,
+      "b": 0.545098066329956,
+      "a": 1
+    },
+    "depth": 11
+  },
+  {
+    "text": "E-commerce Product Demos",
+    "name": "E-commerce Product Demos",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.9450980424880981,
+      "g": 0.9607843160629272,
+      "b": 0.9764705896377563,
+      "a": 1
+    },
+    "depth": 8
+  },
+  {
+    "text": "Test products with different models instantly",
+    "name": "Test products with different models instantly",
+    "fontSize": 18,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.9450980424880981,
+      "g": 0.9607843160629272,
+      "b": 0.9764705896377563,
+      "a": 1
+    },
+    "depth": 8
+  },
+  {
+    "text": "Used by",
+    "name": "Used by",
+    "fontSize": 14,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.3921568691730499,
+      "g": 0.45490196347236633,
+      "b": 0.545098066329956,
+      "a": 1
+    },
+    "depth": 10
+  },
+  {
+    "text": "BrandName",
+    "name": "BrandName",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.9450980424880981,
+      "g": 0.9607843160629272,
+      "b": 0.9764705896377563,
+      "a": 1
+    },
+    "depth": 10
+  },
+  {
+    "text": "Video length",
+    "name": "Video length",
+    "fontSize": 14,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.3921568691730499,
+      "g": 0.45490196347236633,
+      "b": 0.545098066329956,
+      "a": 1
+    },
+    "depth": 10
+  },
+  {
+    "text": "30 seconds",
+    "name": "30 seconds",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.9450980424880981,
+      "g": 0.9607843160629272,
+      "b": 0.9764705896377563,
+      "a": 1
+    },
+    "depth": 10
+  },
+  {
+    "text": "Credits used",
+    "name": "Credits used",
+    "fontSize": 14,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.3921568691730499,
+      "g": 0.45490196347236633,
+      "b": 0.545098066329956,
+      "a": 1
+    },
+    "depth": 10
+  },
+  {
+    "text": "60",
+    "name": "60",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.9450980424880981,
+      "g": 0.9607843160629272,
+      "b": 0.9764705896377563,
+      "a": 1
+    },
+    "depth": 10
+  },
+  {
+    "text": "Result",
+    "name": "Result",
+    "fontSize": 14,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.3921568691730499,
+      "g": 0.45490196347236633,
+      "b": 0.545098066329956,
+      "a": 1
+    },
+    "depth": 10
+  },
+  {
+    "text": "40% increase in conversions",
+    "name": "40% increase in conversions",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.9450980424880981,
+      "g": 0.9607843160629272,
+      "b": 0.9764705896377563,
+      "a": 1
+    },
+    "depth": 10
+  },
+  {
+    "text": "Try This Template",
+    "name": "Try This Template",
+    "fontSize": 14,
+    "fontWeight": 400,
+    "color": {
+      "r": 1,
+      "g": 1,
+      "b": 1,
+      "a": 1
+    },
+    "depth": 9
+  },
+  {
+    "text": "Before",
+    "name": "Before",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.3921568691730499,
+      "g": 0.45490196347236633,
+      "b": 0.545098066329956,
+      "a": 1
+    },
+    "depth": 11
+  },
+  {
+    "text": "After",
+    "name": "After",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.3921568691730499,
+      "g": 0.45490196347236633,
+      "b": 0.545098066329956,
+      "a": 1
+    },
+    "depth": 11
+  },
+  {
+    "text": "Educational Content",
+    "name": "Educational Content",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.9450980424880981,
+      "g": 0.9607843160629272,
+      "b": 0.9764705896377563,
+      "a": 1
+    },
+    "depth": 8
+  },
+  {
+    "text": "Localize training videos without re-recording",
+    "name": "Localize training videos without re-recording",
+    "fontSize": 18,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.9450980424880981,
+      "g": 0.9607843160629272,
+      "b": 0.9764705896377563,
+      "a": 1
+    },
+    "depth": 8
+  },
+  {
+    "text": "Used by",
+    "name": "Used by",
+    "fontSize": 14,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.3921568691730499,
+      "g": 0.45490196347236633,
+      "b": 0.545098066329956,
+      "a": 1
+    },
+    "depth": 10
+  },
+  {
+    "text": "EdTech Company",
+    "name": "EdTech Company",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.9450980424880981,
+      "g": 0.9607843160629272,
+      "b": 0.9764705896377563,
+      "a": 1
+    },
+    "depth": 10
+  },
+  {
+    "text": "Video length",
+    "name": "Video length",
+    "fontSize": 14,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.3921568691730499,
+      "g": 0.45490196347236633,
+      "b": 0.545098066329956,
+      "a": 1
+    },
+    "depth": 10
+  },
+  {
+    "text": "60 seconds",
+    "name": "60 seconds",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.9450980424880981,
+      "g": 0.9607843160629272,
+      "b": 0.9764705896377563,
+      "a": 1
+    },
+    "depth": 10
+  },
+  {
+    "text": "Credits used",
+    "name": "Credits used",
+    "fontSize": 14,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.3921568691730499,
+      "g": 0.45490196347236633,
+      "b": 0.545098066329956,
+      "a": 1
+    },
+    "depth": 10
+  },
+  {
+    "text": "120",
+    "name": "120",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.9450980424880981,
+      "g": 0.9607843160629272,
+      "b": 0.9764705896377563,
+      "a": 1
+    },
+    "depth": 10
+  },
+  {
+    "text": "Saved",
+    "name": "Saved",
+    "fontSize": 14,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.3921568691730499,
+      "g": 0.45490196347236633,
+      "b": 0.545098066329956,
+      "a": 1
+    },
+    "depth": 10
+  },
+  {
+    "text": "$5,000 in production costs",
+    "name": "$5,000 in production costs",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.9450980424880981,
+      "g": 0.9607843160629272,
+      "b": 0.9764705896377563,
+      "a": 1
+    },
+    "depth": 10
+  },
+  {
+    "text": "Try This Template",
+    "name": "Try This Template",
+    "fontSize": 14,
+    "fontWeight": 400,
+    "color": {
+      "r": 1,
+      "g": 1,
+      "b": 1,
+      "a": 1
+    },
+    "depth": 9
+  },
+  {
+    "text": "Before",
+    "name": "Before",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.3921568691730499,
+      "g": 0.45490196347236633,
+      "b": 0.545098066329956,
+      "a": 1
+    },
+    "depth": 11
+  },
+  {
+    "text": "After",
+    "name": "After",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.3921568691730499,
+      "g": 0.45490196347236633,
+      "b": 0.545098066329956,
+      "a": 1
+    },
+    "depth": 11
+  },
+  {
+    "text": "View All Use Cases",
+    "name": "View All Use Cases",
+    "fontSize": 14,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.9450980424880981,
+      "g": 0.9607843160629272,
+      "b": 0.9764705896377563,
+      "a": 1
+    },
+    "depth": 8
+  },
+  {
+    "text": "Photo Quality Guide",
+    "name": "Photo Quality Guide",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.9450980424880981,
+      "g": 0.9607843160629272,
+      "b": 0.9764705896377563,
+      "a": 1
+    },
+    "depth": 7
+  },
+  {
+    "text": "Best Results",
+    "name": "Best Results",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.9450980424880981,
+      "g": 0.9607843160629272,
+      "b": 0.9764705896377563,
+      "a": 1
+    },
+    "depth": 10
+  },
+  {
+    "text": "Front-facing",
+    "name": "Front-facing",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.9450980424880981,
+      "g": 0.9607843160629272,
+      "b": 0.9764705896377563,
+      "a": 1
+    },
+    "depth": 11
+  },
+  {
+    "text": "Good lighting",
+    "name": "Good lighting",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.9450980424880981,
+      "g": 0.9607843160629272,
+      "b": 0.9764705896377563,
+      "a": 1
+    },
+    "depth": 11
+  },
+  {
+    "text": "Clear face",
+    "name": "Clear face",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.9450980424880981,
+      "g": 0.9607843160629272,
+      "b": 0.9764705896377563,
+      "a": 1
+    },
+    "depth": 11
+  },
+  {
+    "text": "Simple background",
+    "name": "Simple background",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.9450980424880981,
+      "g": 0.9607843160629272,
+      "b": 0.9764705896377563,
+      "a": 1
+    },
+    "depth": 11
+  },
+  {
+    "text": "High resolution",
+    "name": "High resolution",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.9450980424880981,
+      "g": 0.9607843160629272,
+      "b": 0.9764705896377563,
+      "a": 1
+    },
+    "depth": 11
+  },
+  {
+    "text": "Neutral expression",
+    "name": "Neutral expression",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.9450980424880981,
+      "g": 0.9607843160629272,
+      "b": 0.9764705896377563,
+      "a": 1
+    },
+    "depth": 11
+  },
+  {
+    "text": "Avoid",
+    "name": "Avoid",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.9450980424880981,
+      "g": 0.9607843160629272,
+      "b": 0.9764705896377563,
+      "a": 1
+    },
+    "depth": 10
+  },
+  {
+    "text": "Side profile",
+    "name": "Side profile",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.9450980424880981,
+      "g": 0.9607843160629272,
+      "b": 0.9764705896377563,
+      "a": 1
+    },
+    "depth": 11
+  },
+  {
+    "text": "Poor lighting",
+    "name": "Poor lighting",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.9450980424880981,
+      "g": 0.9607843160629272,
+      "b": 0.9764705896377563,
+      "a": 1
+    },
+    "depth": 11
+  },
+  {
+    "text": "Face obscured",
+    "name": "Face obscured",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.9450980424880981,
+      "g": 0.9607843160629272,
+      "b": 0.9764705896377563,
+      "a": 1
+    },
+    "depth": 11
+  },
+  {
+    "text": "Busy background",
+    "name": "Busy background",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.9450980424880981,
+      "g": 0.9607843160629272,
+      "b": 0.9764705896377563,
+      "a": 1
+    },
+    "depth": 11
+  },
+  {
+    "text": "Low resolution",
+    "name": "Low resolution",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.9450980424880981,
+      "g": 0.9607843160629272,
+      "b": 0.9764705896377563,
+      "a": 1
+    },
+    "depth": 11
+  },
+  {
+    "text": "Extreme expression",
+    "name": "Extreme expression",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.9450980424880981,
+      "g": 0.9607843160629272,
+      "b": 0.9764705896377563,
+      "a": 1
+    },
+    "depth": 11
+  },
+  {
+    "text": "Motion Video Guide",
+    "name": "Motion Video Guide",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.9450980424880981,
+      "g": 0.9607843160629272,
+      "b": 0.9764705896377563,
+      "a": 1
+    },
+    "depth": 7
+  },
+  {
+    "text": "Best Practices:",
+    "name": "Best Practices:",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.9450980424880981,
+      "g": 0.9607843160629272,
+      "b": 0.9764705896377563,
+      "a": 1
+    },
+    "depth": 8
+  },
+  {
+    "text": "Clear, centered subject",
+    "name": "Clear, centered subject",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.5803921818733215,
+      "g": 0.6392157077789307,
+      "b": 0.7215686440467834,
+      "a": 1
+    },
+    "depth": 10
+  },
+  {
+    "text": "Consistent lighting throughout",
+    "name": "Consistent lighting throughout",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.5803921818733215,
+      "g": 0.6392157077789307,
+      "b": 0.7215686440467834,
+      "a": 1
+    },
+    "depth": 10
+  },
+  {
+    "text": "Smooth, steady camera movement",
+    "name": "Smooth, steady camera movement",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.5803921818733215,
+      "g": 0.6392157077789307,
+      "b": 0.7215686440467834,
+      "a": 1
+    },
+    "depth": 10
+  },
+  {
+    "text": "Face visible in most frames",
+    "name": "Face visible in most frames",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.5803921818733215,
+      "g": 0.6392157077789307,
+      "b": 0.7215686440467834,
+      "a": 1
+    },
+    "depth": 10
+  },
+  {
+    "text": "1080p or higher resolution",
+    "name": "1080p or higher resolution",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.5803921818733215,
+      "g": 0.6392157077789307,
+      "b": 0.7215686440467834,
+      "a": 1
+    },
+    "depth": 10
+  },
+  {
+    "text": "24-60 fps",
+    "name": "24-60 fps",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.5803921818733215,
+      "g": 0.6392157077789307,
+      "b": 0.7215686440467834,
+      "a": 1
+    },
+    "depth": 10
+  },
+  {
+    "text": "Avoid:",
+    "name": "Avoid:",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.9450980424880981,
+      "g": 0.9607843160629272,
+      "b": 0.9764705896377563,
+      "a": 1
+    },
+    "depth": 8
+  },
+  {
+    "text": "Extreme motion blur",
+    "name": "Extreme motion blur",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.5803921818733215,
+      "g": 0.6392157077789307,
+      "b": 0.7215686440467834,
+      "a": 1
+    },
+    "depth": 10
+  },
+  {
+    "text": "Face covered or obscured",
+    "name": "Face covered or obscured",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.5803921818733215,
+      "g": 0.6392157077789307,
+      "b": 0.7215686440467834,
+      "a": 1
+    },
+    "depth": 10
+  },
+  {
+    "text": "Rapid lighting changes",
+    "name": "Rapid lighting changes",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.5803921818733215,
+      "g": 0.6392157077789307,
+      "b": 0.7215686440467834,
+      "a": 1
+    },
+    "depth": 10
+  },
+  {
+    "text": "Multiple people in frame",
+    "name": "Multiple people in frame",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.5803921818733215,
+      "g": 0.6392157077789307,
+      "b": 0.7215686440467834,
+      "a": 1
+    },
+    "depth": 10
+  },
+  {
+    "text": "Very low resolution (< 480p)",
+    "name": "Very low resolution (< 480p)",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.5803921818733215,
+      "g": 0.6392157077789307,
+      "b": 0.7215686440467834,
+      "a": 1
+    },
+    "depth": 10
+  },
+  {
+    "text": "Extreme close-ups or wide shots",
+    "name": "Extreme close-ups or wide shots",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.5803921818733215,
+      "g": 0.6392157077789307,
+      "b": 0.7215686440467834,
+      "a": 1
+    },
+    "depth": 10
+  },
+  {
+    "text": "Pro Tips",
+    "name": "Pro Tips",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.9450980424880981,
+      "g": 0.9607843160629272,
+      "b": 0.9764705896377563,
+      "a": 1
+    },
+    "depth": 7
+  },
+  {
+    "text": "1",
+    "name": "1",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 1,
+      "g": 1,
+      "b": 1,
+      "a": 1
+    },
+    "depth": 10
+  },
+  {
+    "text": "Test with Safety Checker First",
+    "name": "Test with Safety Checker First",
+    "fontSize": 18,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.9450980424880981,
+      "g": 0.9607843160629272,
+      "b": 0.9764705896377563,
+      "a": 1
+    },
+    "depth": 10
+  },
+  {
+    "text": "Use the free Safety Checker to verify your reference image will work before spending credits.",
+    "name": "Use the free Safety Checker to verify your referen",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.5803921818733215,
+      "g": 0.6392157077789307,
+      "b": 0.7215686440467834,
+      "a": 1
+    },
+    "depth": 10
+  },
+  {
+    "text": "2",
+    "name": "2",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 1,
+      "g": 1,
+      "b": 1,
+      "a": 1
+    },
+    "depth": 10
+  },
+  {
+    "text": "Start with Shorter Videos",
+    "name": "Start with Shorter Videos",
+    "fontSize": 18,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.9450980424880981,
+      "g": 0.9607843160629272,
+      "b": 0.9764705896377563,
+      "a": 1
+    },
+    "depth": 10
+  },
+  {
+    "text": "Test with 10-15 second clips first to ensure quality before generating longer videos.",
+    "name": "Test with 10-15 second clips first to ensure quali",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.5803921818733215,
+      "g": 0.6392157077789307,
+      "b": 0.7215686440467834,
+      "a": 1
+    },
+    "depth": 10
+  },
+  {
+    "text": "3",
+    "name": "3",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 1,
+      "g": 1,
+      "b": 1,
+      "a": 1
+    },
+    "depth": 10
+  },
+  {
+    "text": "Use High-Resolution Source Files",
+    "name": "Use High-Resolution Source Files",
+    "fontSize": 18,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.9450980424880981,
+      "g": 0.9607843160629272,
+      "b": 0.9764705896377563,
+      "a": 1
+    },
+    "depth": 10
+  },
+  {
+    "text": "Better input = better output. Upload 1080p when possible.",
+    "name": "Better input = better output. Upload 1080p when po",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.5803921818733215,
+      "g": 0.6392157077789307,
+      "b": 0.7215686440467834,
+      "a": 1
+    },
+    "depth": 10
+  },
+  {
+    "text": "4",
+    "name": "4",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 1,
+      "g": 1,
+      "b": 1,
+      "a": 1
+    },
+    "depth": 10
+  },
+  {
+    "text": "Match Expressions and Angles",
+    "name": "Match Expressions and Angles",
+    "fontSize": 18,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.9450980424880981,
+      "g": 0.9607843160629272,
+      "b": 0.9764705896377563,
+      "a": 1
+    },
+    "depth": 10
+  },
+  {
+    "text": "Reference photo should have similar expression and angle to the motion video for best results.",
+    "name": "Reference photo should have similar expression and",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.5803921818733215,
+      "g": 0.6392157077789307,
+      "b": 0.7215686440467834,
+      "a": 1
+    },
+    "depth": 10
+  },
+  {
+    "text": "5",
+    "name": "5",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 1,
+      "g": 1,
+      "b": 1,
+      "a": 1
+    },
+    "depth": 10
+  },
+  {
+    "text": "Keep Backgrounds Simple",
+    "name": "Keep Backgrounds Simple",
+    "fontSize": 18,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.9450980424880981,
+      "g": 0.9607843160629272,
+      "b": 0.9764705896377563,
+      "a": 1
+    },
+    "depth": 10
+  },
+  {
+    "text": "Complex backgrounds can cause artifacts. Use plain or slightly blurred backgrounds when possible.",
+    "name": "Complex backgrounds can cause artifacts. Use plain",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.5803921818733215,
+      "g": 0.6392157077789307,
+      "b": 0.7215686440467834,
+      "a": 1
+    },
+    "depth": 10
+  },
+  {
+    "text": "Quality Comparison",
+    "name": "Quality Comparison",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.9450980424880981,
+      "g": 0.9607843160629272,
+      "b": 0.9764705896377563,
+      "a": 1
+    },
+    "depth": 7
+  },
+  {
+    "text": "Resolution Impact:",
+    "name": "Resolution Impact:",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.9450980424880981,
+      "g": 0.9607843160629272,
+      "b": 0.9764705896377563,
+      "a": 1
+    },
+    "depth": 7
+  },
+  {
+    "text": "480p",
+    "name": "480p",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.9450980424880981,
+      "g": 0.9607843160629272,
+      "b": 0.9764705896377563,
+      "a": 1
+    },
+    "depth": 9
+  },
+  {
+    "text": "10 credits",
+    "name": "10 credits",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.5803921818733215,
+      "g": 0.6392157077789307,
+      "b": 0.7215686440467834,
+      "a": 1
+    },
+    "depth": 10
+  },
+  {
+    "text": "Good for testing",
+    "name": "Good for testing",
+    "fontSize": 14,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.3921568691730499,
+      "g": 0.45490196347236633,
+      "b": 0.545098066329956,
+      "a": 1
+    },
+    "depth": 9
+  },
+  {
+    "text": "Recommended",
+    "name": "Recommended",
+    "fontSize": 12,
+    "fontWeight": 400,
+    "color": {
+      "r": 1,
+      "g": 1,
+      "b": 1,
+      "a": 1
+    },
+    "depth": 9
+  },
+  {
+    "text": "720p",
+    "name": "720p",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.9450980424880981,
+      "g": 0.9607843160629272,
+      "b": 0.9764705896377563,
+      "a": 1
+    },
+    "depth": 9
+  },
+  {
+    "text": "20 credits",
+    "name": "20 credits",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.5803921818733215,
+      "g": 0.6392157077789307,
+      "b": 0.7215686440467834,
+      "a": 1
+    },
+    "depth": 10
+  },
+  {
+    "text": "Best balance quality/cost",
+    "name": "Best balance quality/cost",
+    "fontSize": 14,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.3921568691730499,
+      "g": 0.45490196347236633,
+      "b": 0.545098066329956,
+      "a": 1
+    },
+    "depth": 9
+  },
+  {
+    "text": "1080p Source\nUpscaled 4K",
+    "name": "1080p Source\nUpscaled 4K",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.9450980424880981,
+      "g": 0.9607843160629272,
+      "b": 0.9764705896377563,
+      "a": 1
+    },
+    "depth": 9
+  },
+  {
+    "text": "50 credits",
+    "name": "50 credits",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.5803921818733215,
+      "g": 0.6392157077789307,
+      "b": 0.7215686440467834,
+      "a": 1
+    },
+    "depth": 10
+  },
+  {
+    "text": "Professional quality",
+    "name": "Professional quality",
+    "fontSize": 14,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.3921568691730499,
+      "g": 0.45490196347236633,
+      "b": 0.545098066329956,
+      "a": 1
+    },
+    "depth": 9
+  },
+  {
+    "text": "Featured Creations",
+    "name": "Featured Creations",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.9450980424880981,
+      "g": 0.9607843160629272,
+      "b": 0.9764705896377563,
+      "a": 1
+    },
+    "depth": 7
+  },
+  {
+    "text": "From our community:",
+    "name": "From our community:",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.5803921818733215,
+      "g": 0.6392157077789307,
+      "b": 0.7215686440467834,
+      "a": 1
+    },
+    "depth": 6
+  },
+  {
+    "text": "\"Created 100 TikToks in one afternoon\"",
+    "name": "\"Created 100 TikToks in one afternoon\"",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.9450980424880981,
+      "g": 0.9607843160629272,
+      "b": 0.9764705896377563,
+      "a": 1
+    },
+    "depth": 8
+  },
+  {
+    "text": "— Sarah, Content Creator",
+    "name": "— Sarah, Content Creator",
+    "fontSize": 14,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.5803921818733215,
+      "g": 0.6392157077789307,
+      "b": 0.7215686440467834,
+      "a": 1
+    },
+    "depth": 8
+  },
+  {
+    "text": "2.3M views",
+    "name": "2.3M views",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0,
+      "g": 0.9411764740943909,
+      "b": 0.8509804010391235,
+      "a": 1
+    },
+    "depth": 9
+  },
+  {
+    "text": "\"Saved $10K in product photography costs\"",
+    "name": "\"Saved $10K in product photography costs\"",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.9450980424880981,
+      "g": 0.9607843160629272,
+      "b": 0.9764705896377563,
+      "a": 1
+    },
+    "depth": 8
+  },
+  {
+    "text": "— Mike, E-commerce Store Owner",
+    "name": "— Mike, E-commerce Store Owner",
+    "fontSize": 14,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.5803921818733215,
+      "g": 0.6392157077789307,
+      "b": 0.7215686440467834,
+      "a": 1
+    },
+    "depth": 8
+  },
+  {
+    "text": "40% conversion increase",
+    "name": "40% conversion increase",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0,
+      "g": 0.9411764740943909,
+      "b": 0.8509804010391235,
+      "a": 1
+    },
+    "depth": 9
+  },
+  {
+    "text": "\"Localized training videos for 12 languages\"",
+    "name": "\"Localized training videos for 12 languages\"",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.9450980424880981,
+      "g": 0.9607843160629272,
+      "b": 0.9764705896377563,
+      "a": 1
+    },
+    "depth": 8
+  },
+  {
+    "text": "— Alex, Corporate Trainer",
+    "name": "— Alex, Corporate Trainer",
+    "fontSize": 14,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.5803921818733215,
+      "g": 0.6392157077789307,
+      "b": 0.7215686440467834,
+      "a": 1
+    },
+    "depth": 8
+  },
+  {
+    "text": "80% time savings",
+    "name": "80% time savings",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0,
+      "g": 0.9411764740943909,
+      "b": 0.8509804010391235,
+      "a": 1
+    },
+    "depth": 9
+  },
+  {
+    "text": "View More Examples",
+    "name": "View More Examples",
+    "fontSize": 14,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.9450980424880981,
+      "g": 0.9607843160629272,
+      "b": 0.9764705896377563,
+      "a": 1
+    },
+    "depth": 6
+  },
+  {
+    "text": "Ready to Create?",
+    "name": "Ready to Create?",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.9450980424880981,
+      "g": 0.9607843160629272,
+      "b": 0.9764705896377563,
+      "a": 1
+    },
+    "depth": 6
+  },
+  {
+    "text": "Start with 25 free credits — no credit card required",
+    "name": "Start with 25 free credits — no credit card requir",
+    "fontSize": 18,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.5803921818733215,
+      "g": 0.6392157077789307,
+      "b": 0.7215686440467834,
+      "a": 1
+    },
+    "depth": 6
+  },
+  {
+    "text": "Try NewMe.AI Free",
+    "name": "Try NewMe.AI Free",
+    "fontSize": 14,
+    "fontWeight": 400,
+    "color": {
+      "r": 1,
+      "g": 1,
+      "b": 1,
+      "a": 1
+    },
+    "depth": 8
+  },
+  {
+    "text": "View Pricing",
+    "name": "View Pricing",
+    "fontSize": 14,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.9450980424880981,
+      "g": 0.9607843160629272,
+      "b": 0.9764705896377563,
+      "a": 1
+    },
+    "depth": 8
+  },
+  {
+    "text": "Read Documentation",
+    "name": "Read Documentation",
+    "fontSize": 14,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.9450980424880981,
+      "g": 0.9607843160629272,
+      "b": 0.9764705896377563,
+      "a": 1
+    },
+    "depth": 8
+  },
+  {
+    "text": "Terms of Service",
+    "name": "Terms of Service",
+    "fontSize": 14,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.5803921818733215,
+      "g": 0.6392157077789307,
+      "b": 0.7215686440467834,
+      "a": 1
+    },
+    "depth": 6
+  },
+  {
+    "text": "|",
+    "name": "|",
+    "fontSize": 14,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.5803921818733215,
+      "g": 0.6392157077789307,
+      "b": 0.7215686440467834,
+      "a": 1
+    },
+    "depth": 6
+  },
+  {
+    "text": "Privacy Policy",
+    "name": "Privacy Policy",
+    "fontSize": 14,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.5803921818733215,
+      "g": 0.6392157077789307,
+      "b": 0.7215686440467834,
+      "a": 1
+    },
+    "depth": 6
+  },
+  {
+    "text": "|",
+    "name": "|",
+    "fontSize": 14,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.5803921818733215,
+      "g": 0.6392157077789307,
+      "b": 0.7215686440467834,
+      "a": 1
+    },
+    "depth": 6
+  },
+  {
+    "text": "Careers",
+    "name": "Careers",
+    "fontSize": 14,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.5803921818733215,
+      "g": 0.6392157077789307,
+      "b": 0.7215686440467834,
+      "a": 1
+    },
+    "depth": 6
+  },
+  {
+    "text": "© 2025 NuuMee.AI — All rights reserved",
+    "name": "© 2025 NuuMee.AI — All rights reserved",
+    "fontSize": 14,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.5803921818733215,
+      "g": 0.6392157077789307,
+      "b": 0.7215686440467834,
+      "a": 1
+    },
+    "depth": 5
+  },
+  {
+    "text": "N",
+    "name": "N",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 1,
+      "g": 1,
+      "b": 1,
+      "a": 1
+    },
+    "depth": 7
+  },
+  {
+    "text": "NuuMee.AI",
+    "name": "NuuMee.AI",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.9450980424880981,
+      "g": 0.9607843160629272,
+      "b": 0.9764705896377563,
+      "a": 1
+    },
+    "depth": 6
+  },
+  {
+    "text": "Home",
+    "name": "Home",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.5803921818733215,
+      "g": 0.6392157077789307,
+      "b": 0.7215686440467834,
+      "a": 1
+    },
+    "depth": 6
+  },
+  {
+    "text": "Create Videos",
+    "name": "Create Videos",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.5803921818733215,
+      "g": 0.6392157077789307,
+      "b": 0.7215686440467834,
+      "a": 1
+    },
+    "depth": 6
+  },
+  {
+    "text": "Dev",
+    "name": "Dev",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.5803921818733215,
+      "g": 0.6392157077789307,
+      "b": 0.7215686440467834,
+      "a": 1
+    },
+    "depth": 6
+  },
+  {
+    "text": "Price",
+    "name": "Price",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.5803921818733215,
+      "g": 0.6392157077789307,
+      "b": 0.7215686440467834,
+      "a": 1
+    },
+    "depth": 6
+  },
+  {
+    "text": "Documentation",
+    "name": "Documentation",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.5803921818733215,
+      "g": 0.6392157077789307,
+      "b": 0.7215686440467834,
+      "a": 1
+    },
+    "depth": 6
+  },
+  {
+    "text": "Login",
+    "name": "Login",
+    "fontSize": 14,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.5803921818733215,
+      "g": 0.6392157077789307,
+      "b": 0.7215686440467834,
+      "a": 1
+    },
+    "depth": 6
+  },
+  {
+    "text": "25 Credits",
+    "name": "25 Credits",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 1,
+      "g": 1,
+      "b": 1,
+      "a": 1
+    },
+    "depth": 6
+  },
+  {
+    "text": "Alex Chen",
+    "name": "Alex Chen",
+    "fontSize": 16,
+    "fontWeight": 400,
+    "color": {
+      "r": 0.9450980424880981,
+      "g": 0.9607843160629272,
+      "b": 0.9764705896377563,
+      "a": 1
+    },
+    "depth": 6
+  }
+]

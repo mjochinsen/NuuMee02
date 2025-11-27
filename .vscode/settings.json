@@ -1,0 +1,20 @@
+{
+  "workbench.colorTheme": "Default Dark Modern",
+  "workbench.colorCustomizations": {
+    "activityBar.background": "#1e3a2e",
+    "activityBar.foreground": "#7fff7f",
+    "statusBar.background": "#1e3a2e",
+    "statusBar.foreground": "#7fff7f",
+    "titleBar.activeBackground": "#1e3a2e",
+    "titleBar.activeForeground": "#7fff7f",
+    "editor.background": "#0d1f16",
+    "sideBar.background": "#142620"
+  },
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true
+}
