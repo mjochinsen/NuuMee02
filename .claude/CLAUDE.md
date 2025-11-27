@@ -1,61 +1,101 @@
-# NuuMee02  Claude Context
+# NuuMee02 - Claude Context
 
 ## Identity
-AI video generation SaaS (nuumee.ai). Firebase + Next.js + FastAPI + Stripe.
 
-**Repo:** https://github.com/mjochinsen/NuuMee02 | **Branch:** master
+AI video generation SaaS (nuumee.ai)
+Tech stack: Next.js + FastAPI + Firebase + Firestore + Stripe + GCS
+
+**Repo:** https://github.com/mjochinsen/NuuMee02
+**Branch:** master
+**GCP Project:** wanapi-prod
+**Firebase Hosting Site:** nuumee-66a48
 
 ---
 
 ## Session Start Protocol
 
 ```
-1. Read TASK_TRACKER.md ’ Get current phase/task
-2. Check CURRENT STATE section ’ Know where you are
-3. Find next  task ’ Execute it
-4. Update TASK_TRACKER.md ’ Mark 
-5. Repeat until phase complete
+1. Read TASK_TRACKER.md - determine current phase/task
+2. Read CURRENT STATE section inside tracker
+3. Identify the next task (In Progress or Not Started)
+4. Execute ONLY that task
+5. Update TASK_TRACKER.md - mark as Complete
+6. Continue until the phase is finished
 ```
+
+**Never start a new task without checking TASK_TRACKER.md first.**
 
 ---
 
 ## Critical Files
 
-| File | Read When |
-|------|-----------|
-| [TASK_TRACKER.md](../TASK_TRACKER.md) | **ALWAYS FIRST** - Current state |
-| [CREDENTIALS_INVENTORY.md](../CREDENTIALS_INVENTORY.md) | Any API/config work |
-| [NUUMEE_MASTER_PLAN.md](../NUUMEE_MASTER_PLAN.md) | Need phase details |
-| [ORCHESTRATOR_INSTRUCTIONS.md](../ORCHESTRATOR_INSTRUCTIONS.md) | Workflow reference |
-| [docs/PRICING_STRATEGY.md](../docs/PRICING_STRATEGY.md) | Credits/payments |
-| [docs/firestore-schema.md](../docs/firestore-schema.md) | Database work |
-| [LESSONS_LEARNED.md](../LESSONS_LEARNED.md) | Before implementing |
+| File | Purpose |
+|------|---------|
+| [docs/TASK_TRACKER.md](../docs/TASK_TRACKER.md) | **ALWAYS READ FIRST** - Current state |
+| [CREDENTIALS_INVENTORY.md](../CREDENTIALS_INVENTORY.md) | API keys, env vars |
+| [docs/NUUMEE_MASTER_PLAN.md](../docs/NUUMEE_MASTER_PLAN.md) | Phase-by-phase roadmap |
+| [docs/ORCHESTRATOR_INSTRUCTIONS.md](../docs/ORCHESTRATOR_INSTRUCTIONS.md) | Agent workflows |
+| [docs/firestore-schema.md](../docs/firestore-schema.md) | Database reference |
+| [docs/PRICING_STRATEGY.md](../docs/PRICING_STRATEGY.md) | Credits and packages |
+| [LESSONS_LEARNED.md](../LESSONS_LEARNED.md) | Avoid past bugs |
+
+---
+
+## FIBY - Agent Master
+
+**FIBY** is the meta-agent that manages all 40 agents. Use FIBY when you need to:
+
+| Action | Command |
+|--------|---------|
+| Create new agent | `/ask-fiby create agent for {purpose}` |
+| Audit agent | `/ask-fiby audit {agent-name}` |
+| Get guidance | `/ask-fiby which agent for {task}` |
+| Improve agent | `/ask-fiby improve {agent-name}` |
+
+**Documentation:** [docs/FIBY_AGENT_MASTER.md](../docs/FIBY_AGENT_MASTER.md)
+
+**Communication Protocol:**
+```
+KODY -> .claude/requests/ -> FIBY -> .claude/responses/ -> KODY
+```
 
 ---
 
 ## Agent Routing
 
-| Task Type | Agent | Notes |
-|-----------|-------|-------|
-| FastAPI endpoints | `api-builder` | Has patterns, error handling |
-| React/Next.js | `frontend-dev` | Component patterns, hooks |
-| Deployment | `deployment-orchestrator` | Coordinates full deploy |
-| Validation | `deployment-validator` | Test checklist |
-| SEO | `seo-meta-tags` | Meta, JSON-LD, sitemap |
-| Accessibility | `accessibility-auditor` | WCAG 2.1 AA |
-| Performance | `performance-optimizer` | Bundle, lazy loading |
-| Polish (all) | `polish-orchestrator` | Runs all QA agents |
+| Task | Agent |
+|------|-------|
+| FastAPI endpoints | `api-builder` |
+| Next.js components | `frontend-dev` |
+| Full deployment | `deployment-orchestrator` |
+| Deployment testing | `deployment-validator` |
+| SEO | `seo-meta-tags` |
+| Accessibility | `accessibility-auditor` |
+| Performance | `performance-optimizer` |
+| Final polish | `polish-orchestrator` |
+| **Agent help** | `/ask-fiby` |
 
 ---
 
 ## Tech Stack
 
 - **Frontend:** Next.js 14, TypeScript, Tailwind, shadcn/ui
+  - Location: `/frontend`
+
 - **Backend:** FastAPI (Python 3.11), Cloud Run
-- **Database:** Firestore (wanapi-prod)
+  - Location: `/backend`
+
+- **Worker:** Python Cloud Run service for WaveSpeed processing
+  - Location: `/worker`
+
+- **Database:** Firestore (project: wanapi-prod)
+
 - **Auth:** Firebase Auth (client SDK only)
+
 - **Payments:** Stripe
-- **Storage:** GCS
+
+- **Storage:** Google Cloud Storage
+
 - **AI:** WaveSpeed.ai
 
 ---
@@ -63,6 +103,7 @@ AI video generation SaaS (nuumee.ai). Firebase + Next.js + FastAPI + Stripe.
 ## Anti-Patterns (NEVER DO)
 
 ### Auth Bug (caused infinite login loops)
+
 ```typescript
 // WRONG - 403 means "forbidden", not "unauthenticated"
 if (response.status === 403) auth.signOut();
@@ -72,10 +113,11 @@ if (response.status === 401) auth.signOut();
 ```
 
 ### Other Critical Mistakes
-- Backend receiving passwords (use Firebase ID tokens only)
-- Building frontend before verifying backend OpenAPI spec
-- Over-engineering (target ~5K lines total, not 35K)
-- Deleting .claude or .vscode folders
+
+- Backend handling passwords (use Firebase ID tokens only)
+- Frontend built before backend endpoints exist
+- Over-engineering (target total code < 5,000 lines)
+- Deleting .claude/ or .vscode/
 - Skipping phases
 
 ---
@@ -86,8 +128,25 @@ if (response.status === 401) auth.signOut();
 - Tailwind only (no CSS files)
 - Components < 200 lines
 - Functions < 30 lines
-- Flat structure (no deep nesting)
-- UI from `FromFigmaMake/` designs
+- Flat folder structure
+- UI must match FromFigmaMake/
+
+---
+
+## Claude Rules
+
+### Access Rules
+
+- Load ONLY the files relevant to the current task
+- Do NOT read the entire repo unless explicitly asked
+- Do NOT modify .claude/agents unless instructed
+- Do NOT invent new folder structures
+
+### Output Rules
+
+- Minimal code
+- No unnecessary abstractions
+- One feature -> test -> commit -> next feature
 
 ---
 
@@ -95,34 +154,20 @@ if (response.status === 401) auth.signOut();
 
 | Command | Use When |
 |---------|----------|
-| `/check-todos` | Track progress |
+| `/ask-fiby` | Need agent help, creation, or audits |
+| `/check-todos` | Track task progress |
 | `/create-prompt` | Need optimized prompts |
 | `/whats-next` | Session handoff |
 
 ---
 
-## Token Optimization
-
-**DO:**
-- Read TASK_TRACKER.md first (small file, full context)
-- Only read files relevant to current task
-- Use agents for complex tasks
-- Update tracker after each task
-- Use `/clear` between unrelated tasks
-
-**DON'T:**
-- Read entire codebase at start
-- Re-read unchanged files
-- Keep large files in context
-- Skip tracker updates
-
----
-
-## Task State Flow
+## Task State Icons
 
 ```
- Not Started ’ = In Progress ’  Complete
-                              ˜ L Blocked (note reason)
+[_] Not Started
+[>] In Progress
+[x] Complete
+[!] Blocked (include reason)
 ```
 
 ---
@@ -133,7 +178,7 @@ if (response.status === 401) auth.signOut();
 # Backend to Cloud Run
 gcloud run deploy nuumee-api --source backend/ --region us-central1 --project wanapi-prod
 
-# Frontend to Firebase
+# Frontend to Firebase Hosting
 cd frontend && pnpm build && cd .. && firebase deploy --only hosting
 
 # Worker (no public access)
@@ -147,7 +192,8 @@ gcloud run deploy nuumee-worker --source worker/ --region us-central1 --project 
 1. Check TASK_TRACKER.md for dependencies
 2. Check CREDENTIALS_INVENTORY.md for secrets
 3. Check LESSONS_LEARNED.md for known issues
-4. Time-box to 30 min, then ask user
+4. Time-box to 30 minutes
+5. Ask the user for clarification
 
 ---
 

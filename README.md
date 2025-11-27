@@ -27,8 +27,10 @@ NuuMee02/
 ├── .vscode/
 │   └── settings.json            # VS Code workspace settings
 ├── .claude/
-│   ├── agents/                  # 39 Claude agents
-│   ├── commands/                # 11 slash commands
+│   ├── agents/                  # 40 Claude agents (including FIBY)
+│   ├── commands/                # 12 slash commands (including /ask-fiby)
+│   ├── requests/                # KODY → FIBY requests
+│   ├── responses/               # FIBY → KODY responses
 │   ├── specs/                   # Agent specifications
 │   ├── CLAUDE.md                # Project instructions for Claude
 │   └── settings.local.json      # Local Claude settings
@@ -76,9 +78,27 @@ Complete Firestore database schema (35KB):
 
 ---
 
-## Claude Agents (39 total)
+## Claude Agents (40 total)
 
 Located in `.claude/agents/`:
+
+### FIBY - Agent Master (Meta-Agent)
+
+**FIBY** is the meta-agent that manages all other agents. KODY (the primary code architect) uses FIBY when needing to:
+
+| Action | Command |
+|--------|---------|
+| Create new agent | `/ask-fiby create agent for {purpose}` |
+| Audit agent | `/ask-fiby audit {agent-name}` |
+| Get guidance | `/ask-fiby which agent for {task}` |
+| Improve agent | `/ask-fiby improve {agent-name}` |
+
+**Documentation:** [docs/FIBY_AGENT_MASTER.md](docs/FIBY_AGENT_MASTER.md)
+
+**Communication Protocol:**
+```
+KODY → .claude/requests/ → FIBY → .claude/responses/ → KODY
+```
 
 ### Deployment & Infrastructure
 | Agent | Purpose |
@@ -141,12 +161,13 @@ Located in `.claude/agents/`:
 
 ---
 
-## Slash Commands (11 total)
+## Slash Commands (12 total)
 
 Located in `.claude/commands/`:
 
 | Command | Purpose |
 |---------|---------|
+| `/ask-fiby` | **Ask FIBY for agent help, creation, or audits** |
 | `/create-prompt` | Expert prompt engineering system |
 | `/check-todos` | Reviews and manages TODO list |
 | `/add-to-todos` | Adds items to TODO list with context |
@@ -211,11 +232,13 @@ Intentionally NOT preserved:
 ## Infrastructure (Already Deployed)
 
 The following are already set up and working:
-- **Firebase Project:** wanapi-prod
+- **GCP Project ID:** wanapi-prod
+- **GCP Project Number:** 450296399943
+- **Firebase Hosting Site:** nuumee-66a48
 - **Backend API:** Cloud Run (see CREDENTIALS_INVENTORY.md for URL)
 - **Custom Domain:** nuumee.ai (GoDaddy)
 - **Stripe:** Test and Live keys configured
-- **Firestore:** Schema deployed with security rules
+- **Firestore:** Schema deployed with security rules (project: wanapi-prod)
 
 ---
 

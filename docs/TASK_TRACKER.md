@@ -4,6 +4,8 @@
 
 **Updated by:** KODY after each task completion
 
+**GCP Project:** wanapi-prod | **Firebase Hosting Site:** nuumee-66a48
+
 ---
 
 ## HOW TO USE THIS FILE

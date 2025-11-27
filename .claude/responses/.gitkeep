@@ -1,0 +1,23 @@
+# FIBY Response Directory
+
+FIBY writes responses here for KODY to review.
+
+## File Naming Convention
+{request-id}-response.md
+audit-{agent-name}.md
+created-{agent-name}.md
+
+## Response Format
+```markdown
+---
+request_id: {matching request ID}
+status: complete | needs-clarification | failed
+timestamp: {ISO timestamp}
+---
+
+## Results
+[FIBY's findings or created artifacts]
+
+## Next Steps
+[Recommended actions for KODY]
+```

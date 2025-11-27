@@ -3,6 +3,8 @@
 **For:** KODY (Main Claude Code in VS Code on Workstation)
 **Repo:** https://github.com/mjochinsen/NuuMee02
 **Branch:** master
+**GCP Project:** wanapi-prod
+**Firebase Hosting Site:** nuumee-66a48
 
 ---
 

@@ -1,0 +1,21 @@
+# FIBY Request Directory
+
+Place KODY → FIBY requests here.
+
+## File Naming Convention
+{YYYY-MM-DD}-{topic}.md
+
+## Example
+2025-11-27-stripe-agent.md
+
+## Request Format
+```markdown
+---
+type: create | audit | recommend | question
+target: agent-name | feature | topic
+priority: critical | high | normal
+---
+
+## Details
+[Your request details]
+```

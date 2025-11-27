@@ -12,6 +12,8 @@ For agent creation or modification, coordinate with **FIBY** (the agent speciali
 
 **Repo:** https://github.com/mjochinsen/NuuMee02
 **Branch:** master
+**GCP Project:** wanapi-prod
+**Firebase Hosting Site:** nuumee-66a48
 
 NuuMee is an AI-powered video character replacement SaaS. Users upload a reference image and motion video to generate new videos.
 
