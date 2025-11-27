@@ -47,23 +47,23 @@
 
 | ID | Task | Status | Agent/Tool | Output | Notes |
 |----|------|--------|------------|--------|-------|
-| 0.1 | Create folder structure (frontend/, backend/, worker/) | ⬜ | Manual | Folders exist | |
-| 0.2 | Initialize Next.js in frontend/ | ⬜ | `pnpm create next-app` | package.json, app/ | No --src-dir flag |
-| 0.3 | Create backend/app/main.py with health endpoint | ⬜ | `api-builder` | main.py | FastAPI minimal |
-| 0.4 | Create backend/requirements.txt | ⬜ | Manual | requirements.txt | |
-| 0.5 | Create backend/Dockerfile | ⬜ | Manual | Dockerfile | |
-| 0.6 | Create worker/ stub files | ⬜ | Manual | main.py, wavespeed.py | Empty stubs only |
-| 0.7 | Create frontend/.env.local | ⬜ | Manual | .env.local | From CREDENTIALS_INVENTORY.md |
-| 0.8 | Create backend/.env | ⬜ | Manual | .env | From CREDENTIALS_INVENTORY.md |
-| 0.9 | Create firebase.json | ⬜ | `firebase-hosting-preparer` | firebase.json | Site: nuumee-66a48 |
-| 0.10 | Commit and push Phase 0 | ⬜ | Git | Commit hash | "Phase 0: Foundation" |
+| 0.1 | Create folder structure (frontend/, backend/, worker/) | ✅ | Manual | Folders exist | Done |
+| 0.2 | Initialize Next.js in frontend/ | ✅ | `pnpm create next-app` | package.json, app/ | Next.js 16 with Tailwind |
+| 0.3 | Create backend/app/main.py with health endpoint | ✅ | Manual | main.py | FastAPI minimal |
+| 0.4 | Create backend/requirements.txt | ✅ | Manual | requirements.txt | Done |
+| 0.5 | Create backend/Dockerfile | ✅ | Manual | Dockerfile | Done |
+| 0.6 | Create worker/ stub files | ✅ | Manual | main.py, wavespeed.py | Empty stubs only |
+| 0.7 | Create frontend/.env.local | ✅ | Manual | .env.local | Firebase config set |
+| 0.8 | Create backend/.env | ✅ | Manual | .env | GCP project set |
+| 0.9 | Create firebase.json | ✅ | Manual | firebase.json | Site: nuumee-66a48 |
+| 0.10 | Commit and push Phase 0 | ✅ | Git | 605b7e5 | "Phase 0: Foundation" |
 
 **Phase 0 Completion Criteria:**
-- [ ] All folders exist
-- [ ] Next.js initializes without errors
-- [ ] Backend health endpoint code exists
-- [ ] All env files created
-- [ ] Committed to master
+- [x] All folders exist
+- [x] Next.js initializes without errors
+- [x] Backend health endpoint code exists
+- [x] All env files created
+- [x] Committed to master
 
 ---
 
@@ -350,7 +350,7 @@
 
 | Phase | Tasks | Completed | Status |
 |-------|-------|-----------|--------|
-| 0 - Foundation | 10 | 0 | ⬜ |
+| 0 - Foundation | 10 | 10 | ✅ |
 | 1 - Auth | 19 | 0 | ⬜ |
 | 2 - Payments | 14 | 0 | ⬜ |
 | 3 - Uploads | 9 | 0 | ⬜ |
@@ -360,16 +360,16 @@
 | 7 - Subscriptions | 10 | 0 | ⬜ |
 | 8 - Referral | 11 | 0 | ⬜ |
 | 9 - Polish | 11 | 0 | ⬜ |
-| **TOTAL** | **111** | **0** | ⬜ |
+| **TOTAL** | **111** | **10** | 🔄 |
 
 ---
 
 ## CURRENT STATE
 
-**Current Phase:** 0
-**Current Task:** 0.1
+**Current Phase:** 1
+**Current Task:** 1.1
 **Blockers:** None
-**Last Updated:** Not started
+**Last Updated:** 2025-11-27 22:30
 
 ---
 
