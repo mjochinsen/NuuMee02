@@ -1,0 +1,101 @@
+/**
+ * API client for NuuMee backend.
+ * Automatically attaches Firebase ID token to requests.
+ */
+import { getIdToken } from './firebase';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+
+interface ApiOptions extends RequestInit {
+  skipAuth?: boolean;
+}
+
+async function apiRequest<T>(
+  endpoint: string,
+  options: ApiOptions = {}
+): Promise<T> {
+  const { skipAuth = false, headers: customHeaders, ...rest } = options;
+
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+    ...customHeaders,
+  };
+
+  // Attach auth token if available and not skipped
+  if (!skipAuth) {
+    const token = await getIdToken();
+    if (token) {
+      (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
+    }
+  }
+
+  const response = await fetch(`${API_URL}${endpoint}`, {
+    headers,
+    ...rest,
+  });
+
+  // Handle 401 - token invalid/expired (NOT 403 - see LESSONS_LEARNED.md)
+  if (response.status === 401) {
+    // Token invalid or expired - let AuthProvider handle re-auth
+    throw new ApiError('Unauthorized', 401);
+  }
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new ApiError(error.detail || 'Request failed', response.status);
+  }
+
+  return response.json();
+}
+
+export class ApiError extends Error {
+  constructor(message: string, public status: number) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
+
+// Auth endpoints
+export interface UserProfile {
+  uid: string;
+  email: string;
+  display_name: string | null;
+  photo_url: string | null;
+  credits_balance: number;
+  subscription_tier: string;
+  referral_code: string;
+  created_at: string;
+  last_login_at: string;
+}
+
+export interface RegisterResponse {
+  uid: string;
+  email: string;
+  credits_balance: number;
+  referral_code: string;
+  message: string;
+}
+
+export async function registerUser(idToken: string): Promise<RegisterResponse> {
+  return apiRequest<RegisterResponse>('/auth/register', {
+    method: 'POST',
+    body: JSON.stringify({ id_token: idToken }),
+    skipAuth: true, // We're passing token in body
+  });
+}
+
+export async function loginUser(idToken: string): Promise<UserProfile> {
+  return apiRequest<UserProfile>('/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ id_token: idToken }),
+    skipAuth: true, // We're passing token in body
+  });
+}
+
+export async function getMe(): Promise<UserProfile> {
+  return apiRequest<UserProfile>('/auth/me');
+}
+
+export async function checkHealth(): Promise<{ status: string; service: string }> {
+  return apiRequest('/health', { skipAuth: true });
+}
