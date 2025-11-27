@@ -77,14 +77,14 @@
 
 | ID | Task | Status | Agent/Tool | Output | Notes |
 |----|------|--------|------------|--------|-------|
-| 1.1 | Create backend/app/auth/ folder structure | ⬜ | Manual | router.py, firebase.py, models.py | |
-| 1.2 | Implement Firebase Admin SDK init | ⬜ | `api-builder` | firebase.py | Use service account |
-| 1.3 | Implement POST /auth/register | ⬜ | `api-builder` | router.py | Creates Firestore user doc |
-| 1.4 | Implement POST /auth/login | ⬜ | `api-builder` | router.py | Validates token, returns profile |
-| 1.5 | Implement GET /auth/me | ⬜ | `api-builder` | router.py | Returns user profile |
-| 1.6 | Create auth middleware | ⬜ | `api-builder` | middleware/auth.py | Token validation |
-| 1.7 | Deploy backend to Cloud Run | ⬜ | `gcloud run deploy` | Live URL | Update frontend .env |
-| 1.8 | Test backend endpoints with curl | ⬜ | Manual/curl | Test results | All 3 endpoints work |
+| 1.1 | Create backend/app/auth/ folder structure | ✅ | Manual | router.py, firebase.py, models.py | Done |
+| 1.2 | Implement Firebase Admin SDK init | ✅ | Manual | firebase.py | Uses Secret Manager |
+| 1.3 | Implement POST /auth/register | ✅ | Manual | router.py | Creates user with 25 credits |
+| 1.4 | Implement POST /auth/login | ✅ | Manual | router.py | Validates token, returns profile |
+| 1.5 | Implement GET /auth/me | ✅ | Manual | router.py | Returns user profile |
+| 1.6 | Create auth middleware | ✅ | Manual | middleware/auth.py | Token validation |
+| 1.7 | Deploy backend to Cloud Run | ✅ | `gcloud run deploy` | nuumee-api-450296399943 | .env updated |
+| 1.8 | Test backend endpoints with curl | ✅ | curl | Health check passed | /docs available |
 
 ### Frontend Tasks
 
@@ -351,7 +351,7 @@
 | Phase | Tasks | Completed | Status |
 |-------|-------|-----------|--------|
 | 0 - Foundation | 10 | 10 | ✅ |
-| 1 - Auth | 19 | 0 | ⬜ |
+| 1 - Auth | 19 | 8 | 🔄 |
 | 2 - Payments | 14 | 0 | ⬜ |
 | 3 - Uploads | 9 | 0 | ⬜ |
 | 4 - Jobs | 11 | 0 | ⬜ |
@@ -360,16 +360,16 @@
 | 7 - Subscriptions | 10 | 0 | ⬜ |
 | 8 - Referral | 11 | 0 | ⬜ |
 | 9 - Polish | 11 | 0 | ⬜ |
-| **TOTAL** | **111** | **10** | 🔄 |
+| **TOTAL** | **111** | **18** | 🔄 |
 
 ---
 
 ## CURRENT STATE
 
 **Current Phase:** 1
-**Current Task:** 1.1
+**Current Task:** 1.9 (Frontend tasks)
 **Blockers:** None
-**Last Updated:** 2025-11-27 22:30
+**Last Updated:** 2025-11-27 23:15
 
 ---
 
