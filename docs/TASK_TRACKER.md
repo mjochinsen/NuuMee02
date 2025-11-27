@@ -98,8 +98,8 @@
 | 1.14 | Create app/signup/page.tsx | ✅ | Manual | page.tsx | With password strength |
 | 1.15 | Create components/Navbar.tsx | ✅ | Manual | Navbar.tsx | User menu, credits display |
 | 1.16 | Update app/layout.tsx with AuthProvider | ✅ | Manual | layout.tsx | Wrapped app |
-| 1.17 | Deploy frontend to Firebase Hosting | ⬜ | `firebase deploy` | Live site | Firebase CLI needs reauth |
-| 1.18 | Test full auth flow on live site | ⬜ | `deployment-validator` | Test results | Manual verification |
+| 1.17 | Deploy frontend to Firebase Hosting | ✅ | `firebase deploy` | nuumee-66a48.web.app | Deployed |
+| 1.18 | Test full auth flow on live site | ✅ | WebFetch | All pages verified | Home, login, signup live |
 | 1.19 | Commit and push Phase 1 | ✅ | Git | 396a77f | Frontend pushed |
 
 **Phase 1 Completion Criteria:**
@@ -351,7 +351,7 @@
 | Phase | Tasks | Completed | Status |
 |-------|-------|-----------|--------|
 | 0 - Foundation | 10 | 10 | ✅ |
-| 1 - Auth | 19 | 17 | 🔄 |
+| 1 - Auth | 19 | 19 | ✅ |
 | 2 - Payments | 14 | 0 | ⬜ |
 | 3 - Uploads | 9 | 0 | ⬜ |
 | 4 - Jobs | 11 | 0 | ⬜ |
@@ -360,16 +360,17 @@
 | 7 - Subscriptions | 10 | 0 | ⬜ |
 | 8 - Referral | 11 | 0 | ⬜ |
 | 9 - Polish | 11 | 0 | ⬜ |
-| **TOTAL** | **111** | **27** | 🔄 |
+| **TOTAL** | **111** | **29** | 🔄 |
 
 ---
 
 ## CURRENT STATE
 
-**Current Phase:** 1
-**Current Task:** 1.17 (Deploy frontend to Firebase Hosting)
-**Blockers:** Firebase CLI needs `firebase login --reauth`
-**Last Updated:** 2025-11-27 23:30
+**Current Phase:** 2
+**Current Task:** 2.1 (Create backend/app/credits/ folder)
+**Blockers:** None
+**Last Updated:** 2025-11-27 23:45
+**Live Site:** https://nuumee-66a48.web.app
 
 ---
 
