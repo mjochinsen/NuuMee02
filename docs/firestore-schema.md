@@ -1,7 +1,7 @@
 # NuuMee.AI Firestore Database Schema
 
 **Database:** Firestore (Native Mode)
-**Project:** nuumee-66a48
+**Project:** wanapi-prod
 **Created:** 2025-01-21
 
 ---

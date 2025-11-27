@@ -234,7 +234,7 @@ Intentionally NOT preserved:
 The following are already set up and working:
 - **GCP Project ID:** wanapi-prod
 - **GCP Project Number:** 450296399943
-- **Firebase Hosting Site:** nuumee-66a48
+- **Firebase Hosting:** Default site (wanapi-prod)
 - **Backend API:** Cloud Run (see CREDENTIALS_INVENTORY.md for URL)
 - **Custom Domain:** nuumee.ai (GoDaddy)
 - **Stripe:** Test and Live keys configured

@@ -4,7 +4,7 @@
 
 **Updated by:** KODY after each task completion
 
-**GCP Project:** wanapi-prod | **Firebase Hosting Site:** nuumee-66a48
+**GCP Project:** wanapi-prod | **Domain:** nuumee.ai
 
 ---
 

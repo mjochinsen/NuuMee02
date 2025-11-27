@@ -8,7 +8,7 @@ Tech stack: Next.js + FastAPI + Firebase + Firestore + Stripe + GCS
 **Repo:** https://github.com/mjochinsen/NuuMee02
 **Branch:** master
 **GCP Project:** wanapi-prod
-**Firebase Hosting Site:** nuumee-66a48
+**Domain:** nuumee.ai
 
 ---
 
@@ -63,15 +63,17 @@ KODY -> .claude/requests/ -> FIBY -> .claude/responses/ -> KODY
 
 ## Agent Routing
 
-| Task | Agent |
-|------|-------|
+| Task | Agent/Tool |
+|------|------------|
 | FastAPI endpoints | `api-builder` |
 | Next.js components | `frontend-dev` |
 | Full deployment | `deployment-orchestrator` |
 | Deployment testing | `deployment-validator` |
 | SEO | `seo-meta-tags` |
-| Accessibility | `accessibility-auditor` |
+| Accessibility | `accessibility-auditor` or Playwright |
 | Performance | `performance-optimizer` |
+| E2E tests | Playwright |
+| Visual regression | Playwright |
 | Final polish | `polish-orchestrator` |
 | **Agent help** | `/ask-fiby` |
 
@@ -97,6 +99,42 @@ KODY -> .claude/requests/ -> FIBY -> .claude/responses/ -> KODY
 - **Storage:** Google Cloud Storage
 
 - **AI:** WaveSpeed.ai
+
+- **Testing:** Playwright (E2E, visual regression, accessibility audits)
+
+---
+
+## Playwright Testing
+
+```bash
+# Install (in frontend/)
+pnpm add -D @playwright/test
+npx playwright install
+
+# Run all tests
+npx playwright test
+
+# Run with UI
+npx playwright test --ui
+
+# Run specific test
+npx playwright test auth.spec.ts
+
+# Accessibility audit
+npx playwright test --grep @a11y
+
+# Visual regression
+npx playwright test --grep @visual
+```
+
+**Test locations:** `frontend/tests/` or `frontend/e2e/`
+
+**Use for:**
+- E2E user flows (signup, login, payment)
+- Visual regression (screenshot comparison)
+- Accessibility audits (axe-core integration)
+- Cross-browser testing (Chrome, Firefox, Safari)
+- Mobile viewport testing
 
 ---
 

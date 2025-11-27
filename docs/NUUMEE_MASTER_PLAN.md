@@ -4,7 +4,7 @@
 **Repo:** https://github.com/mjochinsen/NuuMee02
 **Branch:** master
 **GCP Project:** wanapi-prod
-**Firebase Hosting Site:** nuumee-66a48
+**Domain:** nuumee.ai
 
 ---
 
