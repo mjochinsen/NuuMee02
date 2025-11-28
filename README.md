@@ -29,10 +29,14 @@ NuuMee02/
 ├── .claude/
 │   ├── agents/                  # 40 Claude agents (including FIBY)
 │   ├── commands/                # 12 slash commands (including /ask-fiby)
+│   ├── hooks/                   # 9 automation hooks (auto-approve, logging, safety)
+│   ├── logs/                    # Session and tool usage logs
 │   ├── requests/                # KODY → FIBY requests
 │   ├── responses/               # FIBY → KODY responses
 │   ├── specs/                   # Agent specifications
 │   ├── CLAUDE.md                # Project instructions for Claude
+│   ├── HOW_TO_USE_HOOKS.md      # Hooks documentation
+│   ├── settings.json            # Claude Code settings
 │   └── settings.local.json      # Local Claude settings
 ├── docs/
 │   ├── PRICING_STRATEGY.md      # Business pricing logic (IMPORTANT)

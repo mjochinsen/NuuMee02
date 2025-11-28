@@ -38,6 +38,7 @@ Tech stack: Next.js + FastAPI + Firebase + Firestore + Stripe + GCS
 | [docs/firestore-schema.md](../docs/firestore-schema.md) | Database reference |
 | [docs/PRICING_STRATEGY.md](../docs/PRICING_STRATEGY.md) | Credits and packages |
 | [LESSONS_LEARNED.md](../LESSONS_LEARNED.md) | Avoid past bugs |
+| [.claude/HOW_TO_USE_HOOKS.md](HOW_TO_USE_HOOKS.md) | Hooks documentation |
 
 ---
 
@@ -185,6 +186,36 @@ if (response.status === 401) auth.signOut();
 - Minimal code
 - No unnecessary abstractions
 - One feature -> test -> commit -> next feature
+
+---
+
+## Hooks System
+
+**9 hooks active** in `.claude/hooks/` - auto-approved operations, logging, and safety guards.
+
+### Auto-Approved (No Prompt)
+- Read any file in project
+- Write to `.claude/`, `frontend/`, `backend/`, `worker/`, `docs/`
+- Edit `.md`, `.ts`, `.tsx`, `.py`, `.json` files
+- Run: `pnpm`, `git`, `ls`, `python`, `node`, `firebase`, `gcloud`
+- Glob, Grep, Task, WebFetch, WebSearch tools
+
+### Blocked (Denied)
+- `sudo`, `rm -rf /`, `chmod 777`, `shutdown`, `kill -9`
+- Write to `~/.ssh/`, `~/.aws/`, `/etc/`
+
+### Hook Lifecycle
+```
+SessionStart -> UserPromptSubmit -> PreToolUse -> PostToolUse -> Stop -> SessionEnd
+```
+
+### Logs Location
+- `.claude/logs/tools.jsonl` - Tool usage
+- `.claude/logs/prompts.jsonl` - User prompts
+- `.claude/logs/agents.jsonl` - Subagent invocations
+- `.claude/logs/session_summaries.jsonl` - Session summaries
+
+**Documentation:** [.claude/HOW_TO_USE_HOOKS.md](HOW_TO_USE_HOOKS.md)
 
 ---
 
