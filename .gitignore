@@ -43,3 +43,11 @@ next-env.d.ts
 .vscode/*
 !.vscode/settings.json
 .idea
+
+# Claude Code
+.claude/logs/
+
+# Playwright
+test-results/
+playwright-report/
+*-snapshots/
