@@ -4,6 +4,39 @@ Systems built by FIBY. Use these in your sessions.
 
 ---
 
+## Hooks System
+
+9 lifecycle hooks auto-execute during sessions.
+
+### What's Active
+- `SessionStart` - Injects project context
+- `UserPromptSubmit` - Logs prompts
+- `PreToolUse` - Auto-approves safe ops, blocks dangerous
+- `PostToolUse` - Logs results, tracks file changes
+- `SubagentStop` - Tracks agent completions
+- `Stop` - Session summary
+- `SessionEnd` - Finalizes logs
+- `PreCompact` - Preserves critical context
+- `Notification` - Logs notifications
+
+### Auto-Approved (no prompt)
+- Read any file
+- Write to: `.claude/`, `frontend/`, `backend/`, `worker/`, `docs/`
+- Edit: `.md`, `.ts`, `.tsx`, `.py`, `.json`
+- Run: `pnpm`, `git`, `ls`, `python`, `node`, `firebase`, `gcloud`
+
+### Blocked
+- `sudo`, `rm -rf /`, `chmod 777`, `shutdown`, `kill -9`
+- Write to: `~/.ssh/`, `~/.aws/`, `/etc/`
+
+### Logs
+`.claude/logs/` - tools.jsonl, prompts.jsonl, agents.jsonl, sessions.jsonl
+
+### Docs
+`.claude/HOW_TO_USE_HOOKS.md`
+
+---
+
 ## Agent Memory System
 
 Persistent storage for insights across sessions.
@@ -79,7 +112,41 @@ GitHub Action runs 6 AM UTC daily.
 
 ---
 
+## Agent System
+
+40 specialized agents in `.claude/agents/`.
+
+### Key Agents
+| Agent | Use For |
+|-------|---------|
+| `api-builder` | FastAPI endpoints |
+| `frontend-dev` | React/Next.js components |
+| `deployment-orchestrator` | Firebase deployments |
+| `memory-curator` | Weekly memory cleanup |
+| `nightly-auditor` | Daily health scan |
+| `fiby-coordinator` | Agent creation/auditing (FIBY) |
+
+### Running Custom Agents
+```
+Task(
+    subagent_type="general-purpose",
+    prompt="Read .claude/agents/{agent-name}.md and execute it. {task}"
+)
+```
+
+### Agent Docs
+- `.claude/agents/README.md` - Full inventory
+- `.claude/HOW_AGENTS_WORK.md` - How to invoke agents
+- `docs/FIBY_AGENT_MASTER.md` - FIBY documentation
+
+---
+
 ## Full Documentation
 
-- `docs/MEMORY_SYSTEM.md` - Complete memory system docs
-- `docs/NIGHTLY_AUDITOR.md` - Complete auditor docs
+| Doc | Contents |
+|-----|----------|
+| `docs/MEMORY_SYSTEM.md` | Memory system |
+| `docs/NIGHTLY_AUDITOR.md` | Auditor system |
+| `.claude/HOW_TO_USE_HOOKS.md` | Hooks system |
+| `.claude/HOW_AGENTS_WORK.md` | Agent invocation |
+| `docs/FIBY_AGENT_MASTER.md` | FIBY meta-agent |
