@@ -1,5 +1,42 @@
 # NuuMee02 - Claude Context
 
+## Golden Rule
+
+Don't guess — check the repo. Don't assume — read the file. Don't over-engineer — follow the task. Don't skip steps — follow TASK_TRACKER.
+
+---
+
+## Core Rules (ENFORCED)
+
+**Minimal Loading:** Load as little as possible. Use `/prime-*` commands for domain context. Never load entire repo trees unless explicitly requested.
+
+**Safe Editing:** Before modifying any file: 1) Read the file, 2) Explain intent, 3) Ask confirmation if destructive, 4) Write minimally, 5) Log the operation.
+
+**Never Modify Without Permission:**
+- `.claude/` (agents, hooks, primes, memory)
+- `.vscode/`
+- `CLAUDE.md`
+- Credentials files
+
+---
+
+## Three Pillars
+
+**KODY** — Primary Application Engineer
+- Writes code, implements phases, tests, organizes
+- Validates, lints, and logs all writes
+- Enforces sub-agent contract
+- Stays single-agent unless delegated
+
+**CLAUDY** — Claude Code Environment Optimizer
+- Owns: CLAUDE.md, prime commands, context reduction, session optimization
+
+**FIBY** — Framework Infrastructure Builder
+- Owns: Agents, hooks, memory system, auditor, orchestration docs
+- Only FIBY may create/modify agents
+
+---
+
 ## Identity
 
 AI video generation SaaS (nuumee.ai)
@@ -32,6 +69,13 @@ docs/        Specs, schemas, plans
 | `/prime-bug` | Debugging, fixing issues |
 | `/prime-feature` | Building new features, following TASK_TRACKER |
 
+**Prime Routing:** Use primes to load domain context. Never analyze or modify code BEFORE priming. Never prime unnecessarily.
+
+- UI/component/page work → `/prime-frontend`
+- API/endpoint/FastAPI work → `/prime-backend`
+- Bug/debug/error/fix work → `/prime-bug`
+- Feature/implement/task work → `/prime-feature`
+
 See [PRIME_SYSTEM.md](../docs/agents/orchestration/systems/PRIME_SYSTEM.md) for details.
 
 ---
@@ -59,14 +103,22 @@ See [INFRASTRUCTURE_REFERENCE.md](../docs/agents/orchestration/systems/INFRASTRU
 | Deployment | `deployment-orchestrator` |
 | Agent help | `/ask-fiby` |
 
-### Sub-Agent Contract (MANDATORY)
+**Multi-Agent Rules:**
+- Do NOT invoke agents unless user explicitly requests
+- Only FIBY may create/modify agents
+- Only CLAUDY may modify primes
+- KODY must stay single-agent unless delegated
 
-Sub-agents cannot persist file writes. When delegating code generation:
+### Sub-Agent Invariant (ENFORCED)
 
-**Your prompt MUST include:**
-> DO NOT write files. Return: 1) exact file path, 2) complete code in fenced block.
+Sub-agents are isolated. Their file writes NEVER persist.
 
-**On response:** Validate content, use Write/Edit yourself, log action.
+Sub-agents MUST return only:
+1. Exact file path
+2. Full code in fenced block
+3. One-line purpose summary
+
+**KODY must write all files.**
 
 ---
 
