@@ -8,12 +8,15 @@ Purpose:
 - Track file changes
 - Monitor performance
 - Summarize operations
+- Write significant events to agent memory
 """
 
 import json
 import sys
 import os
+import subprocess
 from datetime import datetime
+from pathlib import Path
 
 # Read hook input from stdin
 try:
@@ -26,6 +29,9 @@ tool_name = hook_input.get("tool_name", "")
 tool_input = hook_input.get("tool_input", {})
 tool_response = hook_input.get("tool_response", "")
 cwd = hook_input.get("cwd", os.getcwd())
+
+# Memory writer path
+MEMORY_WRITER = Path(cwd) / ".claude" / "memory" / "writer.py"
 
 # Calculate response size
 response_size = len(str(tool_response)) if tool_response else 0
@@ -73,6 +79,42 @@ if tool_name in ["Write", "Edit"]:
         with open(changes_file, "a") as f:
             action = "Created" if tool_name == "Write" else "Modified"
             f.write(f"{action}: {file_path}\n")
+
+# Memory writing for significant events
+def write_to_memory(category, content, context="", tags=None):
+    """Write to agent memory if writer exists."""
+    if not MEMORY_WRITER.exists():
+        return
+    try:
+        cmd = [
+            "python3", str(MEMORY_WRITER),
+            "-c", category,
+            "-m", content[:500],
+            "-s", session_id,
+        ]
+        if context:
+            cmd.extend(["-x", context])
+        if tags:
+            cmd.extend(["-t", ",".join(tags)])
+        subprocess.run(cmd, capture_output=True, timeout=2)
+    except:
+        pass  # Silent fail - don't block tool execution
+
+# Detect significant events for memory
+# Bug fixes (if response mentions fix, error, bug)
+response_str = str(tool_response).lower()
+if tool_name in ["Edit", "Write"] and any(word in response_str for word in ["fix", "bug", "error", "issue"]):
+    file_path = tool_input.get("file_path", "unknown")
+    # Extract context from file path
+    if "auth" in file_path.lower():
+        ctx = "auth"
+    elif "payment" in file_path.lower() or "stripe" in file_path.lower():
+        ctx = "payments"
+    elif "video" in file_path.lower():
+        ctx = "video"
+    else:
+        ctx = "general"
+    # Don't auto-write bugs - too noisy. Let agents decide.
 
 # Output (optional feedback to Claude)
 output = {}

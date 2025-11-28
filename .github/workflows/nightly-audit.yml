@@ -1,0 +1,191 @@
+name: Nightly Audit
+
+on:
+  schedule:
+    # Run at 6 AM UTC every day
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+    # Allow manual triggering
+    inputs:
+      full_scan:
+        description: 'Run full scan (slower but more thorough)'
+        required: false
+        default: 'false'
+        type: boolean
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for git metrics
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Get current date
+        id: date
+        run: echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+
+      - name: Run Security Scan
+        id: security
+        continue-on-error: true
+        run: |
+          echo "## Security Scan" > security_results.txt
+
+          # Check for exposed secrets
+          echo "### Potential Secrets" >> security_results.txt
+          grep -rn "sk_live\|pk_live\|PRIVATE_KEY" --include="*.ts" --include="*.tsx" --include="*.py" --include="*.json" . 2>/dev/null | grep -v node_modules | grep -v ".env.example" | head -10 >> security_results.txt || echo "None found" >> security_results.txt
+
+          # Check for hardcoded passwords
+          echo "### Hardcoded Credentials" >> security_results.txt
+          grep -rn "password\s*=\s*['\"][^'\"]*['\"]" --include="*.ts" --include="*.py" . 2>/dev/null | grep -v node_modules | grep -v "test" | grep -v "example" | head -5 >> security_results.txt || echo "None found" >> security_results.txt
+
+      - name: Count TODOs
+        id: todos
+        run: |
+          TODO_COUNT=$(grep -rn "TODO\|FIXME\|HACK\|XXX" --include="*.ts" --include="*.tsx" --include="*.py" . 2>/dev/null | grep -v node_modules | wc -l)
+          echo "count=$TODO_COUNT" >> $GITHUB_OUTPUT
+
+          echo "## TODO Items" > todo_results.txt
+          echo "Total: $TODO_COUNT" >> todo_results.txt
+          echo "" >> todo_results.txt
+          grep -rn "TODO\|FIXME" --include="*.ts" --include="*.tsx" --include="*.py" . 2>/dev/null | grep -v node_modules | head -15 >> todo_results.txt
+
+      - name: Check Dependencies
+        id: deps
+        continue-on-error: true
+        run: |
+          echo "## Dependency Status" > deps_results.txt
+
+          if [ -d "frontend" ]; then
+            cd frontend
+            echo "### Frontend (pnpm)" >> ../deps_results.txt
+            pnpm install --frozen-lockfile 2>/dev/null || true
+            echo "Outdated packages:" >> ../deps_results.txt
+            pnpm outdated 2>/dev/null | head -10 >> ../deps_results.txt || echo "Unable to check" >> ../deps_results.txt
+            cd ..
+          fi
+
+      - name: Count Test Files
+        id: tests
+        run: |
+          TEST_COUNT=$(find . -name "*.test.ts" -o -name "*.spec.ts" -o -name "test_*.py" 2>/dev/null | grep -v node_modules | wc -l)
+          echo "count=$TEST_COUNT" >> $GITHUB_OUTPUT
+
+      - name: Check Git Status
+        id: git
+        run: |
+          BRANCH=$(git branch --show-current)
+          COMMIT=$(git rev-parse --short HEAD)
+          UNCOMMITTED=$(git status --short | wc -l)
+
+          echo "branch=$BRANCH" >> $GITHUB_OUTPUT
+          echo "commit=$COMMIT" >> $GITHUB_OUTPUT
+          echo "uncommitted=$UNCOMMITTED" >> $GITHUB_OUTPUT
+
+      - name: Generate Report
+        run: |
+          DATE="${{ steps.date.outputs.date }}"
+
+          # Calculate risk score (simple heuristic)
+          RISK=3
+          if grep -q "sk_live\|PRIVATE_KEY" security_results.txt 2>/dev/null; then
+            RISK=9
+          fi
+          if [ "${{ steps.todos.outputs.count }}" -gt 50 ]; then
+            RISK=$((RISK + 1))
+          fi
+
+          # Create report
+          mkdir -p .claude/reports/daily
+          cat > ".claude/reports/daily/${DATE}.md" << EOF
+          # Daily Audit Report: ${DATE}
+
+          ## Risk Score: ${RISK}/10
+
+          **Generated:** $(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          **Branch:** ${{ steps.git.outputs.branch }}
+          **Commit:** ${{ steps.git.outputs.commit }}
+
+          ---
+
+          ## Metrics
+
+          | Metric | Value |
+          |--------|-------|
+          | TODO count | ${{ steps.todos.outputs.count }} |
+          | Test files | ${{ steps.tests.outputs.count }} |
+          | Uncommitted files | ${{ steps.git.outputs.uncommitted }} |
+
+          ---
+
+          $(cat security_results.txt)
+
+          ---
+
+          $(cat todo_results.txt)
+
+          ---
+
+          $(cat deps_results.txt)
+
+          ---
+
+          ## Action Items
+
+          $(if [ $RISK -ge 7 ]; then echo "1. **[CRITICAL]** Review security scan results immediately"; fi)
+          $(if [ "${{ steps.todos.outputs.count }}" -gt 30 ]; then echo "2. **[MEDIUM]** Address TODO backlog (${{ steps.todos.outputs.count }} items)"; fi)
+          $(if [ "${{ steps.tests.outputs.count }}" -lt 10 ]; then echo "3. **[MEDIUM]** Add more tests (currently ${{ steps.tests.outputs.count }} test files)"; fi)
+
+          ---
+
+          *Report generated by nightly-audit GitHub Action*
+          EOF
+
+      - name: Commit Report
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+
+          DATE="${{ steps.date.outputs.date }}"
+
+          git add ".claude/reports/daily/${DATE}.md"
+          git diff --staged --quiet || git commit -m "chore: add daily audit report for ${DATE}
+
+          Risk Score: calculated
+          TODOs: ${{ steps.todos.outputs.count }}
+          Tests: ${{ steps.tests.outputs.count }}
+
+          [skip ci]"
+
+          git push || echo "No changes to push"
+
+      - name: Summary
+        run: |
+          echo "## Nightly Audit Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Date:** ${{ steps.date.outputs.date }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **TODOs:** ${{ steps.todos.outputs.count }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Test files:** ${{ steps.tests.outputs.count }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Report:** \`.claude/reports/daily/${{ steps.date.outputs.date }}.md\`" >> $GITHUB_STEP_SUMMARY
