@@ -33,7 +33,7 @@ Task(
 | Validate/audit | YES |
 | Create/edit files | NO - you must do it |
 
-**Full details:** `.claude/HOW_AGENTS_WORK.md`
+**Full details:** `docs/HOW_AGENTS_WORK.md`
 
 ---
 
@@ -66,7 +66,7 @@ Task(
 `.claude/logs/` - tools.jsonl, prompts.jsonl, agents.jsonl, sessions.jsonl
 
 ### Docs
-`.claude/HOW_TO_USE_HOOKS.md`
+`docs/HOW_TO_USE_HOOKS.md`
 
 ---
 
@@ -169,8 +169,9 @@ Task(
 
 ### Agent Docs
 - `.claude/agents/README.md` - Full inventory
-- `.claude/HOW_AGENTS_WORK.md` - How to invoke agents
+- `docs/HOW_AGENTS_WORK.md` - How to invoke agents + limitations
 - `docs/FIBY_AGENT_MASTER.md` - FIBY documentation
+- `docs/KODY_AGENT_INSTRUCTIONS.md` - KODY usage guide
 
 ---
 
@@ -181,6 +182,8 @@ Task(
 | `docs/agents/orchestration/systems/PRIME_SYSTEM.md` | Prime commands architecture |
 | `docs/MEMORY_SYSTEM.md` | Memory system |
 | `docs/NIGHTLY_AUDITOR.md` | Auditor system |
-| `.claude/HOW_TO_USE_HOOKS.md` | Hooks system |
-| `.claude/HOW_AGENTS_WORK.md` | Agent invocation + limitations |
+| `docs/HOW_TO_USE_HOOKS.md` | Hooks system |
+| `docs/HOW_AGENTS_WORK.md` | Agent invocation + limitations |
+| `docs/KODY_AGENT_INSTRUCTIONS.md` | KODY usage guide |
 | `docs/FIBY_AGENT_MASTER.md` | FIBY meta-agent |
+| `docs/FIBY_TEST.md` | FIBY testing instructions |
