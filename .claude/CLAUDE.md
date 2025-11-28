@@ -36,6 +36,17 @@ See [PRIME_SYSTEM.md](../docs/agents/orchestration/systems/PRIME_SYSTEM.md) for 
 
 ---
 
+## Systems (Hooks, Memory, Agents)
+
+See [INFRASTRUCTURE_REFERENCE.md](../docs/agents/orchestration/systems/INFRASTRUCTURE_REFERENCE.md) for:
+- Sub-agent file write limitations
+- Hooks system (auto-approve, blocked ops, logs)
+- Agent memory (`/remember`, `/recall`)
+- Nightly auditor (`/audit`)
+- Agent inventory
+
+---
+
 ## Agent Routing
 
 | Task | Agent |
