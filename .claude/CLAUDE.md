@@ -32,7 +32,7 @@ docs/        Specs, schemas, plans
 | `/prime-bug` | Debugging, fixing issues |
 | `/prime-feature` | Building new features, following TASK_TRACKER |
 
-See [docs/PRIME_SYSTEM.md](../docs/PRIME_SYSTEM.md) for architecture details.
+See [PRIME_SYSTEM.md](../docs/agents/orchestration/systems/PRIME_SYSTEM.md) for details.
 
 ---
 
