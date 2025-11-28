@@ -4,6 +4,39 @@ Systems built by FIBY. Use these in your sessions.
 
 ---
 
+## CRITICAL: Sub-Agent File Writes Do NOT Persist
+
+**Sub-agents run in sandboxes. Their Write/Edit operations are discarded.**
+
+### The Problem
+```python
+# WRONG - file will NOT exist after agent returns
+Task(subagent_type="frontend-dev", prompt="Create page.tsx")
+```
+
+### The Solution
+```python
+# RIGHT - agent returns code, YOU write it
+Task(
+    subagent_type="frontend-dev",
+    prompt="Generate code for page.tsx. DO NOT write the file. Return the code."
+)
+# Then YOU use Write tool with the returned code
+```
+
+### Sub-Agent Use Cases
+
+| Task | Use Sub-Agent? |
+|------|---------------|
+| Explore/analyze codebase | YES |
+| Generate code snippets | YES (return text, you write) |
+| Validate/audit | YES |
+| Create/edit files | NO - you must do it |
+
+**Full details:** `.claude/HOW_AGENTS_WORK.md`
+
+---
+
 ## Hooks System
 
 9 lifecycle hooks auto-execute during sessions.

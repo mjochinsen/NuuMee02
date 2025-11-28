@@ -1,6 +1,73 @@
 # How Agents Actually Work in NuuMee
 
-## The Reality
+---
+
+## CRITICAL LIMITATION: Sub-Agent File Writes Do NOT Persist
+
+**Sub-agents run in isolated sandboxes. Their file writes are discarded.**
+
+| Agent Context | File Writes Persist? |
+|---------------|---------------------|
+| Main Claude (KODY) | YES |
+| Sub-agents via Task() | NO - sandboxed |
+
+### What This Means
+
+When you spawn a sub-agent:
+```python
+Task(subagent_type="frontend-dev", prompt="Create page.tsx")
+```
+
+The sub-agent will:
+1. Report "file created successfully"
+2. Return a success message
+3. **But the file does NOT exist on disk**
+
+### The Correct Pattern
+
+**Use sub-agents for RESEARCH and ANALYSIS only.**
+
+For file creation, sub-agents should return the code, then KODY writes it:
+
+```python
+# WRONG - file won't persist
+Task(
+    subagent_type="frontend-dev",
+    prompt="Create frontend/src/pages/dashboard.tsx"
+)
+
+# RIGHT - agent returns code, KODY writes it
+Task(
+    subagent_type="frontend-dev",
+    prompt="""
+    Generate the code for frontend/src/pages/dashboard.tsx
+    DO NOT write the file. Return the complete code in your response.
+    I (KODY) will write it to disk.
+    """
+)
+# Then KODY uses Write tool with the returned code
+```
+
+### When to Use Sub-Agents
+
+| Use Case | Sub-Agent? | Why |
+|----------|------------|-----|
+| Explore codebase | YES | Read-only |
+| Analyze architecture | YES | Read-only |
+| Generate code snippets | YES | Returns text, KODY writes |
+| Validate/audit | YES | Read-only checks |
+| Create files | NO | Writes don't persist |
+| Edit existing files | NO | Edits don't persist |
+| Run bash commands | MAYBE | Some persist, some don't |
+
+### TL;DR
+
+**Sub-agents = research assistants that return text.**
+**KODY = the only one who can write files.**
+
+---
+
+## Agent Types
 
 Claude Code has TWO ways to use agents:
 
