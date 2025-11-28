@@ -105,9 +105,26 @@ if (response.status === 401) auth.signOut(); // RIGHT
 
 ---
 
+## Workflow Quick Reference
+
+| Situation | Action |
+|-----------|--------|
+| Learned something useful | `/remember insight: ...` |
+| Fixed tricky bug | `/remember bug: cause was X, fix was Y` |
+| Need context on topic | `/recall {topic}` |
+| Delegating code generation | Include contract in prompt |
+| Before committing | `/audit quick` |
+| Starting domain work | `/prime-frontend` or `/prime-backend` |
+| Session handoff | `/whats-next` |
+| Need agent help | `/ask-fiby` |
+| Deploy to production | `/deploy-firebase` |
+
+---
+
 ## When Stuck
 
 1. Check TASK_TRACKER.md
 2. Check CREDENTIALS_INVENTORY.md
 3. Check LESSONS_LEARNED.md
-4. Time-box 30 min, then ask user
+4. `/recall {problem domain}`
+5. Time-box 30 min, then ask user
