@@ -56,6 +56,15 @@ See [INFRASTRUCTURE_REFERENCE.md](../docs/agents/orchestration/systems/INFRASTRU
 | Deployment | `deployment-orchestrator` |
 | Agent help | `/ask-fiby` |
 
+### Sub-Agent Contract (MANDATORY)
+
+Sub-agents cannot persist file writes. When delegating code generation:
+
+**Your prompt MUST include:**
+> DO NOT write files. Return: 1) exact file path, 2) complete code in fenced block.
+
+**On response:** Validate content, use Write/Edit yourself, log action.
+
 ---
 
 ## Safety Rules (NEVER DO)
