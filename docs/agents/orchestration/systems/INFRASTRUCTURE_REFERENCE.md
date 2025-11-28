@@ -178,8 +178,9 @@ Task(
 
 | Doc | Contents |
 |-----|----------|
+| `docs/agents/orchestration/systems/PRIME_SYSTEM.md` | Prime commands architecture |
 | `docs/MEMORY_SYSTEM.md` | Memory system |
 | `docs/NIGHTLY_AUDITOR.md` | Auditor system |
 | `.claude/HOW_TO_USE_HOOKS.md` | Hooks system |
-| `.claude/HOW_AGENTS_WORK.md` | Agent invocation |
+| `.claude/HOW_AGENTS_WORK.md` | Agent invocation + limitations |
 | `docs/FIBY_AGENT_MASTER.md` | FIBY meta-agent |
