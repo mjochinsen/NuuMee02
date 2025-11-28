@@ -43,7 +43,10 @@ Categories: insight, pattern, decision, bug, preference
 
 **Audit:** `/audit` (full) | `/audit quick` (security + TODOs)
 
-See [INFRASTRUCTURE_REFERENCE.md](../docs/agents/orchestration/systems/INFRASTRUCTURE_REFERENCE.md) for full details.
+See [INFRASTRUCTURE_REFERENCE.md](../docs/agents/orchestration/systems/INFRASTRUCTURE_REFERENCE.md) for:
+- Sub-agent file write limitations
+- Hooks system (auto-approve, blocked ops, logs)
+- Agent inventory
 
 ---
 
