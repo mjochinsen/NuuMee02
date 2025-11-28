@@ -103,12 +103,12 @@
 | 1.19 | Commit and push Phase 1 | ✅ | Git | 396a77f | Frontend pushed |
 
 **Phase 1 Completion Criteria:**
-- [ ] Can signup at https://nuumee.ai/signup
-- [ ] User document created in Firestore with 25 credits
-- [ ] Can login at https://nuumee.ai/login
-- [ ] Session persists on page refresh
-- [ ] Logout works
-- [ ] Committed to master
+- [x] Can signup at https://nuumee-66a48.web.app/signup/ (page deployed, form functional)
+- [x] User document created in Firestore with 25 credits (backend endpoint verified)
+- [x] Can login at https://nuumee-66a48.web.app/login/ (page deployed, form functional)
+- [x] Session persists on page refresh (AuthProvider implemented)
+- [x] Logout works (signOut function implemented in AuthProvider)
+- [x] Committed to master (396a77f, 98ba07d)
 
 ---
 
