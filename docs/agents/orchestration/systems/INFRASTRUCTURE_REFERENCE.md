@@ -8,30 +8,50 @@ Systems built by FIBY. Use these in your sessions.
 
 **Sub-agents run in sandboxes. Their Write/Edit operations are discarded.**
 
-### The Problem
-```python
-# WRONG - file will NOT exist after agent returns
-Task(subagent_type="frontend-dev", prompt="Create page.tsx")
+### Mandatory Contracts
+
+**Sub-agent contract (code generation):**
+```
+DO NOT write or edit files. Instead:
+1. Return the exact file path
+2. Return complete content in fenced code block
+3. No placeholders or "..."
 ```
 
-### The Solution
+**KODY contract (receiving code):**
+```
+1. Extract file path from response
+2. Extract code block content
+3. Use Write tool to create file
+4. Verify file exists
+```
+
+### Example
+
 ```python
-# RIGHT - agent returns code, YOU write it
+# Sub-agent prompt
 Task(
     subagent_type="frontend-dev",
-    prompt="Generate code for page.tsx. DO NOT write the file. Return the code."
+    prompt="""
+    Generate code for frontend/app/page.tsx
+
+    CONTRACT:
+    - DO NOT write the file
+    - Return: FILE: {path}
+    - Return: Complete code in fenced block
+    """
 )
-# Then YOU use Write tool with the returned code
+# KODY then writes: Write(file_path="...", content=extracted_code)
 ```
 
 ### Sub-Agent Use Cases
 
-| Task | Use Sub-Agent? |
-|------|---------------|
-| Explore/analyze codebase | YES |
-| Generate code snippets | YES (return text, you write) |
+| Task | Sub-Agent? |
+|------|------------|
+| Explore/analyze | YES |
+| Generate code | YES (returns text, KODY writes) |
 | Validate/audit | YES |
-| Create/edit files | NO - you must do it |
+| Create/edit files | NO - KODY must do it |
 
 **Full details:** `docs/HOW_AGENTS_WORK.md`
 

@@ -23,29 +23,99 @@ The sub-agent will:
 2. Return a success message
 3. **But the file does NOT exist on disk**
 
-### The Correct Pattern
+### MANDATORY CONTRACTS
 
-**Use sub-agents for RESEARCH and ANALYSIS only.**
+#### Sub-Agent Contract (when generating code)
 
-For file creation, sub-agents should return the code, then KODY writes it:
+Sub-agents MUST follow this format:
+
+```
+DO NOT write or edit files. Instead:
+
+1. Return the exact file path
+2. Return the complete content
+3. Keep code inside a single fenced code block
+4. Keep the response deterministic (no placeholders, no "...")
+```
+
+**Example sub-agent response:**
+
+```
+FILE: frontend/app/dashboard/page.tsx
+
+\`\`\`tsx
+'use client';
+
+import { useState } from 'react';
+
+export default function DashboardPage() {
+  return (
+    <div className="p-4">
+      <h1>Dashboard</h1>
+    </div>
+  );
+}
+\`\`\`
+```
+
+#### KODY Contract (when receiving code from sub-agent)
+
+When a sub-agent returns file content, KODY MUST:
+
+1. Extract the file path from response
+2. Extract the code block content
+3. Use `Write` tool to create the file
+4. Verify the file exists after writing
+5. Log the action
+
+**Example KODY workflow:**
+
+```python
+# 1. Spawn sub-agent for code generation
+result = Task(
+    subagent_type="frontend-dev",
+    prompt="""
+    Generate code for frontend/app/dashboard/page.tsx
+
+    CONTRACT:
+    - DO NOT write the file
+    - Return: FILE: {path}
+    - Return: Complete code in fenced block
+    - No placeholders or "..."
+    """
+)
+
+# 2. Parse response, extract path and code
+# 3. Write file
+Write(file_path="frontend/app/dashboard/page.tsx", content=extracted_code)
+
+# 4. Verify
+# File now exists on disk
+```
+
+### WRONG vs RIGHT
 
 ```python
 # WRONG - file won't persist
 Task(
     subagent_type="frontend-dev",
-    prompt="Create frontend/src/pages/dashboard.tsx"
+    prompt="Create frontend/app/dashboard/page.tsx"
 )
 
-# RIGHT - agent returns code, KODY writes it
+# RIGHT - explicit contract
 Task(
     subagent_type="frontend-dev",
     prompt="""
-    Generate the code for frontend/src/pages/dashboard.tsx
-    DO NOT write the file. Return the complete code in your response.
-    I (KODY) will write it to disk.
+    Generate code for frontend/app/dashboard/page.tsx
+
+    CONTRACT:
+    - DO NOT write the file
+    - Return: FILE: {path}
+    - Return: Complete code in fenced block
+    - No placeholders
     """
 )
-# Then KODY uses Write tool with the returned code
+# Then KODY extracts and writes
 ```
 
 ### When to Use Sub-Agents
