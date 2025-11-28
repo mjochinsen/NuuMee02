@@ -53,3 +53,5 @@ next-env.d.ts
 test-results/
 playwright-report/
 *-snapshots/
+*.pyc
+__pycache__/

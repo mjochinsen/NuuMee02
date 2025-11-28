@@ -99,3 +99,38 @@ export async function getMe(): Promise<UserProfile> {
 export async function checkHealth(): Promise<{ status: string; service: string }> {
   return apiRequest('/health', { skipAuth: true });
 }
+
+// Credits endpoints
+export interface CreditPackage {
+  id: string;
+  name: string;
+  price_cents: number;
+  credits: number;
+  stripe_price_id: string;
+  bonus_percent: number;
+}
+
+export interface CreditBalance {
+  balance: number;
+  last_updated: string | null;
+}
+
+export interface CheckoutResponse {
+  checkout_url: string;
+  session_id: string;
+}
+
+export async function getCreditPackages(): Promise<CreditPackage[]> {
+  return apiRequest<CreditPackage[]>('/credits/packages', { skipAuth: true });
+}
+
+export async function getCreditBalance(): Promise<CreditBalance> {
+  return apiRequest<CreditBalance>('/credits/balance');
+}
+
+export async function createCheckoutSession(packageId: string): Promise<CheckoutResponse> {
+  return apiRequest<CheckoutResponse>('/credits/checkout', {
+    method: 'POST',
+    body: JSON.stringify({ package_id: packageId }),
+  });
+}

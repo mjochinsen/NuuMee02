@@ -2,18 +2,42 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Check, Zap, X, Star, Calculator, MessageSquare, Mail, Trophy, DollarSign } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Check, Zap, Star, Calculator, MessageSquare, Mail, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { createCheckoutSession } from '@/lib/api';
+import { useAuth } from '@/components/AuthProvider';
 
 export default function PricingPage() {
+  const router = useRouter();
+  const { user } = useAuth();
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annually'>('monthly');
   const [calculatorVideos, setCalculatorVideos] = useState([25]);
   const [calculatorDuration, setCalculatorDuration] = useState('30');
+  const [loadingPackage, setLoadingPackage] = useState<string | null>(null);
+
+  const handleBuyCredits = async (packageId: string) => {
+    if (!user) {
+      router.push('/login?redirect=/pricing');
+      return;
+    }
+
+    setLoadingPackage(packageId);
+    try {
+      const { checkout_url } = await createCheckoutSession(packageId);
+      window.location.href = checkout_url;
+    } catch (error) {
+      console.error('Checkout error:', error);
+      alert('Failed to start checkout. Please try again.');
+    } finally {
+      setLoadingPackage(null);
+    }
+  };
 
   const plans = [
     { name: 'Free', price: 0, period: 'forever', credits: 25, creditsLabel: '25 credits (one-time)', features: ['25 credits total', '720p resolution', 'Watermarked output', 'Basic support'] },
@@ -22,10 +46,10 @@ export default function PricingPage() {
   ];
 
   const creditPackages = [
-    { name: 'Starter', price: 10, credits: 120, bonus: null },
-    { name: 'Popular', price: 30, credits: 400, bonus: '+10%', featured: true },
-    { name: 'Pro', price: 75, credits: 1100, bonus: '+20%' },
-    { name: 'Mega', price: 150, credits: 2500, bonus: '+28%' },
+    { id: 'starter', name: 'Starter', price: 10, credits: 120, bonus: null },
+    { id: 'popular', name: 'Popular', price: 30, credits: 400, bonus: '+10%', featured: true },
+    { id: 'pro', name: 'Pro', price: 75, credits: 1100, bonus: '+20%' },
+    { id: 'mega', name: 'Mega', price: 150, credits: 2500, bonus: '+28%' },
   ];
 
   const creditsNeeded = calculatorVideos[0] * (calculatorDuration === '10' ? 20 : calculatorDuration === '30' ? 60 : 120);
@@ -75,7 +99,14 @@ export default function PricingPage() {
               </div>
               <div className="mb-4"><span className="text-[#F1F5F9] text-3xl">${pkg.price}</span></div>
               <div className="mb-4"><span className="text-[#00F0D9] text-xl">{pkg.credits} credits</span></div>
-              <Button className={pkg.featured ? 'w-full bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] hover:opacity-90 text-white' : 'w-full border-[#334155] text-[#F1F5F9] hover:border-[#00F0D9]'} variant={pkg.featured ? 'default' : 'outline'}>Buy</Button>
+              <Button
+                onClick={() => handleBuyCredits(pkg.id)}
+                disabled={loadingPackage === pkg.id}
+                className={pkg.featured ? 'w-full bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] hover:opacity-90 text-white' : 'w-full border-[#334155] text-[#F1F5F9] hover:border-[#00F0D9]'}
+                variant={pkg.featured ? 'default' : 'outline'}
+              >
+                {loadingPackage === pkg.id ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Processing...</> : 'Buy'}
+              </Button>
             </Card>
           ))}
         </div>

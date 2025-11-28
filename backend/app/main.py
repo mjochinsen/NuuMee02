@@ -4,6 +4,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .auth.router import router as auth_router
+from .credits.router import router as credits_router
+from .webhooks.router import router as webhooks_router
 
 app = FastAPI(
     title="NuuMee API",
@@ -33,6 +35,8 @@ app.add_middleware(
 
 # Include routers
 app.include_router(auth_router)
+app.include_router(credits_router)
+app.include_router(webhooks_router)
 
 
 @app.get("/health")

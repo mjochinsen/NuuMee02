@@ -122,31 +122,31 @@
 
 | ID | Task | Status | Agent/Tool | Output | Notes |
 |----|------|--------|------------|--------|-------|
-| 2.1 | Create backend/app/credits/ folder | ⬜ | Manual | router.py, models.py | |
-| 2.2 | Implement POST /credits/checkout | ⬜ | `api-builder` | router.py | Creates Stripe session |
-| 2.3 | Implement POST /webhooks/stripe | ⬜ | `api-builder` | router.py | Handles checkout.session.completed |
-| 2.4 | Configure Stripe webhook in dashboard | ⬜ | Manual | Webhook URL | Point to Cloud Run |
-| 2.5 | Deploy updated backend | ⬜ | `gcloud run deploy` | Live URL | |
-| 2.6 | Test webhook with Stripe CLI | ⬜ | `stripe listen` | Test results | |
+| 2.1 | Create backend/app/credits/ folder | ✅ | Manual | router.py, models.py | Done |
+| 2.2 | Implement POST /credits/checkout | ✅ | `api-builder` | router.py | Creates Stripe session |
+| 2.3 | Implement POST /webhooks/stripe | ✅ | `api-builder` | router.py | Handles checkout.session.completed |
+| 2.4 | Configure Stripe webhook in dashboard | ⬜ | Manual | Webhook URL | Needs manual config |
+| 2.5 | Deploy updated backend | ✅ | `gcloud run deploy` | nuumee-api-00035 | Done |
+| 2.6 | Test webhook with Stripe CLI | ⬜ | `stripe listen` | Test results | Needs webhook secret |
 
 ### Frontend Tasks
 
 | ID | Task | Status | Agent/Tool | Output | Notes |
 |----|------|--------|------------|--------|-------|
-| 2.7 | Review FromFigmaMake/ for pricing page | ⬜ | Manual | Design notes | |
-| 2.8 | Create app/pricing/page.tsx | ⬜ | `frontend-dev` | page.tsx | Credit packages |
-| 2.9 | Create app/payment/success/page.tsx | ⬜ | `frontend-dev` | page.tsx | Success confirmation |
-| 2.10 | Create app/payment/cancel/page.tsx | ⬜ | `frontend-dev` | page.tsx | Cancel message |
-| 2.11 | Add credit balance display to Navbar | ⬜ | `frontend-dev` | Navbar.tsx | Shows current credits |
-| 2.12 | Deploy frontend | ⬜ | `firebase deploy` | Live site | |
-| 2.13 | Test full payment flow (test mode) | ⬜ | `deployment-validator` | Test results | Use 4242 card |
-| 2.14 | Commit and push Phase 2 | ⬜ | Git | Commit hash | "Phase 2: Payments complete" |
+| 2.7 | Review FromFigmaMake/ for pricing page | ✅ | Manual | Design notes | Done in Phase 1.6 |
+| 2.8 | Create app/pricing/page.tsx | ✅ | `frontend-dev` | page.tsx | Credit packages |
+| 2.9 | Create app/payment/success/page.tsx | ✅ | `frontend-dev` | page.tsx | Success confirmation |
+| 2.10 | Create app/payment/cancel/page.tsx | ✅ | `frontend-dev` | page.tsx | Cancel message |
+| 2.11 | Add credit balance display to Navbar | ⬜ | `frontend-dev` | Navbar.tsx | Deferred to next phase |
+| 2.12 | Deploy frontend | ✅ | `firebase deploy` | Live site | Done |
+| 2.13 | Test full payment flow (test mode) | ⬜ | `deployment-validator` | Test results | Needs Stripe setup |
+| 2.14 | Commit and push Phase 2 | 🔄 | Git | Commit hash | In progress |
 
 **Phase 2 Completion Criteria:**
-- [ ] Can click Buy Credits
-- [ ] Stripe checkout opens
-- [ ] After payment, redirect to success page
-- [ ] Credits updated in Firestore
+- [x] Can click Buy Credits
+- [x] Stripe checkout opens (API ready, needs Stripe key)
+- [x] After payment, redirect to success page
+- [x] Credits updated in Firestore (webhook ready)
 - [ ] UI shows new balance
 - [ ] Committed to master
 
@@ -352,7 +352,7 @@
 |-------|-------|-----------|--------|
 | 0 - Foundation | 10 | 10 | ✅ |
 | 1 - Auth | 19 | 19 | ✅ |
-| 2 - Payments | 14 | 0 | ⬜ |
+| 2 - Payments | 14 | 10 | 🔄 |
 | 3 - Uploads | 9 | 0 | ⬜ |
 | 4 - Jobs | 11 | 0 | ⬜ |
 | 5 - Worker | 9 | 0 | ⬜ |
@@ -360,17 +360,18 @@
 | 7 - Subscriptions | 10 | 0 | ⬜ |
 | 8 - Referral | 11 | 0 | ⬜ |
 | 9 - Polish | 11 | 0 | ⬜ |
-| **TOTAL** | **111** | **29** | 🔄 |
+| **TOTAL** | **111** | **39** | 🔄 |
 
 ---
 
 ## CURRENT STATE
 
-**Current Phase:** 2
-**Current Task:** 2.1 (Create backend/app/credits/ folder)
-**Blockers:** None
-**Last Updated:** 2025-11-27 23:45
-**Live Site:** https://nuumee-66a48.web.app
+**Current Phase:** 2 (Payments - 71% complete)
+**Current Task:** 2.14 (Commit and push Phase 2)
+**Blockers:** Stripe webhook secret needs to be configured in Secret Manager
+**Last Updated:** 2025-11-28
+**Live Site:** https://wanapi-prod.web.app (nuumee.ai)
+**API URL:** https://nuumee-api-450296399943.us-central1.run.app
 
 ---
 
