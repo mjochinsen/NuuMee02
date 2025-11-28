@@ -6,7 +6,12 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:visual": "playwright test --grep @visual",
+    "test:visual:ui": "playwright test --grep @visual --ui",
+    "test:visual:update": "playwright test --grep @visual --update-snapshots",
+    "test:visual:report": "playwright show-report",
+    "test:setup": "bash e2e/setup-visual-tests.sh"
   },
   "dependencies": {
     "@radix-ui/react-accordion": "^1.2.12",
@@ -55,6 +60,7 @@
     "vaul": "^1.1.2"
   },
   "devDependencies": {
+    "@playwright/test": "^1.57.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

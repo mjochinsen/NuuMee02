@@ -1,0 +1,24 @@
+Convert [COMPONENT_NAME] from React to Next.js with Tailwind CSS.
+
+REQUIREMENTS:
+1. Use file_search to find ALL imported components in the target file
+2. Read each imported component to check dependencies
+3. Convert child components BEFORE parent components
+4. Add 'use client' to components using hooks/events/browser APIs
+5. Replace React Router with Next.js navigation:
+   - import { Link, useLocation } → import Link from 'next/link'; import { usePathname }
+   - const location = useLocation() → const pathname = usePathname()
+   - to="/path" → href="/path"
+   - navigate('/path') → router.push('/path')
+6. Keep ALL original imports, styles, and logic
+7. Preserve exact component structure and Tailwind classes
+
+PROCESS:
+Step 1: read('[COMPONENT_FILE_PATH]')
+Step 2: file_search for all imported component names
+Step 3: read each found component file
+Step 4: Identify conversion needs (routing, hooks, etc)
+Step 5: Convert dependencies first, then target component
+Step 6: Verify all imports, 'use client' placement, and routing changes
+
+Do NOT assume components exist. Do NOT skip dependency checking.

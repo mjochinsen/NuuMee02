@@ -2,7 +2,7 @@
 name: polish-orchestrator
 description: Orchestrates all polish agents (accessibility, performance, responsive, SEO, etc). Use for comprehensive QA or batch polish tasks.
 tools: task, read, write
-model: sonnet
+model: opus
 color: purple
 ---
 
@@ -31,6 +31,7 @@ Run all polish agents in optimal order. Coordinates comprehensive quality audits
 **Scope:** [pages audited]
 
 ### Summary
+
 - Accessibility: [score]/100
 - Performance: [score]/100
 - Responsive: [score]/100
@@ -40,12 +41,15 @@ Run all polish agents in optimal order. Coordinates comprehensive quality audits
 - Animations: [broken icons]
 
 ### Critical Issues Across All Audits ([N] total)
+
 1. `file:line` - [Issue] - From: [agent] - Fix: [solution]
 
 ### Quick Wins ([N] issues, [X] min total)
+
 1. [Easy fix] - Impact: [benefit] - Time: [X] min
 
 ### Execution Plan
+
 **Phase 1** (Critical, 30 min): Fix [N] issues
 **Phase 2** (High, 1 hour): Fix [N] issues
 **Phase 3** (Polish, 2 hours): Fix [N] issues

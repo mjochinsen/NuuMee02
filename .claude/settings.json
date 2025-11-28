@@ -1,0 +1,162 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/user-prompt-submit.sh \"$PROMPT\""
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/pre-tool-use.sh \"$TOOL_NAME\" \"$TOOL_INPUT\""
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/post-tool-use.sh \"$TOOL_NAME\" \"$TOOL_INPUT\" \"$TOOL_OUTPUT\""
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/notification.sh \"$MESSAGE\""
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/stop.sh \"$STOP_REASON\""
+          }
+        ]
+      }
+    ],
+    "SubAgentStop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/subagent-stop.sh \"$AGENT_NAME\" \"$STOP_REASON\""
+          }
+        ]
+      }
+    ]
+  },
+  "permissions": {
+    "allow": [
+      "Read",
+      "Write(.claude/*)",
+      "Write(frontend/*)",
+      "Write(backend/*)",
+      "Write(worker/*)",
+      "Write(docs/*)",
+      "Edit(.claude/*)",
+      "Edit(frontend/*)",
+      "Edit(backend/*)",
+      "Edit(worker/*)",
+      "Edit(docs/*)",
+      "Glob",
+      "Grep",
+      "Bash(pnpm:*)",
+      "Bash(npm:*)",
+      "Bash(git:*)",
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(mkdir:*)",
+      "Bash(tree:*)",
+      "Bash(echo:*)",
+      "Bash(python:*)",
+      "Bash(python3:*)",
+      "Bash(node:*)",
+      "Bash(npx:*)",
+      "Bash(gcloud:*)",
+      "Bash(firebase:*)",
+      "Bash(curl:*)",
+      "Bash(chmod:*)",
+      "Bash(find:*)",
+      "Bash(grep:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)",
+      "Bash(wc:*)",
+      "Bash(pwd)",
+      "Bash(env)",
+      "Bash(which:*)",
+      "Bash(test:*)",
+      "Bash(tee:*)",
+      "Bash(export:*)",
+      "Bash(gh:*)",
+      "WebFetch",
+      "WebSearch",
+      "Task",
+      "TodoWrite",
+      "SlashCommand"
+    ],
+    "deny": [
+      "Write(~/.ssh/*)",
+      "Write(~/.gnupg/*)",
+      "Write(~/.aws/*)",
+      "Write(~/.gcloud/*)",
+      "Write(/etc/*)",
+      "Write(/usr/*)",
+      "Write(/var/*)",
+      "Write(/tmp/*)",
+      "Edit(~/.ssh/*)",
+      "Edit(~/.gnupg/*)",
+      "Edit(~/.aws/*)",
+      "Edit(~/.gcloud/*)",
+      "Edit(/etc/*)",
+      "Edit(/usr/*)",
+      "Edit(/var/*)",
+      "Bash(rm -rf /)",
+      "Bash(rm -rf ~)",
+      "Bash(sudo:*)",
+      "Bash(su:*)",
+      "Bash(chmod 777:*)",
+      "Bash(chown:*)",
+      "Bash(shutdown:*)",
+      "Bash(reboot:*)",
+      "Bash(systemctl:*)",
+      "Bash(kill -9:*)",
+      "Bash(pkill:*)",
+      "Bash(killall:*)",
+      "Bash(dd:*)",
+      "Bash(mkfs:*)",
+      "Bash(fdisk:*)",
+      "Bash(passwd:*)",
+      "Bash(useradd:*)",
+      "Bash(userdel:*)",
+      "Bash(visudo:*)"
+    ]
+  },
+  "enableAllProjectMcpServers": true,
+  "logging": {
+    "enabled": true,
+    "level": "info",
+    "file": ".claude/logs/hooks.log"
+  }
+}
