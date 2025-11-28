@@ -46,6 +46,8 @@ next-env.d.ts
 
 # Claude Code
 .claude/logs/
+.claude/memory/*.jsonl
+.claude/reports/daily/
 
 # Playwright
 test-results/
