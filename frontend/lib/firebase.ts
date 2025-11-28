@@ -68,5 +68,5 @@ export function onAuthChange(callback: (user: User | null) => void) {
   return onAuthStateChanged(auth, callback);
 }
 
-export { auth };
+export { auth, googleProvider, githubProvider };
 export type { User };
