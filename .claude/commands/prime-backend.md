@@ -30,11 +30,18 @@ backend/
   .env
 ```
 
-## Critical Rule
+## Critical Rules
+
 **Backend NEVER receives passwords.**
 - Frontend uses Firebase Auth client SDK
 - Backend only receives Firebase ID tokens
 - Verify tokens with Firebase Admin SDK
+
+**AUTH RULE (Frontend response handling):**
+- NEVER sign out user on HTTP 403
+- 403 = insufficient permissions → show toast only
+- 401 = invalid token → signOut() is correct
+- This prevents logout loops seen in early builds
 
 ## Auth Pattern
 ```python
