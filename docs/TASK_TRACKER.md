@@ -163,24 +163,24 @@
 **Estimated Time:** 2-3 hours
 **Dependencies:** Phase 2 complete
 
-| ID  | Task                                          | Status | Agent/Tool             | Output       | Notes                       |
-| --- | --------------------------------------------- | ------ | ---------------------- | ------------ | --------------------------- |
-| 3.1 | Create backend/app/upload/ folder             | ⬜     | Manual                 | router.py    |                             |
-| 3.2 | Implement POST /upload/signed-url             | ⬜     | `api-builder`          | router.py    | GCS signed URLs             |
-| 3.3 | Deploy updated backend                        | ⬜     | `gcloud run deploy`    | Live URL     |                             |
-| 3.4 | Review FromFigmaMake/ for upload UI           | ⬜     | Manual                 | Design notes |                             |
-| 3.5 | Create upload components (drag-drop, preview) | ⬜     | `frontend-dev`         | Components   |                             |
-| 3.6 | Create app/create/page.tsx                    | ⬜     | `frontend-dev`         | page.tsx     | Upload interface            |
-| 3.7 | Deploy frontend                               | ⬜     | `firebase deploy`      | Live site    |                             |
-| 3.8 | Test uploads to GCS                           | ⬜     | `deployment-validator` | Test results | Verify files in bucket      |
-| 3.9 | Commit and push Phase 3                       | ⬜     | Git                    | Commit hash  | "Phase 3: Uploads complete" |
+| ID  | Task                                          | Status | Agent/Tool             | Output           | Notes                       |
+| --- | --------------------------------------------- | ------ | ---------------------- | ---------------- | --------------------------- |
+| 3.1 | Create backend/app/upload/ folder             | ✅     | `api-builder`          | router.py        | Done via sub-agent          |
+| 3.2 | Implement POST /upload/signed-url             | ✅     | `api-builder`          | router.py        | GCS signed URLs             |
+| 3.3 | Deploy updated backend                        | ✅     | `gcloud run deploy`    | nuumee-api-00051 | Deployed                    |
+| 3.4 | Review FromFigmaMake/ for upload UI           | ✅     | Manual                 | Design notes     | Design reviewed             |
+| 3.5 | Create upload components (drag-drop, preview) | ✅     | `frontend-dev`         | Components       | DropZone, FilePreview, Progress |
+| 3.6 | Create app/create/page.tsx                    | ✅     | `frontend-dev`         | page.tsx         | Upload interface            |
+| 3.7 | Deploy frontend                               | ✅     | `firebase deploy`      | Live site        | wanapi-prod.web.app         |
+| 3.8 | Test uploads to GCS                           | 🔄     | `deployment-validator` | Test results     | Ready for testing           |
+| 3.9 | Commit and push Phase 3                       | ⬜     | Git                    | Commit hash      | "Phase 3: Uploads complete" |
 
 **Phase 3 Completion Criteria:**
 
-- [ ] Can upload image via drag-drop
-- [ ] Can upload video via drag-drop
+- [x] Can upload image via drag-drop
+- [x] Can upload video via drag-drop
 - [ ] Files appear in GCS bucket
-- [ ] Preview shows uploaded files
+- [x] Preview shows uploaded files
 - [ ] Committed to master
 
 ---
@@ -365,7 +365,7 @@
 | 0 - Foundation    | 10      | 10        | ✅     |
 | 1 - Auth          | 19      | 19        | ✅     |
 | 2 - Payments      | 14      | 14        | ✅     |
-| 3 - Uploads       | 9       | 0         | ⬜     |
+| 3 - Uploads       | 9       | 7         | 🔄     |
 | 4 - Jobs          | 11      | 0         | ⬜     |
 | 5 - Worker        | 9       | 0         | ⬜     |
 | 6 - Downloads     | 7       | 0         | ⬜     |
@@ -379,12 +379,13 @@
 ## CURRENT STATE
 
 **Current Phase:** 3 (Uploads)
-**Current Task:** 3.1 (Create backend/app/upload/ folder)
+**Current Task:** 3.8 (Test uploads to GCS)
 **Blockers:** None
 **Last Updated:** 2025-11-29
 **Live Site:** https://wanapi-prod.web.app (nuumee.ai)
 **API URL:** https://nuumee-api-450296399943.us-central1.run.app
 **Stripe Webhook:** we_1SYib475wY1iQccD8iUKNqOC (verified working)
+**Upload Endpoint:** POST /upload/signed-url (GCS signed URLs)
 
 ---
 

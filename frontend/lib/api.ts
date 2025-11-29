@@ -147,3 +147,64 @@ export async function createCheckoutSession(packageId: string): Promise<Checkout
     body: JSON.stringify({ package_id: packageId }),
   });
 }
+
+// Upload endpoints
+export interface SignedUrlRequest {
+  file_type: 'image' | 'video';
+  file_name: string;
+  content_type: string;
+}
+
+export interface SignedUrlResponse {
+  upload_url: string;
+  file_path: string;
+  bucket_name: string;
+  expires_at: string;
+}
+
+export async function getSignedUrl(request: SignedUrlRequest): Promise<SignedUrlResponse> {
+  return apiRequest<SignedUrlResponse>('/upload/signed-url', {
+    method: 'POST',
+    body: JSON.stringify(request),
+  });
+}
+
+/**
+ * Upload a file to GCS using a signed URL with progress tracking
+ */
+export async function uploadToGCS(
+  file: File,
+  signedUrl: string,
+  onProgress?: (progress: number) => void
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+
+    xhr.upload.addEventListener('progress', (e) => {
+      if (e.lengthComputable && onProgress) {
+        const progress = (e.loaded / e.total) * 100;
+        onProgress(progress);
+      }
+    });
+
+    xhr.addEventListener('load', () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve();
+      } else {
+        reject(new Error(`Upload failed with status ${xhr.status}`));
+      }
+    });
+
+    xhr.addEventListener('error', () => {
+      reject(new Error('Upload failed'));
+    });
+
+    xhr.addEventListener('abort', () => {
+      reject(new Error('Upload aborted'));
+    });
+
+    xhr.open('PUT', signedUrl);
+    xhr.setRequestHeader('Content-Type', file.type);
+    xhr.send(file);
+  });
+}
