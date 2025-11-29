@@ -11,8 +11,7 @@ security = HTTPBearer(auto_error=False)
 
 
 async def get_current_user_id(
-    request: Request,
-    credentials: Optional[HTTPAuthorizationCredentials] = None
+    request: Request
 ) -> str:
     """
     Extract and verify user ID from Firebase ID token in Authorization header.

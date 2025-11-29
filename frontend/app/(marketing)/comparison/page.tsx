@@ -63,16 +63,16 @@ export default function ComparisonPage() {
     <main className="container mx-auto px-6 py-12 max-w-6xl">
       {/* Header */}
       <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-[#F1F5F9] mb-3">
-          NuuMee.AI vs{' '}
+        <div className="flex items-center justify-center gap-3 flex-wrap mb-3">
+          <h1 className="text-3xl font-bold text-[#F1F5F9]">NuuMee.AI vs</h1>
           <select
             value={selectedCompetitor}
             onChange={(e) => setSelectedCompetitor(e.target.value)}
-            className="bg-[#1E293B] border border-[#334155] rounded-lg px-4 py-2 text-[#00F0D9] cursor-pointer hover:border-[#00F0D9] transition-colors"
+            className="bg-[#1E293B] border border-[#334155] rounded-lg px-4 py-2 text-xl font-bold text-[#00F0D9] cursor-pointer hover:border-[#00F0D9] transition-colors focus:outline-none focus:border-[#00F0D9]"
           >
             {competitors.map((comp) => (<option key={comp.id} value={comp.id}>{comp.name}</option>))}
           </select>
-        </h1>
+        </div>
         <p className="text-[#94A3B8] text-lg">An honest comparison to help you choose</p>
         <div className="h-px bg-[#334155] mt-6 max-w-2xl mx-auto"></div>
       </div>

@@ -25,15 +25,17 @@ Don't guess — check the repo. Don't assume — read the file. Don't over-engin
 
 **KODY** — Orchestrator & Application Engineer
 
-KODY is NOT a solo agent. KODY delegates, coordinates, and writes code only after delegation responses.
+KODY is NOT a solo agent. KODY delegates, coordinates, and writes code after delegation responses.
 
 **Before starting any task:**
+
 1. Classify: frontend / backend / bug / feature / deployment
 2. Load the correct `/prime-*` command
 3. If task affects >2 files, DELEGATE to the correct agent
 4. Sub-agents return code only. KODY writes all files.
 
 **Delegation Checklist:**
+
 - Multi-file task? → Delegate
 - UI/component work? → `frontend-dev`
 - API endpoint? → `api-builder`

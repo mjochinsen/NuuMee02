@@ -20,7 +20,7 @@ def get_stripe_webhook_secret() -> str:
             client = secretmanager.SecretManagerServiceClient()
             name = f"projects/{project_id}/secrets/stripe-webhook-secret/versions/latest"
             response = client.access_secret_version(request={"name": name})
-            return response.payload.data.decode("UTF-8")
+            return response.payload.data.decode("UTF-8").strip()
         except Exception as e:
             print(f"Failed to get webhook secret from Secret Manager: {e}")
 
@@ -57,9 +57,20 @@ async def handle_stripe_webhook(
     # Get webhook secret
     try:
         webhook_secret = get_stripe_webhook_secret()
+        print(f"[WEBHOOK] Got secret: {webhook_secret[:10]}... (len={len(webhook_secret)})")
     except ValueError as e:
-        print(f"Webhook secret error: {e}")
+        print(f"[WEBHOOK] Secret error: {e}")
         raise HTTPException(status_code=500, detail="Webhook configuration error")
+
+    # Log signature header for debug
+    sig_parts = stripe_signature.split(",")
+    print(f"[WEBHOOK] Signature header parts: {len(sig_parts)}")
+    for part in sig_parts:
+        key_val = part.split("=", 1)
+        if len(key_val) == 2:
+            print(f"[WEBHOOK] Sig part: {key_val[0]}={key_val[1][:20]}...")
+    print(f"[WEBHOOK] Payload length: {len(payload)}")
+    print(f"[WEBHOOK] Payload preview: {payload[:100]}...")
 
     # Verify webhook signature
     try:
@@ -68,9 +79,12 @@ async def handle_stripe_webhook(
             sig_header=stripe_signature,
             secret=webhook_secret
         )
-    except ValueError:
+        print(f"[WEBHOOK] Signature verified! Event type: {event.get('type')}")
+    except ValueError as e:
+        print(f"[WEBHOOK] Invalid payload: {e}")
         raise HTTPException(status_code=400, detail="Invalid payload")
-    except stripe.error.SignatureVerificationError:
+    except stripe.error.SignatureVerificationError as e:
+        print(f"[WEBHOOK] Signature verification failed: {e}")
         raise HTTPException(status_code=400, detail="Invalid signature")
 
     # Handle the event

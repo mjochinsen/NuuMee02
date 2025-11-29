@@ -1,10 +1,8 @@
 'use client';
 
 import { ChevronDown, Zap, Plus, User, CreditCard, Key, Briefcase, HelpCircle, Settings, LogOut, Gift } from 'lucide-react';
-import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,9 +14,11 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/components/AuthProvider';
 
 export function Header() {
-  const [credits] = useState(25);
   const pathname = usePathname();
-  const { user, loading, signOut } = useAuth();
+  const { user, profile, loading, signOut } = useAuth();
+
+  // Get credits from profile, default to 0 if not loaded
+  const credits = profile?.credits_balance ?? 0;
 
   const isActive = (path: string) => pathname === path;
 
@@ -35,39 +35,47 @@ export function Header() {
           </Link>
 
           <nav className="hidden md:flex items-center gap-6">
-            <Link
-              href="/"
-              className={`hover:text-[#00F0D9] transition-colors ${
-                isActive('/') ? 'text-[#F1F5F9]' : 'text-[#94A3B8]'
-              }`}
-            >
-              Home
-            </Link>
-            <Link
-              href="/jobs/create"
-              className={`hover:text-[#00F0D9] transition-colors ${
-                isActive('/jobs/create') ? 'text-[#F1F5F9]' : 'text-[#94A3B8]'
-              }`}
-            >
-              Create Videos
-            </Link>
-            <Link
-              href="/pricing"
-              className={`hover:text-[#00F0D9] transition-colors ${
-                isActive('/pricing') ? 'text-[#F1F5F9]' : 'text-[#94A3B8]'
-              }`}
-            >
-              Pricing
-            </Link>
-            <Link
-              href="/documentation"
-              className={`hover:text-[#00F0D9] transition-colors ${
-                isActive('/documentation') ? 'text-[#F1F5F9]' : 'text-[#94A3B8]'
-              }`}
-            >
-              Docs
-            </Link>
-          </nav>
+          <Link
+            href="/"
+            className={`hover:text-[#00F0D9] transition-colors ${
+              isActive('/') ? 'text-[#F1F5F9]' : 'text-[#94A3B8]'
+            }`}
+          >
+            Home
+          </Link>
+          <Link
+            href="/videos/create"
+            className={`hover:text-[#00F0D9] transition-colors ${
+              isActive('/videos/create') ? 'text-[#F1F5F9]' : 'text-[#94A3B8]'
+            }`}
+          >
+            Create Videos
+          </Link>
+          <Link
+            href="/dev"
+            className={`hover:text-[#00F0D9] transition-colors ${
+              isActive('/dev') ? 'text-[#F1F5F9]' : 'text-[#94A3B8]'
+            }`}
+          >
+            Dev
+          </Link>
+          <Link
+            href="/pricing"
+            className={`hover:text-[#00F0D9] transition-colors ${
+              isActive('/pricing') ? 'text-[#F1F5F9]' : 'text-[#94A3B8]'
+            }`}
+          >
+            Pricing
+          </Link>
+          <Link
+            href="/documentation"
+            className={`hover:text-[#00F0D9] transition-colors ${
+              isActive('/documentation') ? 'text-[#F1F5F9]' : 'text-[#94A3B8]'
+            }`}
+          >
+            Docs
+          </Link>
+        </nav>
         </div>
 
         {/* Right Side - Auth/Credits/Account */}
@@ -76,12 +84,14 @@ export function Header() {
             <div className="h-9 w-20 animate-pulse rounded-lg bg-[#1E293B]" />
           ) : user ? (
             <>
-              {/* Credits Display */}
-              <button className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-[#3B1FE2] to-[#00F0D9] hover:opacity-90 transition-opacity">
-                <Zap className="w-4 h-4 text-white" />
-                <span className="text-white text-sm font-medium">{credits} Credits</span>
-                <Plus className="w-4 h-4 text-white" />
-              </button>
+              {/* Credits Display - Links to Billing */}
+              <Link href="/billing">
+                <button className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-[#3B1FE2] to-[#00F0D9] hover:opacity-90 transition-opacity">
+                  <Zap className="w-4 h-4 text-white" />
+                  <span className="text-white text-sm font-medium">{credits} Credits</span>
+                  <Plus className="w-4 h-4 text-white" />
+                </button>
+              </Link>
 
               {/* Account Dropdown */}
               <DropdownMenu>
@@ -101,7 +111,7 @@ export function Header() {
                         {user.displayName || user.email?.split('@')[0] || 'User'}
                       </span>
                       <Badge variant="secondary" className="bg-gradient-to-r from-[#3B1FE2] to-[#00F0D9] text-white border-0 text-xs">
-                        Creator
+                        {profile?.subscription_tier || 'Free'}
                       </Badge>
                     </div>
                   </div>

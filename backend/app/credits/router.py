@@ -124,7 +124,7 @@ async def get_credit_balance(user_id: str = Depends(get_current_user_id)):
 
 @router.post("/checkout", response_model=CheckoutResponse)
 async def create_checkout_session(
-    request: CheckoutRequest,
+    checkout_req: CheckoutRequest,
     user_id: str = Depends(get_current_user_id)
 ):
     """
@@ -134,15 +134,21 @@ async def create_checkout_session(
     1. Creates a Stripe Customer if user doesn't have one
     2. Creates a Stripe Checkout Session for one-time payment
     3. Stores the Stripe Customer ID in the user's Firestore document
+
+    Request body: {"package_id": "starter"|"popular"|"pro"|"mega"}
     """
+    # Debug logging
+    print(f"[CHECKOUT] Received request for user {user_id}")
+    print(f"[CHECKOUT] Request body: package_id={checkout_req.package_id}")
+
     _ensure_stripe_key()
 
     # Validate package exists
-    package = CREDIT_PACKAGES.get(request.package_id)
+    package = CREDIT_PACKAGES.get(checkout_req.package_id)
     if not package:
         raise HTTPException(
             status_code=400,
-            detail=f"Invalid package_id: {request.package_id}"
+            detail=f"Invalid package_id: {checkout_req.package_id}"
         )
 
     # Get user from Firestore

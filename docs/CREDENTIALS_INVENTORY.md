@@ -96,11 +96,26 @@
 | Test Mode | Publishable | `pk_test_51STYhZ75wY1iQccDDRavZv2vPLXst1loXKYwN5iGNFxB6iN8RDX54qwuChVWxUZry9Twz3nGnRI16lPJMYfx18k400fcPVNHIw` |
 | Secret Key | Location | Stored in GCP Secret Manager: `stripe-secret-key` |
 
-### Webhook Configuration
+### Webhook Configuration (Production)
 | Item | Value |
 |------|-------|
-| Endpoint | `https://nuumee-api-hu7rfrhmka-uc.a.run.app/api/v1/webhook/stripe` |
-| Signing Secret | Stored in GCP Secret Manager |
+| Endpoint | `https://nuumee-api-450296399943.us-central1.run.app/api/v1/webhooks/stripe` |
+| Signing Secret | Stored in GCP Secret Manager: `stripe-webhook-secret` |
+
+### Test/Sandbox Configuration
+| Environment | Key Type | Location |
+|-------------|----------|----------|
+| Test | Publishable | Frontend .env: `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` |
+| Test | Secret | GCP Secret Manager: `stripe-secret-key` |
+
+### Test Webhook Configuration (ACTIVE)
+| Item | Value |
+|------|-------|
+| Destination ID | `we_1SYib475wY1iQccD8iUKNqOC` |
+| Name | `NuuMee Production Webhook` |
+| Endpoint URL | `https://nuumee-api-450296399943.us-central1.run.app/api/v1/webhooks/stripe` |
+| Signing Secret | GCP Secret Manager: `stripe-webhook-secret` (version 8) |
+| Created | 2025-11-29 |
 
 ### Credit Package Price IDs (Placeholder)
 | Package | Stripe Price ID |

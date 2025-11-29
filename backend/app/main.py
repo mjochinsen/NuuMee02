@@ -16,14 +16,14 @@ app = FastAPI(
 # CORS configuration
 cors_origins = os.getenv(
     "CORS_ALLOWED_ORIGINS",
-    '["http://localhost:3000","https://nuumee.ai"]'
+    '["http://localhost:3000","https://nuumee.ai","https://wanapi-prod.web.app","https://wanapi-prod.firebaseapp.com"]'
 )
 # Parse JSON string to list
 import json
 try:
     allowed_origins = json.loads(cors_origins)
 except json.JSONDecodeError:
-    allowed_origins = ["http://localhost:3000", "https://nuumee.ai"]
+    allowed_origins = ["http://localhost:3000", "https://nuumee.ai", "https://wanapi-prod.web.app", "https://wanapi-prod.firebaseapp.com"]
 
 app.add_middleware(
     CORSMiddleware,
@@ -33,10 +33,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include routers
-app.include_router(auth_router)
-app.include_router(credits_router)
-app.include_router(webhooks_router)
+# Include routers with /api/v1 prefix
+app.include_router(auth_router, prefix="/api/v1")
+app.include_router(credits_router, prefix="/api/v1")
+app.include_router(webhooks_router, prefix="/api/v1")
 
 
 @app.get("/health")

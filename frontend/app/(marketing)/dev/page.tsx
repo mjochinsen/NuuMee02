@@ -36,7 +36,7 @@ export default function SitemapPage() {
       title: 'Authenticated Pages',
       icon: '🔒',
       pages: [
-        { name: 'Create Videos', path: '/jobs/create', description: 'Main video creation interface with dual view modes', responsive: true },
+        { name: 'Create Videos', path: '/videos/create', description: 'Main video creation interface with dual view modes', responsive: true },
         { name: 'Jobs', path: '/jobs', description: 'Video generation history and job management', responsive: true },
         { name: 'Billing', path: '/billing', description: 'Credits, subscriptions, and payment methods', responsive: true },
         { name: 'Account Settings', path: '/account', description: 'User profile and preferences', responsive: true },

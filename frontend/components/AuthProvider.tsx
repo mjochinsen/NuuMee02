@@ -32,8 +32,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setProfile(userProfile);
         setError(null);
       } catch (err) {
-        if (err instanceof ApiError && err.status === 401) {
-          // User doesn't exist in backend yet, register them
+        if (err instanceof ApiError && (err.status === 401 || err.status === 404)) {
+          // User doesn't exist in backend yet (404) or token issue (401), register them
           try {
             await registerUser(idToken);
             // After registration, login to get full profile

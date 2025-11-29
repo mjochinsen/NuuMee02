@@ -4,7 +4,8 @@
  */
 import { getIdToken } from './firebase';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const API_URL = `${API_BASE}/api/v1`;
 
 interface ApiOptions extends RequestInit {
   skipAuth?: boolean;
@@ -41,8 +42,18 @@ async function apiRequest<T>(
   }
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
-    throw new ApiError(error.detail || 'Request failed', response.status);
+    const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
+    // Handle FastAPI validation errors which return detail as array of objects
+    let errorMessage = 'Request failed';
+    if (typeof errorData.detail === 'string') {
+      errorMessage = errorData.detail;
+    } else if (Array.isArray(errorData.detail)) {
+      // FastAPI validation error format: [{ loc: [...], msg: "...", type: "..." }]
+      errorMessage = errorData.detail.map((e: { msg?: string }) => e.msg || 'Validation error').join(', ');
+    } else if (errorData.detail && typeof errorData.detail === 'object') {
+      errorMessage = JSON.stringify(errorData.detail);
+    }
+    throw new ApiError(errorMessage, response.status);
   }
 
   return response.json();
@@ -97,7 +108,9 @@ export async function getMe(): Promise<UserProfile> {
 }
 
 export async function checkHealth(): Promise<{ status: string; service: string }> {
-  return apiRequest('/health', { skipAuth: true });
+  // Health endpoint is at root level, not under /api/v1
+  const response = await fetch(`${API_BASE}/health`);
+  return response.json();
 }
 
 // Credits endpoints

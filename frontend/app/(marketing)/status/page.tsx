@@ -105,16 +105,6 @@ export default function StatusPage() {
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-[#0F172A] to-[#1E293B]">
-      <header className="border-b border-[#334155] bg-[#0F172A]/95 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-6 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#00F0D9] to-[#3B1FE2] flex items-center justify-center"><span className="text-white font-bold">N</span></div>
-            <span className="text-[#F1F5F9] font-semibold">NuuMee.AI Status</span>
-          </Link>
-          <Link href="/"><Button variant="outline" className="border-[#334155] text-[#F1F5F9] hover:border-[#00F0D9]">Back to Home</Button></Link>
-        </div>
-      </header>
-
       <div className="container mx-auto px-6 py-12 max-w-5xl">
         <div className="mb-8"><h1 className="text-3xl font-bold text-[#F1F5F9] mb-2">System Status</h1><div className="h-px bg-[#334155]"></div></div>
 
