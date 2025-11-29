@@ -8,6 +8,8 @@ Purpose:
 - Block dangerous operations
 - Log tool usage intentions
 - Validate file paths
+- WARN if prime not loaded before domain edits
+- WARN if committing without audit
 """
 
 import json
@@ -25,6 +27,18 @@ session_id = hook_input.get("session_id", "unknown")
 tool_name = hook_input.get("tool_name", "")
 tool_input = hook_input.get("tool_input", {})
 cwd = hook_input.get("cwd", os.getcwd())
+
+# Session state for warnings
+state_file = os.path.join(cwd, ".claude", "state", "session.json")
+session_state = {"primes_loaded": [], "audit_run": False}
+try:
+    if os.path.exists(state_file):
+        with open(state_file, "r") as f:
+            session_state = json.load(f)
+except:
+    pass
+
+warnings = []
 
 # Project root detection
 project_root = cwd
@@ -115,6 +129,13 @@ elif tool_name in ["Write", "Edit"]:
         if not is_protected:
             decision = "allow"
 
+        # WARNING: Check if prime is loaded for domain
+        primes_loaded = session_state.get("primes_loaded", [])
+        if "frontend" in file_path and "frontend" not in primes_loaded:
+            warnings.append("WARNING: Editing frontend/ without /prime-frontend loaded.")
+        elif "backend" in file_path and "backend" not in primes_loaded:
+            warnings.append("WARNING: Editing backend/ without /prime-backend loaded.")
+
 elif tool_name == "Bash":
     command = tool_input.get("command", "")
     if is_safe_command(command):
@@ -124,6 +145,12 @@ elif tool_name == "Bash":
                         "python", "node", "tree", "wc", "which"]
         if any(command.strip().startswith(p) for p in safe_prefixes):
             decision = "allow"
+
+        # WARNING: Check if committing without audit
+        if "git commit" in command:
+            audit_run = session_state.get("audit_run", False)
+            if not audit_run:
+                warnings.append("WARNING: Committing without running /audit quick first.")
     else:
         decision = "deny"
 
@@ -160,9 +187,13 @@ log_file = os.path.join(log_dir, "tools.jsonl")
 with open(log_file, "a") as f:
     f.write(json.dumps(log_entry) + "\n")
 
-# Output decision
+# Output decision and warnings
 output = {}
 if decision:
     output["decision"] = decision
+
+# Include warnings as user message
+if warnings:
+    output["message"] = "\n".join(warnings)
 
 print(json.dumps(output))

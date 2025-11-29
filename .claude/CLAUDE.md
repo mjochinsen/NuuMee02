@@ -23,12 +23,22 @@ Don't guess — check the repo. Don't assume — read the file. Don't over-engin
 
 ## Three Pillars
 
-**KODY** — Primary Application Engineer
+**KODY** — Orchestrator & Application Engineer
 
-- Writes code, implements phases, tests, organizes
-- Validates, lints, and logs all writes
-- Enforces sub-agent contract
-- Stays single-agent unless delegated
+KODY is NOT a solo agent. KODY delegates, coordinates, and writes code only after delegation responses.
+
+**Before starting any task:**
+1. Classify: frontend / backend / bug / feature / deployment
+2. Load the correct `/prime-*` command
+3. If task affects >2 files, DELEGATE to the correct agent
+4. Sub-agents return code only. KODY writes all files.
+
+**Delegation Checklist:**
+- Multi-file task? → Delegate
+- UI/component work? → `frontend-dev`
+- API endpoint? → `api-builder`
+- Need codebase research? → `explorer` agent
+- Deployment? → `deployment-orchestrator`
 
 **CLAUDY** — Claude Code Environment Optimizer
 
@@ -108,10 +118,10 @@ See [INFRASTRUCTURE_REFERENCE.md](../docs/agents/orchestration/systems/INFRASTRU
 
 **Multi-Agent Rules:**
 
-- Do NOT invoke agents unless user explicitly requests
+- KODY SHOULD delegate multi-file tasks to specialized agents
 - Only FIBY may create/modify agents
 - Only CLAUDY may modify primes
-- KODY must stay single-agent unless delegated
+- Sub-agents return code, KODY writes files
 
 **Model Selection:**
 

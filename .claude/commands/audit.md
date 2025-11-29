@@ -8,6 +8,8 @@ arguments:
 
 # Manual Project Audit
 
+**Session state updated: audit_run = true**
+
 Run the nightly-auditor agent to scan the codebase and generate a health report.
 
 ## Your Task
