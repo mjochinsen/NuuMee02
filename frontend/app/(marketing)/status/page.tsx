@@ -108,18 +108,29 @@ export default function StatusPage() {
       <div className="container mx-auto px-6 py-12 max-w-5xl">
         <div className="mb-8"><h1 className="text-3xl font-bold text-[#F1F5F9] mb-2">System Status</h1><div className="h-px bg-[#334155]"></div></div>
 
-        {/* Overall Status */}
-        <section className="mb-8 border border-[#334155] rounded-xl p-8 bg-[#0F172A]">
+        {/* Coming Soon Notice */}
+        <section className="mb-8 border border-amber-500/30 bg-amber-500/5 rounded-xl p-6">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">🔧</span>
+            <div>
+              <h2 className="text-amber-400 font-semibold">Status Monitoring Coming Soon</h2>
+              <p className="text-[#94A3B8] text-sm mt-1">Real-time system status monitoring is under development. For urgent issues, please contact support@nuumee.ai</p>
+            </div>
+          </div>
+        </section>
+
+        {/* Placeholder Status */}
+        <section className="mb-8 border border-[#334155] rounded-xl p-8 bg-[#0F172A] opacity-50">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
               <span className="text-4xl">{getStatusIcon(systemStatus)}</span>
               <div>
                 <h2 className={`text-2xl font-bold ${getStatusColor(systemStatus)}`}>{getSystemStatusText(systemStatus)}</h2>
-                <p className="text-[#94A3B8] text-sm mt-1">Last updated: {getRelativeTime(lastUpdated)}</p>
+                <p className="text-[#94A3B8] text-sm mt-1">Preview - Not real-time data</p>
               </div>
             </div>
-            <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isRefreshing} className="border-[#334155] text-[#F1F5F9] hover:border-[#00F0D9]">
-              <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />Refresh
+            <Button variant="outline" size="sm" disabled className="border-[#334155] text-[#F1F5F9] opacity-50">
+              <RefreshCw className="w-4 h-4 mr-2" />Refresh
             </Button>
           </div>
         </section>

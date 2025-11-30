@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   User,
   Bell,
@@ -15,7 +15,6 @@ import {
   Download,
   Copy,
   Monitor,
-  Smartphone,
   QrCode,
   Printer,
 } from 'lucide-react';
@@ -42,26 +41,31 @@ import {
 } from '@/components/ui/dialog';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Progress } from '@/components/ui/progress';
+import { useAuth } from '@/components/AuthProvider';
 
 type TabType = 'profile' | 'notifications' | 'security' | 'privacy' | 'delete';
 
-interface Session {
-  id: string;
-  device: string;
-  location: string;
-  ip: string;
-  lastActive: string;
-  isCurrent: boolean;
-}
 
 export default function AccountSettingsPage() {
+  const { user, profile, loading } = useAuth();
   const [activeTab, setActiveTab] = useState<TabType>('profile');
-  const [fullName, setFullName] = useState('Alex Chen');
-  const [email, setEmail] = useState('alex.chen@email.com');
-  const [username, setUsername] = useState('alexchen');
+
+  // Initialize state from auth profile (real data)
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [company, setCompany] = useState('');
-  const [location, setLocation] = useState('San Francisco, CA');
+  const [location, setLocation] = useState('');
   const [bio, setBio] = useState('');
+
+  // Populate form with real user data when available
+  useEffect(() => {
+    if (user) {
+      setFullName(user.displayName || profile?.display_name || '');
+      setEmail(user.email || '');
+      setUsername(user.email?.split('@')[0] || '');
+    }
+  }, [user, profile]);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -101,32 +105,6 @@ export default function AccountSettingsPage() {
     processing: false,
   });
 
-  const sessions: Session[] = [
-    {
-      id: '1',
-      device: 'Chrome on macOS',
-      location: 'San Francisco, CA',
-      ip: '192.168.1.1',
-      lastActive: 'Just now',
-      isCurrent: true,
-    },
-    {
-      id: '2',
-      device: 'Safari on iPhone 14 Pro',
-      location: 'San Francisco, CA',
-      ip: '192.168.1.5',
-      lastActive: '2 hours ago',
-      isCurrent: false,
-    },
-    {
-      id: '3',
-      device: 'Firefox on Windows 11',
-      location: 'Los Angeles, CA',
-      ip: '10.0.0.123',
-      lastActive: 'Yesterday',
-      isCurrent: false,
-    },
-  ];
 
   const backupCodes = [
     'ABCD-1234-EFGH',
@@ -172,13 +150,6 @@ export default function AccountSettingsPage() {
     setNotifications(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
-  const handleEndSession = (sessionId: string) => {
-    alert('Session ended');
-  };
-
-  const handleEndAllSessions = () => {
-    alert('All other sessions ended');
-  };
 
   const handleRequestDataExport = () => {
     alert('Data export requested. Check your email in 10 minutes.');
@@ -707,52 +678,35 @@ export default function AccountSettingsPage() {
                   <h3 className="text-[#F1F5F9] mb-4">Active Sessions</h3>
                   <div className="h-px bg-[#334155] mb-4"></div>
                   <div className="space-y-4">
-                    {sessions.map((session) => (
-                      <div key={session.id} className="border border-[#334155] rounded-xl p-4 bg-[#1E293B]">
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-start gap-3">
-                            {session.device.includes('iPhone') ? (
-                              <Smartphone className="w-5 h-5 text-[#00F0D9] mt-0.5" />
-                            ) : (
-                              <Monitor className="w-5 h-5 text-[#00F0D9] mt-0.5" />
-                            )}
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <span className="text-[#F1F5F9]">{session.device}</span>
-                                {session.isCurrent && (
-                                  <Badge className="bg-[#00F0D9]/10 text-[#00F0D9] border-[#00F0D9]/20">
-                                    CURRENT
-                                  </Badge>
-                                )}
-                              </div>
-                              <p className="text-[#94A3B8] text-sm">
-                                {session.location} • IP: {session.ip}
-                              </p>
-                              <p className="text-[#94A3B8] text-sm">
-                                Last active: {session.lastActive}
-                              </p>
-                            </div>
+                    {/* Current session info from Firebase Auth */}
+                    <div className="border border-[#334155] rounded-xl p-4 bg-[#1E293B]">
+                      <div className="flex items-start gap-3">
+                        <Monitor className="w-5 h-5 text-[#00F0D9] mt-0.5" />
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[#F1F5F9]">Current Session</span>
+                            <Badge className="bg-[#00F0D9]/10 text-[#00F0D9] border-[#00F0D9]/20">
+                              CURRENT
+                            </Badge>
                           </div>
-                          {!session.isCurrent && (
-                            <Button
-                              onClick={() => handleEndSession(session.id)}
-                              variant="outline"
-                              size="sm"
-                              className="border-[#334155] text-[#F1F5F9] hover:border-red-500 hover:text-red-500"
-                            >
-                              End Session
-                            </Button>
+                          <p className="text-[#94A3B8] text-sm">
+                            Signed in via {user?.providerData?.[0]?.providerId === 'google.com' ? 'Google' : 'Email'}
+                          </p>
+                          {user?.metadata?.lastSignInTime && (
+                            <p className="text-[#94A3B8] text-sm">
+                              Last sign-in: {new Date(user.metadata.lastSignInTime).toLocaleString()}
+                            </p>
                           )}
                         </div>
                       </div>
-                    ))}
-                    <Button
-                      onClick={handleEndAllSessions}
-                      variant="outline"
-                      className="border-[#334155] text-[#F1F5F9] hover:border-red-500 hover:text-red-500"
-                    >
-                      End All Other Sessions
-                    </Button>
+                    </div>
+
+                    {/* Coming soon notice */}
+                    <div className="border border-[#334155] rounded-xl p-4 bg-[#1E293B]/50">
+                      <p className="text-[#94A3B8] text-sm text-center">
+                        Multi-session management coming soon. For now, you can sign out from all devices by changing your password.
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>

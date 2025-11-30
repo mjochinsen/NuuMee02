@@ -8,14 +8,8 @@ import {
   Zap,
   Check,
   AlertCircle,
-  Download,
-  Search,
-  ChevronLeft,
-  ChevronRight,
   X,
   Plus,
-  Edit,
-  Trash2,
   FileText,
   Crown,
   Sparkles,
@@ -65,24 +59,6 @@ interface SubscriptionPlan {
   icon: string;
 }
 
-interface PaymentMethod {
-  id: string;
-  brand: string;
-  last4: string;
-  expiry: string;
-  isDefault: boolean;
-}
-
-interface Transaction {
-  id: string;
-  date: string;
-  description: string;
-  subDescription?: string;
-  amount?: number;
-  credits?: number;
-  status: 'success' | 'pending' | 'failed' | 'refund';
-  hasInvoice?: boolean;
-}
 
 export default function BillingPage() {
   const { profile, user, loading } = useAuth();
@@ -99,9 +75,6 @@ export default function BillingPage() {
   const [selectedPackage, setSelectedPackage] = useState<CreditPackage | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null);
   const [autoRefill, setAutoRefill] = useState(false);
-  const [transactionFilter, setTransactionFilter] = useState('all');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
   const [isBuyModalOpen, setIsBuyModalOpen] = useState(false);
   const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
   const [subscriptionModalType, setSubscriptionModalType] = useState<'subscribe' | 'upgrade' | 'downgrade' | 'cancel' | 'annual' | 'founding'>('subscribe');
@@ -146,49 +119,6 @@ export default function BillingPage() {
     },
   ];
 
-  const paymentMethods: PaymentMethod[] = [
-    { id: '1', brand: 'Visa', last4: '4242', expiry: '12/26', isDefault: true },
-    { id: '2', brand: 'Mastercard', last4: '5555', expiry: '03/27', isDefault: false },
-  ];
-
-  const transactions: Transaction[] = [
-    {
-      id: '1',
-      date: 'Nov 11, 2:34 PM',
-      description: 'Credit Purchase',
-      amount: 40,
-      credits: 50,
-      status: 'success',
-      hasInvoice: true,
-    },
-    {
-      id: '2',
-      date: 'Nov 10, 4:22 PM',
-      description: 'Video Generation',
-      subDescription: '(job-mno-345)',
-      credits: -2,
-      status: 'success',
-    },
-    {
-      id: '3',
-      date: 'Nov 9, 12:00 AM',
-      description: 'Subscription Renewal',
-      subDescription: 'Creator Plan',
-      amount: 29,
-      credits: 50,
-      status: 'success',
-      hasInvoice: true,
-    },
-    {
-      id: '4',
-      date: 'Nov 8, 3:15 PM',
-      description: 'Refund',
-      subDescription: 'Failed job',
-      amount: 10,
-      credits: 5,
-      status: 'refund',
-    },
-  ];
 
   const handlePurchaseCredits = async (pkg: CreditPackage) => {
     setSelectedPackage(pkg);
@@ -246,19 +176,6 @@ export default function BillingPage() {
     setIsSubscriptionModalOpen(true);
   };
 
-  const getStatusBadge = (status: Transaction['status']) => {
-    const badges = {
-      success: '✅',
-      pending: '⏳',
-      failed: '❌',
-      refund: '💚',
-    };
-    return badges[status];
-  };
-
-  const getCardBrandIcon = (brand: string) => {
-    return '💳';
-  };
 
   return (
     <main className="container mx-auto px-6 py-12 max-w-7xl">
@@ -650,49 +567,18 @@ export default function BillingPage() {
           <h2 className="text-[#F1F5F9]">Payment Methods</h2>
         </div>
 
-        <div className="space-y-4 mb-6">
-          {paymentMethods.map((method) => (
-            <div key={method.id} className="border border-[#334155] rounded-xl p-4 bg-[#1E293B] flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <span className="text-2xl">{getCardBrandIcon(method.brand)}</span>
-                <div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-[#F1F5F9]">
-                      {method.brand} •••• {method.last4}
-                    </span>
-                    {method.isDefault && (
-                      <Badge className="bg-[#00F0D9]/10 text-[#00F0D9] border-[#00F0D9]/20">
-                        DEFAULT
-                      </Badge>
-                    )}
-                  </div>
-                  <span className="text-[#94A3B8] text-sm">
-                    Expires {method.expiry}
-                  </span>
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" className="border-[#334155] text-[#F1F5F9] hover:border-[#00F0D9] hover:text-[#00F0D9]">
-                  <Edit className="w-4 h-4 mr-1" />
-                  Edit
-                </Button>
-                <Button variant="outline" size="sm" className="border-[#334155] text-[#F1F5F9] hover:border-red-500 hover:text-red-500">
-                  <Trash2 className="w-4 h-4 mr-1" />
-                  Remove
-                </Button>
-              </div>
-            </div>
-          ))}
+        {/* Coming Soon Notice */}
+        <div className="border border-amber-500/30 bg-amber-500/5 rounded-xl p-4 mb-6">
+          <p className="text-amber-400 text-sm text-center">
+            Payment methods are managed by Stripe. During checkout, you can save your card for future purchases.
+          </p>
         </div>
 
-        <Button
-          onClick={() => setShowAddCardModal(true)}
-          variant="outline"
-          className="border-[#334155] text-[#F1F5F9] hover:border-[#00F0D9] hover:text-[#00F0D9]"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Add Payment Method
-        </Button>
+        <div className="text-center text-[#94A3B8] py-8">
+          <CreditCard className="w-12 h-12 mx-auto mb-3 opacity-50" />
+          <p>No saved payment methods</p>
+          <p className="text-sm mt-1">Your payment methods will appear here after your first purchase</p>
+        </div>
       </div>
 
       {/* Transaction History */}
@@ -702,129 +588,17 @@ export default function BillingPage() {
           <h2 className="text-[#F1F5F9]">Transaction History</h2>
         </div>
 
-        {/* Filters */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-[#94A3B8] text-sm mr-2">Filters:</span>
-            <Select value={transactionFilter} onValueChange={setTransactionFilter}>
-              <SelectTrigger className="w-40 bg-[#1E293B] border-[#334155] text-[#F1F5F9]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-[#1E293B] border-[#334155]">
-                <SelectItem value="all" className="text-[#F1F5F9]">All</SelectItem>
-                <SelectItem value="credits" className="text-[#F1F5F9]">Credits</SelectItem>
-                <SelectItem value="subscriptions" className="text-[#F1F5F9]">Subscriptions</SelectItem>
-                <SelectItem value="refunds" className="text-[#F1F5F9]">Refunds</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#94A3B8]" />
-              <Input
-                type="text"
-                placeholder="Search transactions..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 w-64 bg-[#1E293B] border-[#334155] text-[#F1F5F9] placeholder:text-[#94A3B8] focus:border-[#00F0D9]"
-              />
-            </div>
-            <Button variant="outline" size="sm" className="border-[#334155] text-[#F1F5F9] hover:border-[#00F0D9] hover:text-[#00F0D9]">
-              Export CSV
-            </Button>
-          </div>
+        {/* Coming Soon Notice */}
+        <div className="border border-amber-500/30 bg-amber-500/5 rounded-xl p-4 mb-6">
+          <p className="text-amber-400 text-sm text-center">
+            Transaction history integration coming soon. Your purchases and usage will be tracked here.
+          </p>
         </div>
 
-        {/* Table */}
-        <div className="border border-[#334155] rounded-xl overflow-hidden mb-6">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-[#1E293B]">
-                <tr>
-                  <th className="px-4 py-3 text-left text-[#94A3B8] text-sm">Date</th>
-                  <th className="px-4 py-3 text-left text-[#94A3B8] text-sm">Description</th>
-                  <th className="px-4 py-3 text-right text-[#94A3B8] text-sm">Amount</th>
-                  <th className="px-4 py-3 text-right text-[#94A3B8] text-sm">Credits</th>
-                  <th className="px-4 py-3 text-center text-[#94A3B8] text-sm">Status</th>
-                  <th className="px-4 py-3 text-center text-[#94A3B8] text-sm">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {transactions.map((transaction, index) => (
-                  <tr
-                    key={transaction.id}
-                    className={index !== transactions.length - 1 ? 'border-b border-[#334155]' : ''}
-                  >
-                    <td className="px-4 py-4 text-[#94A3B8] text-sm whitespace-nowrap">
-                      {transaction.date}
-                    </td>
-                    <td className="px-4 py-4">
-                      <div className="text-[#F1F5F9]">{transaction.description}</div>
-                      {transaction.subDescription && (
-                        <div className="text-[#94A3B8] text-sm">{transaction.subDescription}</div>
-                      )}
-                    </td>
-                    <td className="px-4 py-4 text-right text-[#F1F5F9]">
-                      {transaction.amount ? `$${transaction.amount}` : '-'}
-                    </td>
-                    <td className="px-4 py-4 text-right text-[#F1F5F9]">
-                      {transaction.credits ? (
-                        <span className={transaction.credits > 0 ? 'text-green-500' : 'text-red-400'}>
-                          {transaction.credits > 0 ? '+' : ''}{transaction.credits}
-                        </span>
-                      ) : '-'}
-                    </td>
-                    <td className="px-4 py-4 text-center">
-                      <span className="text-xl">{getStatusBadge(transaction.status)}</span>
-                    </td>
-                    <td className="px-4 py-4 text-center">
-                      {transaction.hasInvoice && (
-                        <Button variant="outline" size="sm" className="border-[#334155] text-[#F1F5F9] hover:border-[#00F0D9] hover:text-[#00F0D9]">
-                          <Download className="w-4 h-4 mr-1" />
-                          Invoice
-                        </Button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Pagination */}
-        <div className="flex items-center justify-between">
-          <span className="text-[#94A3B8] text-sm">
-            Showing 1-10 of 114
-          </span>
-          <div className="flex items-center gap-4">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-              disabled={currentPage === 1}
-              className="border-[#334155] text-[#F1F5F9] hover:border-[#00F0D9] hover:text-[#00F0D9] disabled:opacity-50"
-            >
-              <ChevronLeft className="w-4 h-4 mr-1" />
-              Previous
-            </Button>
-
-            <span className="text-[#94A3B8]">
-              Page {currentPage} of 12
-            </span>
-
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentPage(prev => prev + 1)}
-              disabled={currentPage === 12}
-              className="border-[#334155] text-[#F1F5F9] hover:border-[#00F0D9] hover:text-[#00F0D9] disabled:opacity-50"
-            >
-              Next
-              <ChevronRight className="w-4 h-4 ml-1" />
-            </Button>
-          </div>
+        <div className="text-center text-[#94A3B8] py-8">
+          <FileText className="w-12 h-12 mx-auto mb-3 opacity-50" />
+          <p>No transactions yet</p>
+          <p className="text-sm mt-1">Your purchase and usage history will appear here</p>
         </div>
       </div>
 

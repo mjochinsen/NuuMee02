@@ -243,11 +243,11 @@ export default function SupportPage() {
 
       {/* System Status Banner */}
       <div className="mb-12">
-        <div className="border border-green-500/20 bg-green-500/5 rounded-xl p-4 max-w-3xl mx-auto">
+        <div className="border border-amber-500/20 bg-amber-500/5 rounded-xl p-4 max-w-3xl mx-auto">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="text-xl">🟢</span>
-              <span className="text-green-500">All Systems Operational</span>
+              <span className="text-xl">🔧</span>
+              <span className="text-amber-400">System status monitoring coming soon</span>
             </div>
             <Link href="/status">
               <Button variant="link" className="text-[#00F0D9] hover:text-[#00F0D9]/80">
