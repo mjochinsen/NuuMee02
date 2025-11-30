@@ -126,14 +126,13 @@
 | Studio (2500 credits) | `price_studio_2500` |
 | Enterprise (5000 credits) | `price_enterprise_5000` |
 
-### Subscription Price IDs (Placeholder)
-| Plan | Stripe Price ID |
-|------|-----------------|
-| Pro Monthly | `price_pro_monthly` |
-| Studio Monthly | `price_studio_monthly` |
-| Enterprise Monthly | `price_enterprise_monthly` |
+### Subscription Price IDs (Test/Sandbox)
+| Plan | Price ID | Product ID | Amount | Credits/Month |
+|------|----------|------------|--------|---------------|
+| Creator Monthly | `price_1SWSmxQBPfmhkssa6Z8nxFcN` | `prod_TTPcWegVL3MDyq` | $29 | 400 |
+| Studio Monthly | `price_1SZ311QBPfmhkssaioh8XeVc` | `prod_TW5BqLj05xoeP2` | $99 | 1,600 |
 
-**Note:** These are placeholder IDs in code. Actual Stripe Price IDs need to be created in Stripe Dashboard and configured.
+**Note:** These are TEST/SANDBOX IDs. Production Price IDs need to be created separately in Live mode.
 
 ---
 
