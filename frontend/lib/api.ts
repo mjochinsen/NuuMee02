@@ -292,3 +292,15 @@ export async function estimateCost(
   });
   return apiRequest<CreditCostResponse>(`/jobs/cost?${params.toString()}`, { skipAuth: true });
 }
+
+// Job output download
+export interface JobOutputResponse {
+  job_id: string;
+  download_url: string;
+  expires_in_seconds: number;
+  filename: string;
+}
+
+export async function getJobOutput(jobId: string): Promise<JobOutputResponse> {
+  return apiRequest<JobOutputResponse>(`/jobs/${jobId}/output`);
+}

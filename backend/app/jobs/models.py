@@ -140,3 +140,21 @@ class CreditCostResponse(BaseModel):
                 "estimated_duration_seconds": 30
             }
         }
+
+
+class JobOutputResponse(BaseModel):
+    """Response containing signed download URL for job output."""
+    job_id: str = Field(..., description="Job ID")
+    download_url: str = Field(..., description="Signed GCS download URL")
+    expires_in_seconds: int = Field(default=3600, description="URL expiration time in seconds")
+    filename: str = Field(..., description="Output video filename")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "job_id": "job_abc123",
+                "download_url": "https://storage.googleapis.com/nuumee-outputs/...",
+                "expires_in_seconds": 3600,
+                "filename": "job_abc123.mp4"
+            }
+        }

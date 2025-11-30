@@ -32,17 +32,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { useAuth } from '@/components/AuthProvider';
-import { getJobs, JobResponse, JobStatus as ApiJobStatus } from '@/lib/api';
+import { getJobs, getJobOutput, JobResponse, JobStatus as ApiJobStatus } from '@/lib/api';
 
 type JobStatus = 'completed' | 'processing' | 'failed' | 'queued' | 'pending';
 
 interface Job {
   id: string;
+  jobType: string;
   referenceImagePath?: string;
   motionVideoPath?: string;
   status: JobStatus;
   createdAt: string;
+  updatedAt: string;
+  completedAt?: string | null;
   resolution: string;
   credits: number;
   errorMessage?: string;
@@ -54,10 +63,13 @@ interface Job {
 function convertApiJob(apiJob: JobResponse): Job {
   return {
     id: apiJob.id,
+    jobType: apiJob.job_type,
     referenceImagePath: apiJob.reference_image_path,
     motionVideoPath: apiJob.motion_video_path,
     status: apiJob.status as JobStatus,
     createdAt: new Date(apiJob.created_at).toLocaleString(),
+    updatedAt: new Date(apiJob.updated_at).toLocaleString(),
+    completedAt: apiJob.completed_at ? new Date(apiJob.completed_at).toLocaleString() : null,
     resolution: apiJob.resolution,
     credits: apiJob.credits_charged,
     errorMessage: apiJob.error_message || undefined,
@@ -76,6 +88,8 @@ export default function JobsPage() {
   const [totalJobs, setTotalJobs] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const jobsPerPage = 10;
 
   // Fetch jobs from API
@@ -107,6 +121,26 @@ export default function JobsPage() {
   useEffect(() => {
     fetchJobs();
   }, [fetchJobs]);
+
+  // Handle download button click
+  const handleDownload = async (jobId: string) => {
+    setDownloadingId(jobId);
+    try {
+      const response = await getJobOutput(jobId);
+      // Create temporary anchor to trigger download
+      const link = document.createElement('a');
+      link.href = response.download_url;
+      link.download = response.filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (err) {
+      console.error('Download failed:', err);
+      setError(err instanceof Error ? err.message : 'Download failed');
+    } finally {
+      setDownloadingId(null);
+    }
+  };
 
   // Filter by search query (client-side for now)
   const filteredJobs = jobs.filter((job) => {
@@ -227,12 +261,26 @@ export default function JobsPage() {
             <div className="flex gap-2 flex-wrap">
               {job.status === 'completed' && (
                 <>
-                  <Button variant="outline" size="sm" className="border-[#334155] text-[#F1F5F9] hover:border-[#00F0D9] hover:text-[#00F0D9]">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-[#334155] text-[#F1F5F9] hover:border-[#00F0D9] hover:text-[#00F0D9]"
+                    onClick={() => setSelectedJob(job)}
+                  >
                     Details
                   </Button>
-                  <Button size="sm" className="bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] hover:opacity-90 text-white">
-                    <Download className="w-4 h-4 mr-1" />
-                    Download
+                  <Button
+                    size="sm"
+                    className="bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] hover:opacity-90 text-white"
+                    onClick={() => handleDownload(job.id)}
+                    disabled={downloadingId === job.id || !job.outputVideoPath}
+                  >
+                    {downloadingId === job.id ? (
+                      <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                    ) : (
+                      <Download className="w-4 h-4 mr-1" />
+                    )}
+                    {downloadingId === job.id ? 'Downloading...' : 'Download'}
                   </Button>
                   <Button variant="outline" size="sm" className="border-[#334155] text-[#F1F5F9] hover:border-[#00F0D9] hover:text-[#00F0D9]">
                     <Share2 className="w-4 h-4 mr-1" />
@@ -511,6 +559,119 @@ export default function JobsPage() {
           </Button>
         </div>
       )}
+
+      {/* Job Detail Modal */}
+      <Dialog open={!!selectedJob} onOpenChange={(open) => !open && setSelectedJob(null)}>
+        <DialogContent className="bg-[#1E293B] border-[#334155] text-[#F1F5F9] max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-[#F1F5F9] flex items-center gap-3">
+              Job Details
+              {selectedJob && getStatusBadge(selectedJob.status)}
+            </DialogTitle>
+          </DialogHeader>
+
+          {selectedJob && (
+            <div className="space-y-4 mt-4">
+              {/* Job ID */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-[#94A3B8] mb-1">Job ID</p>
+                  <p className="font-mono text-sm">{selectedJob.id}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-[#94A3B8] mb-1">Job Type</p>
+                  <p className="capitalize">{selectedJob.jobType}</p>
+                </div>
+              </div>
+
+              {/* Paths */}
+              <div>
+                <p className="text-sm text-[#94A3B8] mb-1">Reference Image</p>
+                <p className="font-mono text-sm break-all text-[#F1F5F9]/80">{selectedJob.referenceImagePath}</p>
+              </div>
+              <div>
+                <p className="text-sm text-[#94A3B8] mb-1">Motion Video</p>
+                <p className="font-mono text-sm break-all text-[#F1F5F9]/80">{selectedJob.motionVideoPath}</p>
+              </div>
+
+              {/* Details grid */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-[#94A3B8] mb-1">Resolution</p>
+                  <p>{selectedJob.resolution}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-[#94A3B8] mb-1">Credits Charged</p>
+                  <p className="font-semibold">{selectedJob.credits}</p>
+                </div>
+                {selectedJob.seed !== null && selectedJob.seed !== undefined && (
+                  <div>
+                    <p className="text-sm text-[#94A3B8] mb-1">Seed</p>
+                    <p className="font-mono">{selectedJob.seed}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Timestamps */}
+              <div className="grid grid-cols-2 gap-4 pt-2 border-t border-[#334155]">
+                <div>
+                  <p className="text-sm text-[#94A3B8] mb-1">Created At</p>
+                  <p className="text-sm">{selectedJob.createdAt}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-[#94A3B8] mb-1">Updated At</p>
+                  <p className="text-sm">{selectedJob.updatedAt}</p>
+                </div>
+                {selectedJob.completedAt && (
+                  <div>
+                    <p className="text-sm text-[#94A3B8] mb-1">Completed At</p>
+                    <p className="text-sm">{selectedJob.completedAt}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Output path */}
+              {selectedJob.outputVideoPath && (
+                <div className="pt-2 border-t border-[#334155]">
+                  <p className="text-sm text-[#94A3B8] mb-1">Output Video</p>
+                  <p className="font-mono text-sm break-all text-[#F1F5F9]/80">{selectedJob.outputVideoPath}</p>
+                </div>
+              )}
+
+              {/* Error message */}
+              {selectedJob.errorMessage && (
+                <div className="bg-red-950/20 border border-red-900/50 rounded p-3">
+                  <p className="text-sm text-[#94A3B8] mb-1">Error Message</p>
+                  <p className="text-red-400 text-sm">{selectedJob.errorMessage}</p>
+                </div>
+              )}
+
+              {/* Download button */}
+              {selectedJob.status === 'completed' && selectedJob.outputVideoPath && (
+                <div className="pt-4 border-t border-[#334155]">
+                  <Button
+                    className="w-full bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] hover:opacity-90 text-white"
+                    onClick={() => handleDownload(selectedJob.id)}
+                    disabled={downloadingId === selectedJob.id}
+                  >
+                    {downloadingId === selectedJob.id ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Downloading...
+                      </>
+                    ) : (
+                      <>
+                        <Download className="w-4 h-4 mr-2" />
+                        Download Video
+                      </>
+                    )}
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </main>
   );
 }

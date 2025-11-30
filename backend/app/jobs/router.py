@@ -7,6 +7,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from google.cloud import firestore
 
+from google.cloud import storage
 from .models import (
     CreateJobRequest,
     JobResponse,
@@ -15,6 +16,7 @@ from .models import (
     JobType,
     Resolution,
     CreditCostResponse,
+    JobOutputResponse,
 )
 from ..auth.firebase import get_firestore_client
 from ..middleware.auth import get_current_user_id
@@ -387,3 +389,89 @@ async def get_job(
         updated_at=updated_at,
         completed_at=completed_at,
     )
+
+
+def generate_signed_download_url(bucket_name: str, blob_path: str, expiration: int = 3600) -> str:
+    """Generate a signed URL for downloading a file from GCS."""
+    client = storage.Client()
+    bucket = client.bucket(bucket_name)
+    blob = bucket.blob(blob_path)
+    url = blob.generate_signed_url(
+        version="v4",
+        expiration=expiration,
+        method="GET",
+    )
+    return url
+
+
+@router.get("/{job_id}/output", response_model=JobOutputResponse)
+async def get_job_output(
+    job_id: str,
+    user_id: str = Depends(get_current_user_id),
+):
+    """
+    Get download URL for completed job output video.
+
+    Returns a signed GCS download URL valid for 1 hour.
+
+    **Requirements:**
+    - Job must exist and belong to the user
+    - Job status must be "completed"
+    - Output video must exist
+    """
+    db = get_firestore_client()
+
+    # Get job document
+    job_ref = db.collection("jobs").document(job_id)
+    job_doc = job_ref.get()
+
+    if not job_doc.exists:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    data = job_doc.to_dict()
+
+    # Verify ownership
+    if data.get("user_id") != user_id:
+        raise HTTPException(status_code=403, detail="Not authorized to access this job")
+
+    # Verify job is completed
+    job_status = data.get("status")
+    if job_status != JobStatus.COMPLETED.value:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "error": "job_not_completed",
+                "message": f"Job is not completed yet. Current status: {job_status}",
+                "current_status": job_status
+            }
+        )
+
+    # Verify output exists
+    output_path = data.get("output_video_path")
+    if not output_path:
+        raise HTTPException(status_code=404, detail="No output video available for this job")
+
+    # Get output bucket from environment
+    output_bucket = os.getenv("OUTPUT_BUCKET", "nuumee-outputs")
+
+    # Generate signed download URL
+    try:
+        download_url = generate_signed_download_url(
+            bucket_name=output_bucket,
+            blob_path=output_path,
+            expiration=3600
+        )
+
+        # Extract filename from path
+        filename = output_path.split("/")[-1]
+
+        return JobOutputResponse(
+            job_id=job_id,
+            download_url=download_url,
+            expires_in_seconds=3600,
+            filename=filename
+        )
+
+    except Exception as e:
+        logger.error(f"Failed to generate download URL for job {job_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to generate download URL: {str(e)}")
