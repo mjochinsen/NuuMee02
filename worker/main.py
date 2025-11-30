@@ -220,7 +220,6 @@ def process_animate_job(job_data: dict) -> str:
     seed = job_data.get("seed", -1) or -1
 
     # Get signed URLs for input files
-    # Parse GCS paths: "uploads/user123/filename.jpg" -> bucket + path
     image_path = job_data["reference_image_path"]
     video_path = job_data["motion_video_path"]
 
@@ -253,7 +252,150 @@ def process_animate_job(job_data: dict) -> str:
 
     # Download and upload to our bucket
     output_path = f"outputs/{job_data['user_id']}/{job_id}.mp4"
-    gcs_path = upload_from_url(output_url, OUTPUT_BUCKET, output_path)
+    upload_from_url(output_url, OUTPUT_BUCKET, output_path)
+
+    return output_path
+
+
+def process_extend_job(job_data: dict) -> str:
+    """Process a video extend job.
+
+    Args:
+        job_data: Job document data
+
+    Returns:
+        Output video GCS path
+    """
+    job_id = job_data["id"]
+    resolution = job_data.get("resolution", "480p")
+    duration = job_data.get("duration", 5)
+    seed = job_data.get("seed", -1) or -1
+    prompt = job_data.get("prompt", "")
+
+    # Get signed URL for input video
+    video_path = job_data["input_video_path"]
+    video_url = generate_signed_url(VIDEO_BUCKET, video_path)
+
+    logger.info(f"Processing extend job {job_id}: duration={duration}, resolution={resolution}")
+
+    # Start WaveSpeed job
+    wavespeed = get_wavespeed()
+    request_id = wavespeed.extend(
+        video_url=video_url,
+        prompt=prompt,
+        duration=duration,
+        resolution=resolution,
+        seed=seed,
+    )
+
+    # Update job with WaveSpeed request ID
+    update_job_status(job_id, "processing", wavespeed_request_id=request_id)
+
+    # Poll for completion
+    result = wavespeed.poll_result(request_id)
+
+    # Get output URL
+    outputs = wavespeed.get_outputs(result)
+    if not outputs:
+        raise WaveSpeedAPIError("No output URL in result", response=result)
+
+    output_url = outputs[0]
+
+    # Download and upload to our bucket
+    output_path = f"outputs/{job_data['user_id']}/{job_id}.mp4"
+    upload_from_url(output_url, OUTPUT_BUCKET, output_path)
+
+    return output_path
+
+
+def process_upscale_job(job_data: dict) -> str:
+    """Process a video upscale job.
+
+    Args:
+        job_data: Job document data
+
+    Returns:
+        Output video GCS path
+    """
+    job_id = job_data["id"]
+    target_resolution = job_data.get("target_resolution", "1080p")
+
+    # Get signed URL for input video
+    video_path = job_data["input_video_path"]
+    video_url = generate_signed_url(VIDEO_BUCKET, video_path)
+
+    logger.info(f"Processing upscale job {job_id}: target={target_resolution}")
+
+    # Start WaveSpeed job
+    wavespeed = get_wavespeed()
+    request_id = wavespeed.upscale(
+        video_url=video_url,
+        target_resolution=target_resolution,
+    )
+
+    # Update job with WaveSpeed request ID
+    update_job_status(job_id, "processing", wavespeed_request_id=request_id)
+
+    # Poll for completion
+    result = wavespeed.poll_result(request_id)
+
+    # Get output URL
+    outputs = wavespeed.get_outputs(result)
+    if not outputs:
+        raise WaveSpeedAPIError("No output URL in result", response=result)
+
+    output_url = outputs[0]
+
+    # Download and upload to our bucket
+    output_path = f"outputs/{job_data['user_id']}/{job_id}.mp4"
+    upload_from_url(output_url, OUTPUT_BUCKET, output_path)
+
+    return output_path
+
+
+def process_foley_job(job_data: dict) -> str:
+    """Process a video foley (add audio) job.
+
+    Args:
+        job_data: Job document data
+
+    Returns:
+        Output video GCS path
+    """
+    job_id = job_data["id"]
+    seed = job_data.get("seed", -1) or -1
+    prompt = job_data.get("audio_prompt", "")
+
+    # Get signed URL for input video
+    video_path = job_data["input_video_path"]
+    video_url = generate_signed_url(VIDEO_BUCKET, video_path)
+
+    logger.info(f"Processing foley job {job_id}")
+
+    # Start WaveSpeed job
+    wavespeed = get_wavespeed()
+    request_id = wavespeed.foley(
+        video_url=video_url,
+        prompt=prompt if prompt else None,
+        seed=seed,
+    )
+
+    # Update job with WaveSpeed request ID
+    update_job_status(job_id, "processing", wavespeed_request_id=request_id)
+
+    # Poll for completion
+    result = wavespeed.poll_result(request_id)
+
+    # Get output URL
+    outputs = wavespeed.get_outputs(result)
+    if not outputs:
+        raise WaveSpeedAPIError("No output URL in result", response=result)
+
+    output_url = outputs[0]
+
+    # Download and upload to our bucket
+    output_path = f"outputs/{job_data['user_id']}/{job_id}.mp4"
+    upload_from_url(output_url, OUTPUT_BUCKET, output_path)
 
     return output_path
 
@@ -273,21 +415,32 @@ def process_job(job_id: str):
         return
 
     job_data = job_doc.to_dict()
+    job_data["id"] = job_id  # Include ID in job data for processors
     job_type = job_data.get("job_type", "animate")
     user_id = job_data["user_id"]
     credits_charged = job_data.get("credits_charged", 0)
 
     logger.info(f"Processing job {job_id}: type={job_type}")
 
+    # Job type handlers
+    JOB_HANDLERS = {
+        "animate": process_animate_job,
+        "extend": process_extend_job,
+        "upscale": process_upscale_job,
+        "foley": process_foley_job,
+    }
+
     try:
         # Update status to processing
         update_job_status(job_id, "processing")
 
-        # Process based on job type
-        if job_type == "animate":
-            output_path = process_animate_job(job_data)
-        else:
+        # Get handler for job type
+        handler = JOB_HANDLERS.get(job_type)
+        if not handler:
             raise ValueError(f"Unsupported job type: {job_type}")
+
+        # Process job
+        output_path = handler(job_data)
 
         # Update job as completed
         update_job_status(job_id, "completed", output_video_path=output_path)
