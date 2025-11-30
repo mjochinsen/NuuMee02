@@ -144,7 +144,8 @@ elif tool_name == "Bash":
         safe_commands = ["ls", "cat", "head", "tail", "grep", "find", "pwd",
                         "echo", "pnpm", "npm", "npx", "python", "python3", "node",
                         "tree", "wc", "which", "mkdir", "touch", "curl", "wget",
-                        "timeout", "for", "cp", "mv", "rm", "chmod", "date", "sleep"]
+                        "timeout", "for", "cp", "mv", "rm", "chmod", "date", "sleep",
+                        "cd", "gcloud", "firebase", "gsutil"]
         # Git commands (need specific handling)
         safe_git = ["git status", "git log", "git diff", "git add", "git commit",
                    "git push", "git checkout", "git branch", "git fetch", "git pull",
