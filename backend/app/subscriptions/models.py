@@ -25,14 +25,14 @@ SUBSCRIPTION_TIERS = {
         "name": "Creator",
         "price_cents": 2900,  # $29/month
         "monthly_credits": 400,
-        "stripe_price_id": "price_creator_monthly",  # Updated after Stripe product creation
+        "stripe_price_id": "price_1SWSmxQBPfmhkssa6Z8nxFcN",  # Stripe Creator Plan
         "credits_rollover_cap": 800,  # 2x monthly credits
     },
     SubscriptionTier.STUDIO: {
         "name": "Studio",
         "price_cents": 9900,  # $99/month
         "monthly_credits": 1600,
-        "stripe_price_id": "price_studio_monthly",  # Updated after Stripe product creation
+        "stripe_price_id": "price_1SZ311QBPfmhkssaioh8XeVc",  # Stripe Studio Plan
         "credits_rollover_cap": 3200,  # 2x monthly credits
     },
 }
