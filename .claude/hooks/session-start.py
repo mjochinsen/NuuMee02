@@ -39,6 +39,22 @@ log_file = os.path.join(log_dir, "sessions.jsonl")
 with open(log_file, "a") as f:
     f.write(json.dumps(log_entry) + "\n")
 
+# RESET SESSION STATE for new session
+state_dir = os.path.join(cwd, ".claude", "state")
+os.makedirs(state_dir, exist_ok=True)
+state_file = os.path.join(state_dir, "session.json")
+fresh_state = {
+    "primes_loaded": [],
+    "audit_run": False,
+    "session_id": session_id,
+    "started_at": datetime.now().isoformat()
+}
+try:
+    with open(state_file, "w") as f:
+        json.dump(fresh_state, f, indent=2)
+except:
+    pass
+
 # Project context to inject
 # Read current phase from TASK_TRACKER if available
 current_phase = "Unknown"

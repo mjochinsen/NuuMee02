@@ -9,6 +9,7 @@ Purpose:
 - Monitor performance
 - Summarize operations
 - Write significant events to agent memory
+- UPDATE SESSION STATE when primes/audit run
 """
 
 import json
@@ -29,6 +30,29 @@ tool_name = hook_input.get("tool_name", "")
 tool_input = hook_input.get("tool_input", {})
 tool_response = hook_input.get("tool_response", "")
 cwd = hook_input.get("cwd", os.getcwd())
+
+# Session state management
+STATE_FILE = os.path.join(cwd, ".claude", "state", "session.json")
+
+def load_session_state():
+    """Load current session state."""
+    try:
+        if os.path.exists(STATE_FILE):
+            with open(STATE_FILE, "r") as f:
+                return json.load(f)
+    except:
+        pass
+    return {"primes_loaded": [], "audit_run": False, "last_updated": None}
+
+def save_session_state(state):
+    """Save session state."""
+    try:
+        os.makedirs(os.path.dirname(STATE_FILE), exist_ok=True)
+        state["last_updated"] = datetime.now().isoformat()
+        with open(STATE_FILE, "w") as f:
+            json.dump(state, f, indent=2)
+    except:
+        pass
 
 # Memory writer path
 MEMORY_WRITER = Path(cwd) / ".claude" / "memory" / "writer.py"
@@ -66,6 +90,39 @@ elif tool_name == "Task":
 elif tool_name == "Bash":
     command = tool_input.get("command", "")[:50]
     log_entry["command"] = command
+
+elif tool_name == "SlashCommand":
+    # CRITICAL: Detect prime and audit commands, update session state
+    command = tool_input.get("command", "")
+    state = load_session_state()
+    state_changed = False
+
+    # Detect prime commands
+    if "/prime-frontend" in command:
+        if "frontend" not in state["primes_loaded"]:
+            state["primes_loaded"].append("frontend")
+            state_changed = True
+    elif "/prime-backend" in command:
+        if "backend" not in state["primes_loaded"]:
+            state["primes_loaded"].append("backend")
+            state_changed = True
+    elif "/prime-bug" in command:
+        if "bug" not in state["primes_loaded"]:
+            state["primes_loaded"].append("bug")
+            state_changed = True
+    elif "/prime-feature" in command:
+        if "feature" not in state["primes_loaded"]:
+            state["primes_loaded"].append("feature")
+            state_changed = True
+
+    # Detect audit command
+    if "/audit" in command:
+        state["audit_run"] = True
+        state_changed = True
+
+    if state_changed:
+        save_session_state(state)
+        log_entry["session_state_updated"] = True
 
 log_file = os.path.join(log_dir, "tools.jsonl")
 with open(log_file, "a") as f:
