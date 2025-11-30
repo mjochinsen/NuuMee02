@@ -1,8 +1,12 @@
 """Upload routes for GCS signed URL generation."""
 import os
+import requests
 from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, HTTPException
 from google.cloud import storage
+from google.auth import default
+from google.auth.transport import requests as google_requests
+from google.auth import impersonated_credentials
 
 from .models import SignedUrlRequest, SignedUrlResponse, FileType
 from ..middleware.auth import get_current_user_id
@@ -17,6 +21,63 @@ VIDEO_BUCKET = os.getenv("GCS_VIDEO_BUCKET", "nuumee-videos")
 
 # Signed URL expiration time (in minutes)
 SIGNED_URL_EXPIRATION_MINUTES = 15
+
+# Cache for signing credentials
+_signing_credentials = None
+_service_account_email = None
+
+
+def _get_service_account_email():
+    """
+    Get the service account email from Cloud Run metadata server or environment.
+    """
+    # First check environment variable (can be set explicitly)
+    sa_email = os.getenv("SERVICE_ACCOUNT_EMAIL")
+    if sa_email:
+        return sa_email
+
+    # Try to get from Cloud Run metadata server
+    try:
+        response = requests.get(
+            "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/email",
+            headers={"Metadata-Flavor": "Google"},
+            timeout=2
+        )
+        if response.status_code == 200:
+            return response.text
+    except Exception:
+        pass
+
+    # Fallback to hardcoded value for this project
+    return "nuumee-api@wanapi-prod.iam.gserviceaccount.com"
+
+
+def _get_signing_credentials():
+    """
+    Get credentials that can sign blobs using IAM impersonation.
+
+    On Cloud Run, we use credential impersonation to get signing capabilities.
+    """
+    global _signing_credentials, _service_account_email
+
+    if _signing_credentials is not None:
+        return _signing_credentials, _service_account_email
+
+    # Get default credentials
+    source_credentials, project = default()
+
+    # Get service account email from metadata server
+    _service_account_email = _get_service_account_email()
+
+    # Create impersonated credentials with signing capability
+    _signing_credentials = impersonated_credentials.Credentials(
+        source_credentials=source_credentials,
+        target_principal=_service_account_email,
+        target_scopes=['https://www.googleapis.com/auth/cloud-platform'],
+        lifetime=3600,  # 1 hour
+    )
+
+    return _signing_credentials, _service_account_email
 
 
 def _get_storage_client():
@@ -113,12 +174,17 @@ async def generate_signed_url(
         # Calculate expiration time
         expiration = datetime.now(timezone.utc) + timedelta(minutes=SIGNED_URL_EXPIRATION_MINUTES)
 
-        # Generate signed URL for PUT operation
+        # Get signing credentials (impersonated for Cloud Run)
+        signing_creds, service_account_email = _get_signing_credentials()
+
+        # Generate signed URL using impersonated credentials
+        # The impersonated credentials can sign blobs via IAM
         signed_url = blob.generate_signed_url(
             version="v4",
             expiration=expiration,
             method="PUT",
             content_type=request.content_type,
+            credentials=signing_creds,
         )
 
         return SignedUrlResponse(
