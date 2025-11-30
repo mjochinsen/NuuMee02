@@ -92,7 +92,6 @@ export default function CreatePage() {
 
     setIsCreating(true);
     try {
-      // TODO: Phase 4 - Call video creation API
       console.log('Creating video with:', { imagePath, videoPath });
       alert('Video creation will be implemented in Phase 4!');
     } catch (error) {

@@ -25,11 +25,12 @@ interface APIKey {
 }
 
 export default function APIKeysPage() {
+  // Mock data for UI demonstration only - NOT real API keys
   const [apiKeys, setApiKeys] = useState<APIKey[]>([
     {
       id: '1',
       name: 'Production Key',
-      key: 'sk_live_abc123def456ghi789jkl012mno345pqr678stu901vwx234yz5678',
+      key: 'sk_live_EXAMPLE_NOT_A_REAL_KEY_demo_1234567890',
       created: 'Oct 15, 2025',
       lastUsed: '2 hours ago',
       isLive: true,
@@ -37,7 +38,7 @@ export default function APIKeysPage() {
     {
       id: '2',
       name: 'Test Key',
-      key: 'sk_test_xyz789uvw012abc345def678ghi901jkl234mno567pqr890stu123',
+      key: 'sk_test_EXAMPLE_NOT_A_REAL_KEY_demo_0987654321',
       created: 'Oct 15, 2025',
       lastUsed: 'Yesterday',
       isLive: false,
