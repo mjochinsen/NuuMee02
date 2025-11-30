@@ -7,6 +7,7 @@ from .auth.router import router as auth_router
 from .credits.router import router as credits_router
 from .webhooks.router import router as webhooks_router
 from .upload.router import router as upload_router
+from .jobs.router import router as jobs_router
 
 app = FastAPI(
     title="NuuMee API",
@@ -39,6 +40,7 @@ app.include_router(auth_router, prefix="/api/v1")
 app.include_router(credits_router, prefix="/api/v1")
 app.include_router(webhooks_router, prefix="/api/v1")
 app.include_router(upload_router, prefix="/api/v1")
+app.include_router(jobs_router, prefix="/api/v1")
 
 
 @app.get("/health")

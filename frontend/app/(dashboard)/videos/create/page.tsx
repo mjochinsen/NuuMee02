@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PostProcessingOptions } from '@/components/PostProcessingOptions';
 import { useAuth } from '@/components/AuthProvider';
-import { getSignedUrl, uploadToGCS, ApiError } from '@/lib/api';
+import { getSignedUrl, uploadToGCS, createJob, ApiError, JobResponse, Resolution as ApiResolution } from '@/lib/api';
 
 // Test mode: Enable via ?test=1 query param or localStorage
 const checkTestMode = (): boolean => {
@@ -52,6 +52,8 @@ export default function CreateVideoPage() {
   const [generateError, setGenerateError] = useState<string | null>(null);
   const [testModeEnabled, setTestModeEnabled] = useState(false);
   const [loadingTestFiles, setLoadingTestFiles] = useState(false);
+  const [createdJob, setCreatedJob] = useState<JobResponse | null>(null);
+  const [isCreatingJob, setIsCreatingJob] = useState(false);
 
   const imageInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
@@ -146,19 +148,19 @@ export default function CreateVideoPage() {
     }
   };
 
-  const removeImage = () => {
+  const removeImage = useCallback(() => {
     setReferenceImage(null);
     if (referenceImagePreview) URL.revokeObjectURL(referenceImagePreview);
     setReferenceImagePreview(null);
     if (imageInputRef.current) imageInputRef.current.value = '';
-  };
+  }, [referenceImagePreview]);
 
-  const removeVideo = () => {
+  const removeVideo = useCallback(() => {
     setMotionVideo(null);
     if (motionVideoPreview) URL.revokeObjectURL(motionVideoPreview);
     setMotionVideoPreview(null);
     if (videoInputRef.current) videoInputRef.current.value = '';
-  };
+  }, [motionVideoPreview]);
 
   const handleGenerate = useCallback(async () => {
     if (!user) {
@@ -223,22 +225,36 @@ export default function CreateVideoPage() {
       setVideoUpload({ status: 'success', progress: 100, filePath: videoSignedUrl.file_path });
       console.log('Video uploaded successfully');
 
-      // Step 3: Create job (Phase 4 - TODO)
-      console.log('Files uploaded successfully!');
-      console.log('Image path:', imageSignedUrl.file_path);
-      console.log('Video path:', videoSignedUrl.file_path);
-      console.log('Resolution:', resolution);
-      console.log('Seed:', seed);
+      // Step 3: Create job
+      console.log('Step 3: Creating job...');
+      setIsCreatingJob(true);
 
-      // TODO: Phase 4 - Create job via /api/v1/jobs endpoint
-      alert('Files uploaded successfully! Job creation will be implemented in Phase 4.');
+      const seedValue = seed === '-1' || seed === '' ? null : parseInt(seed, 10);
+      const job = await createJob({
+        job_type: 'animate',
+        reference_image_path: imageSignedUrl.file_path,
+        motion_video_path: videoSignedUrl.file_path,
+        resolution: resolution as ApiResolution,
+        seed: isNaN(seedValue as number) ? null : seedValue,
+      });
+
+      console.log('Job created:', job);
+      setCreatedJob(job);
+      setIsCreatingJob(false);
+
+      // Clear form after successful submission
+      removeImage();
+      removeVideo();
 
     } catch (error) {
       console.error('Generation failed:', error);
+      setIsCreatingJob(false);
 
       if (error instanceof ApiError) {
         if (error.status === 401) {
           setGenerateError('Please sign in to generate videos');
+        } else if (error.status === 402) {
+          setGenerateError('Insufficient credits. Please purchase more credits to continue.');
         } else {
           setGenerateError(error.message);
         }
@@ -258,7 +274,7 @@ export default function CreateVideoPage() {
     } finally {
       setIsGenerating(false);
     }
-  }, [referenceImage, motionVideo, user, profile, creditCost, resolution, seed]);
+  }, [referenceImage, motionVideo, user, profile, creditCost, resolution, seed, removeImage, removeVideo]);
 
   return (
     <main className="container mx-auto px-6 py-12 max-w-7xl">
@@ -516,10 +532,82 @@ export default function CreateVideoPage() {
       {/* Result Section */}
       <div className="border border-[#334155] rounded-2xl p-8 bg-[#0F172A] mb-8">
         <h2 className="text-[#F1F5F9] mb-4">📤 Result</h2>
-        <div className="text-center py-12 text-[#94A3B8]">
-          <Video className="w-16 h-16 mx-auto mb-4 opacity-50" />
-          <p>Upload files and generate to see your result here</p>
-        </div>
+        {createdJob ? (
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <div className={`px-3 py-1 rounded-full text-sm ${
+                createdJob.status === 'pending' ? 'bg-yellow-500/20 text-yellow-400' :
+                createdJob.status === 'processing' ? 'bg-blue-500/20 text-blue-400' :
+                createdJob.status === 'completed' ? 'bg-green-500/20 text-green-400' :
+                createdJob.status === 'failed' ? 'bg-red-500/20 text-red-400' :
+                'bg-gray-500/20 text-gray-400'
+              }`}>
+                {createdJob.status.charAt(0).toUpperCase() + createdJob.status.slice(1)}
+              </div>
+              <span className="text-[#94A3B8] text-sm">Job ID: {createdJob.id}</span>
+            </div>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <p className="text-[#64748B]">Resolution</p>
+                <p className="text-[#F1F5F9]">{createdJob.resolution}</p>
+              </div>
+              <div>
+                <p className="text-[#64748B]">Credits Charged</p>
+                <p className="text-[#F1F5F9]">{createdJob.credits_charged}</p>
+              </div>
+              <div>
+                <p className="text-[#64748B]">Created At</p>
+                <p className="text-[#F1F5F9]">{new Date(createdJob.created_at).toLocaleString()}</p>
+              </div>
+              <div>
+                <p className="text-[#64748B]">Seed</p>
+                <p className="text-[#F1F5F9]">{createdJob.seed ?? 'Random'}</p>
+              </div>
+            </div>
+            {createdJob.status === 'pending' && (
+              <div className="flex items-center gap-2 text-[#94A3B8] text-sm">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Your job is queued. Processing will begin shortly...</span>
+              </div>
+            )}
+            {createdJob.status === 'completed' && createdJob.output_video_path && (
+              <Button className="bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2]">
+                Download Video
+              </Button>
+            )}
+            {createdJob.status === 'failed' && createdJob.error_message && (
+              <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+                <p className="text-red-400 text-sm">{createdJob.error_message}</p>
+              </div>
+            )}
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                className="border-[#334155] text-[#F1F5F9] hover:border-[#00F0D9]"
+                onClick={() => window.location.href = '/jobs'}
+              >
+                View All Jobs
+              </Button>
+              <Button
+                variant="outline"
+                className="border-[#334155] text-[#F1F5F9] hover:border-[#00F0D9]"
+                onClick={() => setCreatedJob(null)}
+              >
+                Create Another
+              </Button>
+            </div>
+          </div>
+        ) : isCreatingJob ? (
+          <div className="text-center py-12 text-[#94A3B8]">
+            <Loader2 className="w-12 h-12 mx-auto mb-4 animate-spin text-[#00F0D9]" />
+            <p>Creating job...</p>
+          </div>
+        ) : (
+          <div className="text-center py-12 text-[#94A3B8]">
+            <Video className="w-16 h-16 mx-auto mb-4 opacity-50" />
+            <p>Upload files and generate to see your result here</p>
+          </div>
+        )}
       </div>
 
       {/* Post-Processing Options (A. B. C. D. E. F.) */}

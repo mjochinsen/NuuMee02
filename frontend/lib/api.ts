@@ -208,3 +208,87 @@ export async function uploadToGCS(
     xhr.send(file);
   });
 }
+
+// Jobs endpoints
+export type JobStatus = 'pending' | 'queued' | 'processing' | 'completed' | 'failed';
+export type JobType = 'animate' | 'extend' | 'upscale' | 'foley';
+export type Resolution = '480p' | '720p';
+
+export interface CreateJobRequest {
+  job_type?: JobType;
+  reference_image_path: string;
+  motion_video_path: string;
+  resolution?: Resolution;
+  seed?: number | null;
+}
+
+export interface JobResponse {
+  id: string;
+  user_id: string;
+  job_type: JobType;
+  status: JobStatus;
+  reference_image_path: string;
+  motion_video_path: string;
+  resolution: Resolution;
+  seed: number | null;
+  credits_charged: number;
+  wavespeed_request_id: string | null;
+  output_video_path: string | null;
+  error_message: string | null;
+  created_at: string;
+  updated_at: string;
+  completed_at: string | null;
+}
+
+export interface JobListResponse {
+  jobs: JobResponse[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
+export interface CreditCostResponse {
+  job_type: JobType;
+  resolution: Resolution;
+  estimated_credits: number;
+  estimated_duration_seconds: number | null;
+}
+
+export async function createJob(request: CreateJobRequest): Promise<JobResponse> {
+  return apiRequest<JobResponse>('/jobs', {
+    method: 'POST',
+    body: JSON.stringify(request),
+  });
+}
+
+export async function getJobs(
+  page: number = 1,
+  pageSize: number = 20,
+  status?: JobStatus
+): Promise<JobListResponse> {
+  const params = new URLSearchParams({
+    page: page.toString(),
+    page_size: pageSize.toString(),
+  });
+  if (status) {
+    params.append('status', status);
+  }
+  return apiRequest<JobListResponse>(`/jobs?${params.toString()}`);
+}
+
+export async function getJob(jobId: string): Promise<JobResponse> {
+  return apiRequest<JobResponse>(`/jobs/${jobId}`);
+}
+
+export async function estimateCost(
+  jobType: JobType = 'animate',
+  resolution: Resolution = '480p',
+  durationSeconds: number = 10
+): Promise<CreditCostResponse> {
+  const params = new URLSearchParams({
+    job_type: jobType,
+    resolution: resolution,
+    duration_seconds: durationSeconds.toString(),
+  });
+  return apiRequest<CreditCostResponse>(`/jobs/cost?${params.toString()}`, { skipAuth: true });
+}
