@@ -10,25 +10,27 @@ import { test, expect } from '@playwright/test';
  * 3. Initiates a real checkout session via API
  * 4. Verifies Stripe Checkout URL is returned
  *
- * This is the REAL test that confirms payments work end-to-end.
+ * Required environment variables:
+ * - FIREBASE_API_KEY: Firebase Web API key
+ * - TEST_EMAIL: Test user email
+ * - TEST_PASSWORD: Test user password
  */
 
 // Configuration
-const API_URL = 'https://nuumee-api-450296399943.us-central1.run.app/api/v1';
-const FRONTEND_URL = 'https://wanapi-prod.web.app';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://nuumee-api-450296399943.us-central1.run.app/api/v1';
+const FRONTEND_URL = process.env.TEST_URL || 'https://wanapi-prod.web.app';
 
-// Firebase configuration (same as frontend)
+// Firebase configuration from environment
 const FIREBASE_CONFIG = {
-  apiKey: 'AIzaSyCncAqZcO0U8U8AbOHpRvmg0yBB4x8YUyc',
+  apiKey: process.env.FIREBASE_API_KEY || '',
   authDomain: 'wanapi-prod.firebaseapp.com',
   projectId: 'wanapi-prod',
 };
 
-// Test user credentials - USE A REAL TEST ACCOUNT
-// You need to create this user in Firebase Auth first
+// Test user credentials from environment
 const TEST_USER = {
-  email: 'test@nuumee-test.com',
-  password: 'TestPassword123!',
+  email: process.env.TEST_EMAIL || '',
+  password: process.env.TEST_PASSWORD || '',
 };
 
 // Credit packages to test
@@ -39,11 +41,24 @@ test.describe('Authenticated Checkout Flow', () => {
 
   let idToken: string | null = null;
 
+  test.beforeAll(() => {
+    // Validate required environment variables
+    if (!FIREBASE_CONFIG.apiKey) {
+      console.log('FIREBASE_API_KEY not set - skipping authenticated checkout tests');
+    }
+    if (!TEST_USER.email || !TEST_USER.password) {
+      console.log('TEST_EMAIL/TEST_PASSWORD not set - skipping authenticated checkout tests');
+    }
+  });
+
   /**
    * Test 1: Get Firebase ID token via REST API
    * This simulates what the frontend does when logging in
    */
   test('can authenticate with Firebase and get ID token', async ({ request }) => {
+    // Skip if env vars not set
+    test.skip(!FIREBASE_CONFIG.apiKey || !TEST_USER.email, 'Requires FIREBASE_API_KEY, TEST_EMAIL, TEST_PASSWORD env vars');
+
     // Firebase Auth REST API endpoint for email/password sign-in
     const firebaseAuthUrl = `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${FIREBASE_CONFIG.apiKey}`;
 

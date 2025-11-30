@@ -3,15 +3,20 @@
  *
  * This test completes a full Stripe checkout and verifies credits are added via webhook.
  * Uses Stripe test mode with test card 4242424242424242.
+ *
+ * Required environment variables:
+ * - FIREBASE_API_KEY: Firebase Web API key
+ * - TEST_EMAIL: Test user email
+ * - TEST_PASSWORD: Test user password
  */
 import { test, expect } from '@playwright/test';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://nuumee-api-450296399943.us-central1.run.app';
-const FIREBASE_API_KEY = 'AIzaSyCncAqZcO0U8U8AbOHpRvmg0yBB4x8YUyc';
+const FIREBASE_API_KEY = process.env.FIREBASE_API_KEY || '';
 
-// Test user credentials
-const TEST_EMAIL = 'webhook-test@nuumee-test.com';
-const TEST_PASSWORD = 'TestWebhook123!';
+// Test user credentials from environment
+const TEST_EMAIL = process.env.TEST_EMAIL || '';
+const TEST_PASSWORD = process.env.TEST_PASSWORD || '';
 
 interface FirebaseAuthResponse {
   idToken: string;
@@ -119,6 +124,14 @@ test.describe('Webhook Credit Verification', () => {
   let userId: string;
 
   test.beforeAll(async () => {
+    // Validate required environment variables
+    if (!FIREBASE_API_KEY) {
+      throw new Error('FIREBASE_API_KEY environment variable is required');
+    }
+    if (!TEST_EMAIL || !TEST_PASSWORD) {
+      throw new Error('TEST_EMAIL and TEST_PASSWORD environment variables are required');
+    }
+
     // Get auth token
     const auth = await getFirebaseToken();
     authToken = auth.token;
