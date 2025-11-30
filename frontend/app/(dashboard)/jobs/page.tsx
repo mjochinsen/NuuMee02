@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import {
   Search,
@@ -18,7 +18,8 @@ import {
   Mail,
   FileText,
   User,
-  Video
+  Video,
+  Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,118 +32,102 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { useAuth } from '@/components/AuthProvider';
+import { getJobs, JobResponse, JobStatus as ApiJobStatus } from '@/lib/api';
 
-type JobStatus = 'completed' | 'processing' | 'failed' | 'queued';
+type JobStatus = 'completed' | 'processing' | 'failed' | 'queued' | 'pending';
 
 interface Job {
   id: string;
-  referenceImageUrl?: string;
-  motionVideoUrl?: string;
-  videoDuration?: string;
+  referenceImagePath?: string;
+  motionVideoPath?: string;
   status: JobStatus;
   createdAt: string;
   resolution: string;
-  quality: string;
   credits: number;
-  fileSize?: string;
-  processingTime?: string;
-  postProcessing?: string[];
-  progress?: number;
-  progressText?: string;
-  estimatedTimeRemaining?: string;
   errorMessage?: string;
-  queuePosition?: number;
-  estimatedStartTime?: string;
+  outputVideoPath?: string | null;
+  seed?: number | null;
+}
+
+// Convert API job to display job
+function convertApiJob(apiJob: JobResponse): Job {
+  return {
+    id: apiJob.id,
+    referenceImagePath: apiJob.reference_image_path,
+    motionVideoPath: apiJob.motion_video_path,
+    status: apiJob.status as JobStatus,
+    createdAt: new Date(apiJob.created_at).toLocaleString(),
+    resolution: apiJob.resolution,
+    credits: apiJob.credits_charged,
+    errorMessage: apiJob.error_message || undefined,
+    outputVideoPath: apiJob.output_video_path,
+    seed: apiJob.seed,
+  };
 }
 
 export default function JobsPage() {
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<'all' | JobStatus>('all');
   const [sortBy, setSortBy] = useState('recent');
   const [currentPage, setCurrentPage] = useState(1);
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [totalJobs, setTotalJobs] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const jobsPerPage = 10;
 
-  // Mock data - 5 items as per original
-  const mockJobs: Job[] = [
-    {
-      id: 'job-abc-123-def',
-      status: 'completed',
-      createdAt: 'Nov 11, 2:34 PM',
-      resolution: '720p',
-      quality: 'High',
-      credits: 2,
-      fileSize: '47.3 MB',
-      processingTime: '12m 34s',
-      postProcessing: ['Video Extender', 'Subtitles', '16:9'],
-      videoDuration: '0:45',
-    },
-    {
-      id: 'job-ghi-789-jkl',
-      status: 'processing',
-      createdAt: '8 minutes ago',
-      resolution: '720p',
-      quality: 'High',
-      credits: 2,
-      progress: 67,
-      progressText: 'Applying character replacement...',
-      estimatedTimeRemaining: '~4 min remaining',
-      videoDuration: '1:23',
-    },
-    {
-      id: 'job-mno-345-pqr',
-      status: 'failed',
-      createdAt: 'Yesterday',
-      resolution: '720p',
-      quality: 'High',
-      credits: 2,
-      errorMessage: 'Character not detected in source video',
-      videoDuration: '0:32',
-    },
-    {
-      id: 'job-stu-567-vwx',
-      status: 'queued',
-      createdAt: '2 minutes ago',
-      resolution: '1080p',
-      quality: 'Ultra',
-      credits: 3,
-      queuePosition: 3,
-      estimatedStartTime: '~8 minutes',
-      videoDuration: '2:15',
-    },
-    {
-      id: 'job-yza-890-bcd',
-      status: 'completed',
-      createdAt: 'Nov 10, 4:12 PM',
-      resolution: '1080p',
-      quality: 'Ultra',
-      credits: 3,
-      fileSize: '128.7 MB',
-      processingTime: '18m 22s',
-      postProcessing: ['4K Upscaler', 'Add Sound'],
-      videoDuration: '1:45',
-    },
-  ];
+  // Fetch jobs from API
+  const fetchJobs = useCallback(async () => {
+    if (!user) {
+      setJobs([]);
+      setTotalJobs(0);
+      setIsLoading(false);
+      return;
+    }
 
-  const filteredJobs = mockJobs.filter((job) => {
-    const matchesFilter = activeFilter === 'all' || job.status === activeFilter;
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const statusFilter = activeFilter === 'all' ? undefined : activeFilter as ApiJobStatus;
+      const response = await getJobs(currentPage, jobsPerPage, statusFilter);
+      setJobs(response.jobs.map(convertApiJob));
+      setTotalJobs(response.total);
+    } catch (err) {
+      console.error('Failed to fetch jobs:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load jobs');
+      setJobs([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user, currentPage, activeFilter]);
+
+  useEffect(() => {
+    fetchJobs();
+  }, [fetchJobs]);
+
+  // Filter by search query (client-side for now)
+  const filteredJobs = jobs.filter((job) => {
     const matchesSearch = job.id.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesFilter && matchesSearch;
+    return matchesSearch;
   });
 
-  const totalJobs = filteredJobs.length;
   const totalPages = Math.ceil(totalJobs / jobsPerPage);
   const startIndex = (currentPage - 1) * jobsPerPage;
   const endIndex = startIndex + jobsPerPage;
-  const currentJobs = filteredJobs.slice(startIndex, endIndex);
+  const currentJobs = filteredJobs;
 
   const getStatusBadge = (status: JobStatus) => {
-    const badges = {
+    const badges: Record<JobStatus, { icon: string; text: string; className: string }> = {
       completed: { icon: '✅', text: 'Completed', className: 'bg-green-500/10 text-green-500 border-green-500/20' },
       processing: { icon: '⏳', text: 'Processing', className: 'bg-amber-500/10 text-amber-500 border-amber-500/20 animate-pulse' },
       failed: { icon: '❌', text: 'Failed', className: 'bg-red-500/10 text-red-500 border-red-500/20' },
       queued: { icon: '⏸️', text: 'Queued', className: 'bg-blue-500/10 text-blue-500 border-blue-500/20' },
+      pending: { icon: '🕐', text: 'Pending', className: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20' },
     };
-    const badge = badges[status];
+    const badge = badges[status] || badges.pending;
     return (
       <Badge variant="outline" className={`${badge.className} border`}>
         <span className="mr-1">{badge.icon}</span>
@@ -177,11 +162,6 @@ export default function JobsPage() {
                 </div>
                 <Video className="w-8 h-8 text-[#94A3B8] opacity-30" />
               </div>
-              {job.videoDuration && (
-                <div className="absolute bottom-0 left-0 bg-black/80 text-white text-xs px-2 py-1 rounded-tl-xl rounded-br-xl">
-                  {job.videoDuration}
-                </div>
-              )}
               <div className="absolute bottom-0 right-0 bg-black/60 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-tr-xl rounded-bl-xl">
                 SRC
               </div>
@@ -201,28 +181,30 @@ export default function JobsPage() {
             </div>
 
             <div className="text-[#94A3B8] text-sm mb-3">
-              {job.resolution} • {job.quality}
-              {job.processingTime && ` • ${job.processingTime}`}
+              {job.resolution}
               {` • ${job.credits} credits`}
-              {job.fileSize && ` • ${job.fileSize}`}
+              {job.seed && ` • Seed: ${job.seed}`}
             </div>
 
             {/* Status-specific content */}
-            {job.status === 'completed' && job.postProcessing && (
+            {job.status === 'completed' && job.outputVideoPath && (
               <div className="text-[#94A3B8] text-sm mb-4">
-                🎬 Applied: {job.postProcessing.join(', ')}
+                🎬 Video ready for download
               </div>
             )}
 
             {job.status === 'processing' && (
               <div className="mb-4">
                 <div className="text-[#94A3B8] text-sm mb-2">
-                  🔄 {job.progressText}
+                  🔄 Processing your video...
                 </div>
-                <Progress value={job.progress} className="h-2 bg-[#1E293B]" />
-                <div className="text-[#94A3B8] text-sm mt-1">
-                  {job.progress}% • {job.estimatedTimeRemaining}
-                </div>
+                <Progress value={50} className="h-2 bg-[#1E293B]" />
+              </div>
+            )}
+
+            {job.status === 'pending' && (
+              <div className="text-[#94A3B8] text-sm mb-4">
+                🕐 Waiting to be processed...
               </div>
             )}
 
@@ -237,7 +219,7 @@ export default function JobsPage() {
 
             {job.status === 'queued' && (
               <div className="text-[#94A3B8] text-sm mb-4">
-                ⏸️ Position #{job.queuePosition} in queue • Estimated start: {job.estimatedStartTime}
+                ⏸️ Queued for processing
               </div>
             )}
 
@@ -304,6 +286,14 @@ export default function JobsPage() {
                   </Button>
                 </>
               )}
+
+              {job.status === 'pending' && (
+                <>
+                  <Button variant="outline" size="sm" className="border-[#334155] text-[#F1F5F9] hover:border-[#00F0D9] hover:text-[#00F0D9]">
+                    View Details
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -362,9 +352,11 @@ export default function JobsPage() {
           <Button
             variant="outline"
             size="icon"
-            className="border-[#334155] text-[#F1F5F9] hover:border-[#00F0D9] hover:text-[#00F0D9]"
+            onClick={fetchJobs}
+            disabled={isLoading}
+            className="border-[#334155] text-[#F1F5F9] hover:border-[#00F0D9] hover:text-[#00F0D9] disabled:opacity-50"
           >
-            <RefreshCw className="w-4 h-4" />
+            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
           </Button>
         </div>
       </div>
@@ -419,6 +411,17 @@ export default function JobsPage() {
           >
             ❌ Failed
           </Button>
+          <Button
+            variant={activeFilter === 'pending' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setActiveFilter('pending')}
+            className={activeFilter === 'pending'
+              ? 'bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] text-white border-[#00F0D9]'
+              : 'border-[#334155] text-[#F1F5F9] hover:border-[#00F0D9] hover:text-[#00F0D9]'
+            }
+          >
+            🕐 Pending
+          </Button>
         </div>
 
         <div className="flex items-center gap-3">
@@ -443,7 +446,35 @@ export default function JobsPage() {
 
       {/* Job Cards */}
       <div className="space-y-4 mb-8">
-        {currentJobs.length > 0 ? (
+        {isLoading ? (
+          <div className="border border-[#334155] rounded-2xl p-16 bg-[#0F172A] text-center">
+            <Loader2 className="w-12 h-12 text-[#00F0D9] mx-auto mb-4 animate-spin" />
+            <p className="text-[#94A3B8]">Loading jobs...</p>
+          </div>
+        ) : error ? (
+          <div className="border border-red-500/20 rounded-2xl p-16 bg-red-500/5 text-center">
+            <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+            <h3 className="text-red-400 mb-2">Failed to load jobs</h3>
+            <p className="text-[#94A3B8] mb-4">{error}</p>
+            <Button onClick={fetchJobs} variant="outline" className="border-[#334155] text-[#F1F5F9]">
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Retry
+            </Button>
+          </div>
+        ) : !user ? (
+          <div className="border border-[#334155] rounded-2xl p-16 bg-[#0F172A] text-center">
+            <div className="text-6xl mb-4">🔐</div>
+            <h3 className="text-[#F1F5F9] mb-2">Sign in to view jobs</h3>
+            <p className="text-[#94A3B8] mb-6">
+              Please sign in to see your video generation jobs
+            </p>
+            <Link href="/login">
+              <Button className="bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] hover:opacity-90 text-white">
+                Sign In
+              </Button>
+            </Link>
+          </div>
+        ) : currentJobs.length > 0 ? (
           currentJobs.map(renderJobCard)
         ) : (
           renderEmptyState()
