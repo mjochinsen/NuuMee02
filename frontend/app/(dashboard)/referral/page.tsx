@@ -13,38 +13,20 @@ import {
   Zap,
   Clock,
   CheckCircle,
-  Eye,
-  Trophy,
   ExternalLink,
   Loader2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { useAuth } from '@/components/AuthProvider';
 import { getReferralCode, ReferralCodeResponse } from '@/lib/api';
 
-interface ReferralActivity {
-  name: string;
-  status: 'visited' | 'pending' | 'earned';
-  date: string;
-  action: string;
-  credits?: number;
-}
-
-interface LeaderboardEntry {
-  rank: number;
-  name: string;
-  referrals: number;
-  credits: number;
-  isCurrentUser?: boolean;
-}
+// Interfaces removed - mock UI no longer needed
 
 export default function ReferralPage() {
   const { user, profile } = useAuth();
   const [copied, setCopied] = useState(false);
-  const [showAllReferrals, setShowAllReferrals] = useState(false);
   const [referralData, setReferralData] = useState<ReferralCodeResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -81,50 +63,6 @@ export default function ReferralPage() {
     signedUp: referralData?.stats.converted_referrals || 0,
     earned: referralData?.stats.total_credits_earned || 0,
   };
-
-  // Referral activity - mock data for now (would need separate API endpoint)
-  const referralActivity: ReferralActivity[] = [
-    {
-      name: 'Sarah J.',
-      status: 'earned',
-      date: '2 days ago',
-      action: 'Generated first video',
-      credits: 5,
-    },
-    {
-      name: 'Mike T.',
-      status: 'pending',
-      date: 'today',
-      action: "Hasn't created video yet",
-    },
-    {
-      name: 'Alex K.',
-      status: 'earned',
-      date: 'last week',
-      action: 'Generated first video',
-      credits: 5,
-    },
-    {
-      name: 'Emily R.',
-      status: 'pending',
-      date: '3 days ago',
-      action: "Hasn't created video yet",
-    },
-    {
-      name: 'John D.',
-      status: 'visited',
-      date: 'yesterday',
-      action: "Hasn't signed up yet",
-    },
-  ];
-
-  // Leaderboard - mock data for now (would need separate API endpoint)
-  const leaderboard: LeaderboardEntry[] = [
-    { rank: 1, name: 'Sarah K.', referrals: 127, credits: 635 },
-    { rank: 2, name: 'Mike J.', referrals: 89, credits: 445 },
-    { rank: 3, name: 'Alex M.', referrals: 76, credits: 380 },
-    { rank: 4, name: 'You', referrals: stats.signedUp, credits: stats.earned, isCurrentUser: true },
-  ];
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(referralLink);
@@ -171,48 +109,6 @@ export default function ReferralPage() {
       window.open(url, '_blank');
     }
   };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'earned':
-        return <CheckCircle className="w-5 h-5 text-green-400" />;
-      case 'pending':
-        return <Clock className="w-5 h-5 text-yellow-400" />;
-      case 'visited':
-        return <Eye className="w-5 h-5 text-[#94A3B8]" />;
-      default:
-        return null;
-    }
-  };
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'earned':
-        return (
-          <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
-            Earned
-          </Badge>
-        );
-      case 'pending':
-        return (
-          <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">
-            Pending
-          </Badge>
-        );
-      case 'visited':
-        return (
-          <Badge className="bg-[#334155] text-[#94A3B8] border-[#334155]">
-            Visited
-          </Badge>
-        );
-      default:
-        return null;
-    }
-  };
-
-  const displayedReferrals = showAllReferrals
-    ? referralActivity
-    : referralActivity.slice(0, 3);
 
   // Show loading state
   if (loading) {
@@ -429,77 +325,21 @@ export default function ReferralPage() {
       <section className="mb-8 border border-[#334155] rounded-xl p-8 bg-[#0F172A]">
         <h2 className="text-[#F1F5F9] text-xl font-semibold mb-6">Referral Activity</h2>
 
-        <div className="space-y-4 mb-6">
-          {displayedReferrals.map((referral, idx) => (
-            <div
-              key={idx}
-              className="border border-[#334155] rounded-lg p-4 bg-[#1E293B] hover:border-[#00F0D9]/30 transition-colors"
-            >
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-3">
-                  {getStatusIcon(referral.status)}
-                  <h3 className="text-[#F1F5F9]">{referral.name}</h3>
-                </div>
-                {getStatusBadge(referral.status)}
-              </div>
-              <p className="text-[#94A3B8] text-sm mb-1">
-                Signed up {referral.date} • {referral.action}
-              </p>
-              {referral.credits && (
-                <p className="text-green-400 text-sm">+{referral.credits} credits</p>
-              )}
-            </div>
-          ))}
-        </div>
-
-        {!showAllReferrals && referralActivity.length > 3 && (
-          <Button
-            variant="outline"
-            onClick={() => setShowAllReferrals(true)}
-            className="w-full border-[#334155] text-[#F1F5F9] hover:border-[#00F0D9]"
-          >
-            View All Referrals
-          </Button>
+        {stats.invited === 0 ? (
+          <div className="text-center py-8">
+            <Users className="w-12 h-12 text-[#334155] mx-auto mb-4" />
+            <p className="text-[#94A3B8] mb-2">You haven&apos;t referred anyone yet</p>
+            <p className="text-[#64748B] text-sm">Share your link above to get started!</p>
+          </div>
+        ) : (
+          <div className="text-center py-8">
+            <Clock className="w-12 h-12 text-[#00F0D9]/50 mx-auto mb-4" />
+            <p className="text-[#94A3B8] mb-2">Detailed activity tracking coming soon</p>
+            <p className="text-[#64748B] text-sm">
+              You have {stats.invited} referral{stats.invited !== 1 ? 's' : ''} • {stats.signedUp} signed up • {stats.earned} credits earned
+            </p>
+          </div>
         )}
-      </section>
-
-      {/* Leaderboard */}
-      <section className="mb-8 border border-[#334155] rounded-xl p-8 bg-gradient-to-br from-[#0F172A] to-[#1E293B]">
-        <div className="flex items-center gap-2 mb-6">
-          <Trophy className="w-6 h-6 text-[#00F0D9]" />
-          <h2 className="text-[#F1F5F9] text-xl font-semibold">Top Referrers This Month</h2>
-        </div>
-
-        <div className="space-y-3">
-          {leaderboard.map((entry) => (
-            <div
-              key={entry.rank}
-              className={`flex items-center justify-between p-4 rounded-lg ${
-                entry.isCurrentUser
-                  ? 'bg-[#00F0D9]/10 border border-[#00F0D9]/30'
-                  : 'bg-[#1E293B] border border-[#334155]'
-              }`}
-            >
-              <div className="flex items-center gap-4">
-                <span className="text-2xl min-w-[2rem]">
-                  {entry.rank === 1 && '🥇'}
-                  {entry.rank === 2 && '🥈'}
-                  {entry.rank === 3 && '🥉'}
-                  {entry.rank > 3 && <span className="text-[#94A3B8]">{entry.rank}.</span>}
-                </span>
-                <div>
-                  <p className={entry.isCurrentUser ? 'text-[#00F0D9]' : 'text-[#F1F5F9]'}>
-                    {entry.name}
-                  </p>
-                </div>
-              </div>
-              <div className="text-right">
-                <p className="text-[#F1F5F9]">{entry.referrals} referrals</p>
-                <p className="text-[#94A3B8] text-sm">{entry.credits} credits earned</p>
-              </div>
-            </div>
-          ))}
-        </div>
       </section>
 
       {/* Terms & Conditions */}

@@ -303,19 +303,21 @@
 **Estimated Time:** 3-4 hours
 **Dependencies:** Phase 7 complete
 
-| ID   | Task                                 | Status | Agent/Tool             | Output                 | Notes                        |
-| ---- | ------------------------------------ | ------ | ---------------------- | ---------------------- | ---------------------------- |
-| 8.1  | Create backend/app/referral/ folder  | ✅     | `api-builder`          | router.py, models.py   | Done via sub-agent           |
-| 8.2  | Implement GET /referral/code         | ✅     | `api-builder`          | router.py              | Get/generate referral code   |
-| 8.3  | Implement POST /referral/apply       | ✅     | `api-builder`          | router.py              | Apply code, get 25 credits   |
-| 8.4  | Create backend/app/affiliate/ folder | ✅     | `api-builder`          | router.py, models.py   | Done via sub-agent           |
-| 8.5  | Implement affiliate endpoints        | ✅     | `api-builder`          | router.py              | apply, stats, payout         |
-| 8.6  | Deploy updated backend               | ✅     | `gcloud run deploy`    | nuumee-api-00062-v4t   | All endpoints live           |
-| 8.7  | Update referral page with API        | ✅     | Manual                 | referral/page.tsx      | Uses getReferralCode API     |
-| 8.8  | Update affiliate page with API       | ✅     | Manual                 | affiliate/page.tsx     | Form calls applyForAffiliate |
-| 8.9  | Deploy frontend                      | ✅     | `firebase deploy`      | wanapi-prod.web.app    | All pages deployed           |
-| 8.10 | Test referral flow                   | ⬜     | `deployment-validator` | Test results           |                              |
-| 8.11 | Commit and push Phase 8              | ⬜     | Git                    | Commit hash            | "Phase 8: Referral complete" |
+| ID    | Task                                  | Status | Agent/Tool             | Output                 | Notes                                    |
+| ----- | ------------------------------------- | ------ | ---------------------- | ---------------------- | ---------------------------------------- |
+| 8.1   | Create backend/app/referral/ folder   | ✅     | `api-builder`          | router.py, models.py   | Done via sub-agent                       |
+| 8.2   | Implement GET /referral/code          | ✅     | `api-builder`          | router.py              | Get/generate referral code               |
+| 8.3   | Implement POST /referral/apply        | ✅     | `api-builder`          | router.py              | Apply code, get 25 credits               |
+| 8.4   | Create backend/app/affiliate/ folder  | ✅     | `api-builder`          | router.py, models.py   | Done via sub-agent                       |
+| 8.5   | Implement affiliate endpoints         | ✅     | `api-builder`          | router.py              | apply, stats, payout                     |
+| 8.6   | Deploy updated backend                | ✅     | `gcloud run deploy`    | nuumee-api-00062-v4t   | All endpoints live                       |
+| 8.7   | Update referral page with API         | ✅     | Manual                 | referral/page.tsx      | Uses getReferralCode API                 |
+| 8.8   | Update affiliate page with API        | ✅     | Manual                 | affiliate/page.tsx     | Form calls applyForAffiliate             |
+| 8.9   | Deploy frontend                       | ✅     | `firebase deploy`      | wanapi-prod.web.app    | All pages deployed                       |
+| 8.10  | Remove mock UI from referral page     | ✅     | Manual                 | referral/page.tsx      | Leaderboard hidden, activity shows empty |
+| 8.11  | Run comprehensive audit               | ✅     | `/audit quick`         | No issues found        | Security: clean, TODOs: 0, Build: pass   |
+| 8.12  | Deploy and test                       | ✅     | `firebase deploy`      | wanapi-prod.web.app    | Deployed, auth-protected page works      |
+| 8.13  | Commit and push Phase 8               | ⬜     | Git                    | Commit hash            | "Phase 8: Referral complete"             |
 
 **Phase 8 Completion Criteria:**
 
@@ -358,6 +360,32 @@
 
 ---
 
+## ONGOING — MOCK UI REMOVAL
+
+**Goal:** Remove all mock/hardcoded UI and replace with real API data or empty states
+**Policy:**
+- Production users see honest, real data (empty states when nothing exists)
+- Dev/demo pages can show full UI for stakeholder review (via `/dev/*` routes)
+- Pages only exposed to users when real data is available
+
+| Page                   | Status | Notes                                                        |
+| ---------------------- | ------ | ------------------------------------------------------------ |
+| referral/page.tsx      | ✅     | Activity: empty state / "coming soon". Leaderboard: hidden   |
+| affiliate/page.tsx     | ⬜     | Review for mock data in dashboard stats                      |
+| billing/page.tsx       | ⬜     | Review for mock transaction history                          |
+| jobs/page.tsx          | ✅     | Fetches real data from API                                   |
+| pricing/page.tsx       | ⬜     | Review credit packages (may need API fetch)                  |
+| examples/page.tsx      | ⬜     | Review for hardcoded video examples                          |
+| testimonials/page.tsx  | ⬜     | Review for hardcoded testimonials                            |
+
+**Rules:**
+1. No hardcoded data arrays in page components
+2. Always fetch from API or show empty state
+3. Use `/dev/*` routes for design review with mock data
+4. Flag mock data with `/* DEV_ONLY */` comment if temporarily needed
+
+---
+
 ## SUMMARY
 
 | Phase             | Tasks   | Completed | Status |
@@ -370,16 +398,16 @@
 | 5 - Worker        | 9       | 9         | ✅     |
 | 6 - Downloads     | 7       | 7         | ✅     |
 | 7 - Subscriptions | 10      | 10        | ✅     |
-| 8 - Referral      | 11      | 9         | 🔄     |
+| 8 - Referral      | 13      | 12        | 🔄     |
 | 9 - Polish        | 11      | 0         | ⬜     |
-| **TOTAL**         | **111** | **98**    | 🔄     |
+| **TOTAL**         | **113** | **101**   | 🔄     |
 
 ---
 
 ## CURRENT STATE
 
-**Current Phase:** 8 (Referral & Affiliate) - 90% Complete
-**Current Task:** 8.10 (Test referral flow)
+**Current Phase:** 8 (Referral & Affiliate) - 92% Complete
+**Current Task:** 8.13 (Commit and push Phase 8)
 **Blockers:** None
 **Last Updated:** 2025-11-30
 **Live Site:** https://wanapi-prod.web.app (nuumee.ai)
