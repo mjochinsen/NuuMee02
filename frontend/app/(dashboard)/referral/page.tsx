@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   Copy,
@@ -11,18 +11,19 @@ import {
   Gift,
   Users,
   Zap,
-  TrendingUp,
   Clock,
   CheckCircle,
   Eye,
   Trophy,
   ExternalLink,
+  Loader2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { useAuth } from '@/components/AuthProvider';
+import { getReferralCode, ReferralCodeResponse } from '@/lib/api';
 
 interface ReferralActivity {
   name: string;
@@ -44,20 +45,44 @@ export default function ReferralPage() {
   const { user, profile } = useAuth();
   const [copied, setCopied] = useState(false);
   const [showAllReferrals, setShowAllReferrals] = useState(false);
+  const [referralData, setReferralData] = useState<ReferralCodeResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // User data
-  const userName = user?.displayName || profile?.display_name || 'User';
-  const referralCode = `${userName.toLowerCase().replace(/\s+/g, '-')}-${Math.random().toString(36).substring(2, 8)}`;
-  const referralLink = `https://nuumee.ai/ref/${referralCode}`;
+  // Fetch referral data from API
+  useEffect(() => {
+    async function fetchReferralData() {
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+      try {
+        setLoading(true);
+        const data = await getReferralCode();
+        setReferralData(data);
+        setError(null);
+      } catch (err) {
+        console.error('Failed to fetch referral data:', err);
+        setError('Failed to load referral data');
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchReferralData();
+  }, [user]);
 
-  // Stats
+  // User data from API
+  const referralCode = referralData?.referral_code || 'Loading...';
+  const referralLink = referralData ? `https://nuumee.ai/ref/${referralData.referral_code}` : 'Loading...';
+
+  // Stats from API
   const stats = {
-    invited: 24,
-    signedUp: 18,
-    earned: 15,
+    invited: referralData?.stats.total_referrals || 0,
+    signedUp: referralData?.stats.converted_referrals || 0,
+    earned: referralData?.stats.total_credits_earned || 0,
   };
 
-  // Referral activity
+  // Referral activity - mock data for now (would need separate API endpoint)
   const referralActivity: ReferralActivity[] = [
     {
       name: 'Sarah J.',
@@ -93,12 +118,12 @@ export default function ReferralPage() {
     },
   ];
 
-  // Leaderboard
+  // Leaderboard - mock data for now (would need separate API endpoint)
   const leaderboard: LeaderboardEntry[] = [
     { rank: 1, name: 'Sarah K.', referrals: 127, credits: 635 },
     { rank: 2, name: 'Mike J.', referrals: 89, credits: 445 },
     { rank: 3, name: 'Alex M.', referrals: 76, credits: 380 },
-    { rank: 4, name: 'You', referrals: 18, credits: 90, isCurrentUser: true },
+    { rank: 4, name: 'You', referrals: stats.signedUp, credits: stats.earned, isCurrentUser: true },
   ];
 
   const handleCopyLink = () => {
@@ -188,6 +213,32 @@ export default function ReferralPage() {
   const displayedReferrals = showAllReferrals
     ? referralActivity
     : referralActivity.slice(0, 3);
+
+  // Show loading state
+  if (loading) {
+    return (
+      <main className="container mx-auto px-6 py-12 max-w-5xl flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 text-[#00F0D9] animate-spin mx-auto mb-4" />
+          <p className="text-[#94A3B8]">Loading referral data...</p>
+        </div>
+      </main>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <main className="container mx-auto px-6 py-12 max-w-5xl">
+        <div className="text-center border border-red-500/30 rounded-xl p-8 bg-red-500/10">
+          <p className="text-red-400 mb-4">{error}</p>
+          <Button onClick={() => window.location.reload()} variant="outline" className="border-[#334155] text-[#F1F5F9]">
+            Try Again
+          </Button>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="container mx-auto px-6 py-12 max-w-5xl">

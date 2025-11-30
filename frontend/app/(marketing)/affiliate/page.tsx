@@ -2,20 +2,66 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Briefcase, DollarSign, TrendingUp, CheckCircle, Zap, ArrowRight } from 'lucide-react';
+import { Briefcase, DollarSign, TrendingUp, CheckCircle, Zap, ArrowRight, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card } from '@/components/ui/card';
+import { applyForAffiliate, AffiliateApplyRequest } from '@/lib/api';
 
 export default function AffiliatePage() {
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({ fullName: '', email: '', website: '', platformType: '', audienceSize: '', niche: '', promotionPlan: '', paypalEmail: '', agreedToTerms: false });
 
   const handleInputChange = (field: string, value: string | boolean) => { setFormData((prev) => ({ ...prev, [field]: value })); };
-  const handleSubmit = (e: React.FormEvent) => { e.preventDefault(); setSubmitted(true); };
+
+  // Convert audience size string to number
+  const audienceSizeToNumber = (size: string): number => {
+    switch (size) {
+      case 'under1k': return 500;
+      case '1k-10k': return 5000;
+      case '10k-50k': return 25000;
+      case '50k-100k': return 75000;
+      case '100k+': return 100000;
+      default: return 0;
+    }
+  };
+
+  // Map platform types - linkedin and podcast map to 'other'
+  const mapPlatformType = (type: string): 'youtube' | 'blog' | 'twitter' | 'instagram' | 'tiktok' | 'other' => {
+    const validTypes = ['youtube', 'blog', 'twitter', 'instagram', 'tiktok'];
+    return validTypes.includes(type) ? type as 'youtube' | 'blog' | 'twitter' | 'instagram' | 'tiktok' : 'other';
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setError(null);
+
+    try {
+      const request: AffiliateApplyRequest = {
+        name: formData.fullName,
+        email: formData.email,
+        platform_url: formData.website,
+        platform_type: mapPlatformType(formData.platformType),
+        audience_size: audienceSizeToNumber(formData.audienceSize),
+        promotion_plan: `[Niche: ${formData.niche}] ${formData.promotionPlan}`,
+        paypal_email: formData.paypalEmail,
+      };
+
+      await applyForAffiliate(request);
+      setSubmitted(true);
+    } catch (err) {
+      console.error('Affiliate application error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to submit application');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   if (submitted) {
     return (
@@ -145,7 +191,10 @@ export default function AffiliatePage() {
           <div><label className="block text-[#F1F5F9] mb-2">How will you promote NuuMee.AI?</label><Textarea value={formData.promotionPlan} onChange={(e) => handleInputChange('promotionPlan', e.target.value)} placeholder="I create weekly AI tool review videos on YouTube with 25K subscribers. I'd feature NuuMee.AI in a dedicated tutorial video and include the affiliate link in the description." className="bg-[#1E293B] border-[#334155] text-[#F1F5F9] min-h-[120px]" required /></div>
           <div><label className="block text-[#F1F5F9] mb-2">PayPal Email (for payments)</label><Input type="email" value={formData.paypalEmail} onChange={(e) => handleInputChange('paypalEmail', e.target.value)} placeholder="paypal@example.com" className="bg-[#1E293B] border-[#334155] text-[#F1F5F9]" required /></div>
           <div className="flex items-start gap-3"><Checkbox id="terms" checked={formData.agreedToTerms} onCheckedChange={(checked) => handleInputChange('agreedToTerms', checked as boolean)} className="mt-1" /><label htmlFor="terms" className="text-[#94A3B8] cursor-pointer">I agree to the <Link href="/terms" className="text-[#00F0D9] hover:underline">Affiliate Terms & Conditions</Link></label></div>
-          <Button type="submit" disabled={!formData.agreedToTerms} className="w-full bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] hover:opacity-90 text-white disabled:opacity-50 disabled:cursor-not-allowed">Submit Application</Button>
+          {error && <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400">{error}</div>}
+          <Button type="submit" disabled={!formData.agreedToTerms || submitting} className="w-full bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] hover:opacity-90 text-white disabled:opacity-50 disabled:cursor-not-allowed">
+            {submitting ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin inline" />Submitting...</>) : 'Submit Application'}
+          </Button>
         </form>
       </section>
 

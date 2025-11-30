@@ -363,3 +363,98 @@ export async function cancelSubscription(): Promise<CancelSubscriptionResponse> 
     method: 'POST',
   });
 }
+
+// Referral endpoints
+export interface ReferralStats {
+  total_referrals: number;
+  converted_referrals: number;
+  total_credits_earned: number;
+}
+
+export interface ReferralCodeResponse {
+  referral_code: string;
+  share_url: string;
+  stats: ReferralStats;
+}
+
+export interface ReferralApplyResponse {
+  credits_granted: number;
+  message: string;
+  referral_code: string;
+}
+
+export async function getReferralCode(): Promise<ReferralCodeResponse> {
+  return apiRequest<ReferralCodeResponse>('/referral/code');
+}
+
+export async function applyReferralCode(code: string): Promise<ReferralApplyResponse> {
+  return apiRequest<ReferralApplyResponse>('/referral/apply', {
+    method: 'POST',
+    body: JSON.stringify({ code }),
+  });
+}
+
+// Affiliate endpoints
+export type AffiliatePlatformType = 'youtube' | 'instagram' | 'tiktok' | 'blog' | 'twitter' | 'other';
+export type AffiliateStatusType = 'pending' | 'approved' | 'rejected' | 'suspended';
+export type PayoutStatusType = 'pending' | 'processing' | 'completed' | 'failed';
+
+export interface AffiliateApplyRequest {
+  name: string;
+  email: string;
+  platform_url: string;
+  platform_type: AffiliatePlatformType;
+  promotion_plan: string;
+  paypal_email: string;
+  audience_size: number;
+}
+
+export interface AffiliateApplyResponse {
+  affiliate_id: string;
+  status: AffiliateStatusType;
+  message: string;
+}
+
+export interface AffiliateStats {
+  total_clicks: number;
+  total_signups: number;
+  total_conversions: number;
+  commission_earned: number;
+  commission_pending: number;
+  commission_paid: number;
+}
+
+export interface AffiliateResponse {
+  affiliate_id: string;
+  user_id: string;
+  status: AffiliateStatusType;
+  affiliate_code: string | null;
+  stats: AffiliateStats;
+  applied_at: string;
+  approved_at: string | null;
+}
+
+export interface PayoutResponse {
+  payout_id: string;
+  amount: number;
+  status: PayoutStatusType;
+  message: string;
+}
+
+export async function applyForAffiliate(request: AffiliateApplyRequest): Promise<AffiliateApplyResponse> {
+  return apiRequest<AffiliateApplyResponse>('/affiliate/apply', {
+    method: 'POST',
+    body: JSON.stringify(request),
+  });
+}
+
+export async function getAffiliateStats(): Promise<AffiliateResponse> {
+  return apiRequest<AffiliateResponse>('/affiliate/stats');
+}
+
+export async function requestAffiliatePayout(amount: number): Promise<PayoutResponse> {
+  return apiRequest<PayoutResponse>('/affiliate/payout', {
+    method: 'POST',
+    body: JSON.stringify({ amount }),
+  });
+}

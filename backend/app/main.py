@@ -13,6 +13,8 @@ from .upload.router import router as upload_router
 from .jobs.router import router as jobs_router
 from .subscriptions.router import router as subscriptions_router
 from .subscriptions.router import limiter
+from .referral.router import router as referral_router
+from .affiliate.router import router as affiliate_router
 
 app = FastAPI(
     title="NuuMee API",
@@ -51,6 +53,8 @@ app.include_router(webhooks_router, prefix="/api/v1")
 app.include_router(upload_router, prefix="/api/v1")
 app.include_router(jobs_router, prefix="/api/v1")
 app.include_router(subscriptions_router, prefix="/api/v1")
+app.include_router(referral_router, prefix="/api/v1")
+app.include_router(affiliate_router, prefix="/api/v1")
 
 
 @app.get("/health")

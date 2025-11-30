@@ -1,0 +1,1 @@
+"""Affiliate program module."""

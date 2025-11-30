@@ -303,25 +303,25 @@
 **Estimated Time:** 3-4 hours
 **Dependencies:** Phase 7 complete
 
-| ID   | Task                                 | Status | Agent/Tool             | Output       | Notes                        |
-| ---- | ------------------------------------ | ------ | ---------------------- | ------------ | ---------------------------- |
-| 8.1  | Create backend/app/referral/ folder  | ⬜     | Manual                 | router.py    |                              |
-| 8.2  | Implement GET /referral/code         | ⬜     | `api-builder`          | router.py    |                              |
-| 8.3  | Implement POST /referral/apply       | ⬜     | `api-builder`          | router.py    |                              |
-| 8.4  | Create backend/app/affiliate/ folder | ⬜     | Manual                 | router.py    |                              |
-| 8.5  | Implement affiliate endpoints        | ⬜     | `api-builder`          | router.py    | apply, stats, payout         |
-| 8.6  | Deploy updated backend               | ⬜     | `gcloud run deploy`    | Live URL     |                              |
-| 8.7  | Create referral page                 | ⬜     | `frontend-dev`         | page.tsx     | Share link                   |
-| 8.8  | Create affiliate dashboard           | ⬜     | `frontend-dev`         | page.tsx     | Stats, payout                |
-| 8.9  | Deploy frontend                      | ⬜     | `firebase deploy`      | Live site    |                              |
-| 8.10 | Test referral flow                   | ⬜     | `deployment-validator` | Test results |                              |
-| 8.11 | Commit and push Phase 8              | ⬜     | Git                    | Commit hash  | "Phase 8: Referral complete" |
+| ID   | Task                                 | Status | Agent/Tool             | Output                 | Notes                        |
+| ---- | ------------------------------------ | ------ | ---------------------- | ---------------------- | ---------------------------- |
+| 8.1  | Create backend/app/referral/ folder  | ✅     | `api-builder`          | router.py, models.py   | Done via sub-agent           |
+| 8.2  | Implement GET /referral/code         | ✅     | `api-builder`          | router.py              | Get/generate referral code   |
+| 8.3  | Implement POST /referral/apply       | ✅     | `api-builder`          | router.py              | Apply code, get 25 credits   |
+| 8.4  | Create backend/app/affiliate/ folder | ✅     | `api-builder`          | router.py, models.py   | Done via sub-agent           |
+| 8.5  | Implement affiliate endpoints        | ✅     | `api-builder`          | router.py              | apply, stats, payout         |
+| 8.6  | Deploy updated backend               | ✅     | `gcloud run deploy`    | nuumee-api-00062-v4t   | All endpoints live           |
+| 8.7  | Update referral page with API        | ✅     | Manual                 | referral/page.tsx      | Uses getReferralCode API     |
+| 8.8  | Update affiliate page with API       | ✅     | Manual                 | affiliate/page.tsx     | Form calls applyForAffiliate |
+| 8.9  | Deploy frontend                      | ✅     | `firebase deploy`      | wanapi-prod.web.app    | All pages deployed           |
+| 8.10 | Test referral flow                   | ⬜     | `deployment-validator` | Test results           |                              |
+| 8.11 | Commit and push Phase 8              | ⬜     | Git                    | Commit hash            | "Phase 8: Referral complete" |
 
 **Phase 8 Completion Criteria:**
 
-- [ ] Can generate referral link
-- [ ] New user gets 25 credits via referral
-- [ ] Referrer gets 100 credits after purchase
+- [x] Can generate referral link (GET /referral/code)
+- [x] New user gets 25 credits via referral (POST /referral/apply)
+- [ ] Referrer gets 100 credits after purchase (future webhook enhancement)
 - [ ] Committed to master
 
 ---
@@ -370,16 +370,16 @@
 | 5 - Worker        | 9       | 9         | ✅     |
 | 6 - Downloads     | 7       | 7         | ✅     |
 | 7 - Subscriptions | 10      | 10        | ✅     |
-| 8 - Referral      | 11      | 0         | ⬜     |
+| 8 - Referral      | 11      | 9         | 🔄     |
 | 9 - Polish        | 11      | 0         | ⬜     |
-| **TOTAL**         | **111** | **89**    | 🔄     |
+| **TOTAL**         | **111** | **98**    | 🔄     |
 
 ---
 
 ## CURRENT STATE
 
-**Current Phase:** 8 (Referral & Affiliate) - Ready to Start
-**Current Task:** 8.1 (Create backend/app/referral/ folder)
+**Current Phase:** 8 (Referral & Affiliate) - 90% Complete
+**Current Task:** 8.10 (Test referral flow)
 **Blockers:** None
 **Last Updated:** 2025-11-30
 **Live Site:** https://wanapi-prod.web.app (nuumee.ai)
@@ -389,6 +389,8 @@
 **Upload Endpoint:** POST /upload/signed-url (GCS signed URLs)
 **Jobs Endpoint:** POST /jobs (auto-enqueues), GET /jobs, GET /jobs/{id}, GET /jobs/{id}/output
 **Subscriptions Endpoint:** POST /subscriptions/create, POST /subscriptions/cancel, GET /subscriptions/current, GET /subscriptions/tiers
+**Referral Endpoint:** GET /referral/code, POST /referral/apply
+**Affiliate Endpoint:** POST /affiliate/apply, GET /affiliate/stats, POST /affiliate/payout
 **Cloud Tasks Queue:** nuumee-video-processing (5/sec, 3 retries)
 **Subscription Tiers:** Creator ($29/mo, 400 credits), Studio ($99/mo, 1600 credits)
 
