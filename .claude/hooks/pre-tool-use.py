@@ -142,22 +142,33 @@ elif tool_name == "Bash":
         # Auto-approve safe commands
         # Commands that are safe (with or without flags)
         safe_commands = ["ls", "cat", "head", "tail", "grep", "find", "pwd",
-                        "echo", "pnpm", "npm", "python", "python3", "node",
-                        "tree", "wc", "which", "mkdir", "touch", "curl", "wget"]
+                        "echo", "pnpm", "npm", "npx", "python", "python3", "node",
+                        "tree", "wc", "which", "mkdir", "touch", "curl", "wget",
+                        "timeout", "for", "cp", "mv", "rm", "chmod", "date", "sleep"]
         # Git commands (need specific handling)
         safe_git = ["git status", "git log", "git diff", "git add", "git commit",
                    "git push", "git checkout", "git branch", "git fetch", "git pull",
-                   "git remote", "git show", "git stash", "git rev-parse"]
+                   "git remote", "git show", "git stash", "git rev-parse", "git mv",
+                   "git rm", "git restore", "git reset"]
 
-        cmd_parts = command.strip().split()
+        cmd_stripped = command.strip()
+        cmd_parts = cmd_stripped.split()
         base_cmd = cmd_parts[0] if cmd_parts else ""
+
+        # Handle env var prefixes like PLAYWRIGHT_BASE_URL=... command
+        if "=" in base_cmd and not base_cmd.startswith("-"):
+            # Extract the actual command after env vars
+            for i, part in enumerate(cmd_parts):
+                if "=" not in part:
+                    base_cmd = part
+                    break
 
         # Check if base command is safe
         if base_cmd in safe_commands:
             decision = "allow"
         # Check if git command is safe
-        elif command.strip().startswith("git "):
-            if any(command.strip().startswith(g) for g in safe_git):
+        elif cmd_stripped.startswith("git "):
+            if any(cmd_stripped.startswith(g) for g in safe_git):
                 decision = "allow"
 
         # WARNING: Check if committing without audit
