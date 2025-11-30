@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -14,6 +14,11 @@ import {
   Crown,
   Sparkles,
   Building2,
+  RefreshCw,
+  ChevronLeft,
+  ChevronRight,
+  ArrowUpRight,
+  ArrowDownRight,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -36,7 +41,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useAuth } from '@/components/AuthProvider';
-import { createCheckoutSession, ApiError } from '@/lib/api';
+import { createCheckoutSession, ApiError, getTransactions, CreditTransaction, TransactionType } from '@/lib/api';
 import { BuyCreditsModal } from '@/components/BuyCreditsModal';
 import { SubscriptionModal } from '@/components/SubscriptionModal';
 
@@ -82,6 +87,15 @@ export default function BillingPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  // Transaction state
+  const [transactions, setTransactions] = useState<CreditTransaction[]>([]);
+  const [transactionsLoading, setTransactionsLoading] = useState(true);
+  const [transactionsError, setTransactionsError] = useState<string | null>(null);
+  const [transactionPage, setTransactionPage] = useState(1);
+  const [transactionTotal, setTransactionTotal] = useState(0);
+  const [hasMoreTransactions, setHasMoreTransactions] = useState(false);
+  const transactionPageSize = 10;
+
   const creditPackages: CreditPackage[] = [
     { id: 'starter', name: 'Starter', credits: 120, price: 10, pricePerCredit: 0.083 },
     { id: 'popular', name: 'Popular', credits: 400, price: 30, pricePerCredit: 0.075, popular: true },
@@ -118,6 +132,74 @@ export default function BillingPage() {
       current: currentPlan === 'studio',
     },
   ];
+
+  // Fetch transactions
+  const fetchTransactions = useCallback(async () => {
+    if (!user) return;
+
+    setTransactionsLoading(true);
+    setTransactionsError(null);
+
+    try {
+      const response = await getTransactions(transactionPage, transactionPageSize);
+      setTransactions(response.transactions);
+      setTransactionTotal(response.total);
+      setHasMoreTransactions(response.has_more);
+    } catch (error) {
+      console.error('Failed to fetch transactions:', error);
+      if (error instanceof ApiError) {
+        setTransactionsError(error.message);
+      } else {
+        setTransactionsError('Failed to load transaction history');
+      }
+    } finally {
+      setTransactionsLoading(false);
+    }
+  }, [user, transactionPage]);
+
+  useEffect(() => {
+    fetchTransactions();
+  }, [fetchTransactions]);
+
+  // Helper to format transaction type for display
+  const getTransactionTypeLabel = (type: TransactionType): string => {
+    const labels: Record<TransactionType, string> = {
+      purchase: 'Credit Purchase',
+      subscription: 'Subscription Credits',
+      subscription_renewal: 'Subscription Renewal',
+      referral: 'Referral Bonus',
+      job_usage: 'Job Usage',
+      refund: 'Refund',
+      bonus: 'Bonus Credits',
+    };
+    return labels[type] || type;
+  };
+
+  // Helper to get transaction type badge color
+  const getTransactionBadgeColor = (type: TransactionType): string => {
+    const colors: Record<TransactionType, string> = {
+      purchase: 'bg-blue-500/20 text-blue-400',
+      subscription: 'bg-purple-500/20 text-purple-400',
+      subscription_renewal: 'bg-purple-500/20 text-purple-400',
+      referral: 'bg-green-500/20 text-green-400',
+      job_usage: 'bg-orange-500/20 text-orange-400',
+      refund: 'bg-amber-500/20 text-amber-400',
+      bonus: 'bg-cyan-500/20 text-cyan-400',
+    };
+    return colors[type] || 'bg-gray-500/20 text-gray-400';
+  };
+
+  // Helper to format date
+  const formatDate = (dateString: string): string => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
 
 
   const handlePurchaseCredits = async (pkg: CreditPackage) => {
@@ -583,23 +665,125 @@ export default function BillingPage() {
 
       {/* Transaction History */}
       <div className="border border-[#334155] rounded-2xl p-8 bg-[#0F172A]">
-        <div className="flex items-center gap-2 mb-6">
-          <FileText className="w-5 h-5 text-[#00F0D9]" />
-          <h2 className="text-[#F1F5F9]">Transaction History</h2>
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-2">
+            <FileText className="w-5 h-5 text-[#00F0D9]" />
+            <h2 className="text-[#F1F5F9]">Transaction History</h2>
+            {transactionTotal > 0 && (
+              <Badge variant="outline" className="border-[#334155] text-[#94A3B8]">
+                {transactionTotal} total
+              </Badge>
+            )}
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={fetchTransactions}
+            disabled={transactionsLoading}
+            className="text-[#94A3B8] hover:text-[#F1F5F9]"
+          >
+            <RefreshCw className={`w-4 h-4 mr-2 ${transactionsLoading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
         </div>
 
-        {/* Coming Soon Notice */}
-        <div className="border border-amber-500/30 bg-amber-500/5 rounded-xl p-4 mb-6">
-          <p className="text-amber-400 text-sm text-center">
-            Transaction history integration coming soon. Your purchases and usage will be tracked here.
-          </p>
-        </div>
+        {/* Error State */}
+        {transactionsError && (
+          <div className="border border-red-500/20 bg-red-500/5 rounded-xl p-4 mb-6">
+            <p className="text-red-400 text-sm text-center">{transactionsError}</p>
+          </div>
+        )}
 
-        <div className="text-center text-[#94A3B8] py-8">
-          <FileText className="w-12 h-12 mx-auto mb-3 opacity-50" />
-          <p>No transactions yet</p>
-          <p className="text-sm mt-1">Your purchase and usage history will appear here</p>
-        </div>
+        {/* Loading State */}
+        {transactionsLoading && transactions.length === 0 && (
+          <div className="text-center text-[#94A3B8] py-8">
+            <RefreshCw className="w-8 h-8 mx-auto mb-3 animate-spin opacity-50" />
+            <p>Loading transactions...</p>
+          </div>
+        )}
+
+        {/* Empty State */}
+        {!transactionsLoading && transactions.length === 0 && !transactionsError && (
+          <div className="text-center text-[#94A3B8] py-8">
+            <FileText className="w-12 h-12 mx-auto mb-3 opacity-50" />
+            <p>No transactions yet</p>
+            <p className="text-sm mt-1">Your purchase and usage history will appear here</p>
+          </div>
+        )}
+
+        {/* Transaction List */}
+        {transactions.length > 0 && (
+          <div className="space-y-3">
+            {transactions.map((txn) => (
+              <div
+                key={txn.transaction_id}
+                className="flex items-center justify-between p-4 border border-[#334155] rounded-xl bg-[#1E293B] hover:border-[#00F0D9]/30 transition-colors"
+              >
+                <div className="flex items-center gap-4">
+                  <div className={`p-2 rounded-lg ${txn.amount >= 0 ? 'bg-green-500/10' : 'bg-orange-500/10'}`}>
+                    {txn.amount >= 0 ? (
+                      <ArrowDownRight className="w-5 h-5 text-green-400" />
+                    ) : (
+                      <ArrowUpRight className="w-5 h-5 text-orange-400" />
+                    )}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-[#F1F5F9] font-medium">
+                        {txn.description || getTransactionTypeLabel(txn.type)}
+                      </span>
+                      <Badge className={`text-xs ${getTransactionBadgeColor(txn.type)}`}>
+                        {getTransactionTypeLabel(txn.type)}
+                      </Badge>
+                    </div>
+                    <div className="text-[#94A3B8] text-sm">
+                      {formatDate(txn.created_at)}
+                    </div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className={`text-lg font-semibold ${txn.amount >= 0 ? 'text-green-400' : 'text-orange-400'}`}>
+                    {txn.amount >= 0 ? '+' : ''}{txn.amount} credits
+                  </div>
+                  {txn.balance_after !== null && (
+                    <div className="text-[#94A3B8] text-sm">
+                      Balance: {txn.balance_after}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+
+            {/* Pagination */}
+            {(transactionPage > 1 || hasMoreTransactions) && (
+              <div className="flex items-center justify-between pt-4 border-t border-[#334155]">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setTransactionPage(p => Math.max(1, p - 1))}
+                  disabled={transactionPage === 1 || transactionsLoading}
+                  className="border-[#334155] text-[#F1F5F9] hover:border-[#00F0D9]"
+                >
+                  <ChevronLeft className="w-4 h-4 mr-1" />
+                  Previous
+                </Button>
+                <span className="text-[#94A3B8] text-sm">
+                  Page {transactionPage}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setTransactionPage(p => p + 1)}
+                  disabled={!hasMoreTransactions || transactionsLoading}
+                  className="border-[#334155] text-[#F1F5F9] hover:border-[#00F0D9]"
+                >
+                  Next
+                  <ChevronRight className="w-4 h-4 ml-1" />
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Purchase Credits Modal */}

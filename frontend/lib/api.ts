@@ -483,3 +483,42 @@ export interface SystemHealthResponse {
 export async function getSystemStatus(): Promise<SystemHealthResponse> {
   return apiRequest<SystemHealthResponse>('/status', { skipAuth: true });
 }
+
+// Transaction endpoints
+export type TransactionType = 'purchase' | 'subscription' | 'subscription_renewal' | 'referral' | 'job_usage' | 'refund' | 'bonus';
+
+export interface CreditTransaction {
+  transaction_id: string;
+  type: TransactionType;
+  amount: number;
+  balance_before: number | null;
+  balance_after: number | null;
+  description: string | null;
+  related_stripe_payment_id: string | null;
+  related_referral_code: string | null;
+  related_job_id: string | null;
+  created_at: string;
+}
+
+export interface TransactionListResponse {
+  transactions: CreditTransaction[];
+  total: number;
+  page: number;
+  page_size: number;
+  has_more: boolean;
+}
+
+export async function getTransactions(
+  page: number = 1,
+  pageSize: number = 20,
+  type?: TransactionType
+): Promise<TransactionListResponse> {
+  const params = new URLSearchParams({
+    page: page.toString(),
+    page_size: pageSize.toString(),
+  });
+  if (type) {
+    params.append('transaction_type', type);
+  }
+  return apiRequest<TransactionListResponse>(`/transactions?${params.toString()}`);
+}
