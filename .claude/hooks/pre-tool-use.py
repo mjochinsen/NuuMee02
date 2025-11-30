@@ -140,12 +140,25 @@ elif tool_name == "Bash":
     command = tool_input.get("command", "")
     if is_safe_command(command):
         # Auto-approve safe commands
-        safe_prefixes = ["ls", "cat", "head", "tail", "grep", "find", "pwd",
-                        "echo", "pnpm", "npm", "git status", "git log", "git diff",
-                        "git add", "git commit", "git push", "git checkout", "git branch",
-                        "python", "node", "tree", "wc", "which", "mkdir", "touch"]
-        if any(command.strip().startswith(p) for p in safe_prefixes):
+        # Commands that are safe (with or without flags)
+        safe_commands = ["ls", "cat", "head", "tail", "grep", "find", "pwd",
+                        "echo", "pnpm", "npm", "python", "python3", "node",
+                        "tree", "wc", "which", "mkdir", "touch", "curl", "wget"]
+        # Git commands (need specific handling)
+        safe_git = ["git status", "git log", "git diff", "git add", "git commit",
+                   "git push", "git checkout", "git branch", "git fetch", "git pull",
+                   "git remote", "git show", "git stash", "git rev-parse"]
+
+        cmd_parts = command.strip().split()
+        base_cmd = cmd_parts[0] if cmd_parts else ""
+
+        # Check if base command is safe
+        if base_cmd in safe_commands:
             decision = "allow"
+        # Check if git command is safe
+        elif command.strip().startswith("git "):
+            if any(command.strip().startswith(g) for g in safe_git):
+                decision = "allow"
 
         # WARNING: Check if committing without audit
         if "git commit" in command:
