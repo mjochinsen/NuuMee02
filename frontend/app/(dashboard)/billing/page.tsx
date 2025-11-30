@@ -85,10 +85,10 @@ interface Transaction {
 }
 
 export default function BillingPage() {
-  const { profile, user } = useAuth();
+  const { profile, user, loading } = useAuth();
   const router = useRouter();
-  const credits = profile?.credits_balance ?? 25;
-  const creditValue = credits * 0.50;
+  const credits = loading ? null : (profile?.credits_balance ?? 0);
+  const creditValue = (credits ?? 0) * 0.50;
   const currentPlan = profile?.subscription_tier || 'free';
   const nextBillingDate = 'Dec 11';
 
@@ -121,8 +121,8 @@ export default function BillingPage() {
       id: 'free',
       name: 'Free',
       price: 0,
-      credits: 5,
-      features: ['5 credits/month', 'Watermarked output', 'Basic speed'],
+      credits: 25,
+      features: ['25 credits (one-time)', 'Watermarked output', 'Basic speed'],
       icon: '⭐',
       current: currentPlan === 'free',
     },
@@ -130,8 +130,8 @@ export default function BillingPage() {
       id: 'creator',
       name: 'Creator',
       price: 29,
-      credits: 50,
-      features: ['50 credits/month', 'No watermarks', 'Standard processing', 'Email support'],
+      credits: 400,
+      features: ['400 credits/month', 'No watermarks', 'Standard processing', 'Email support', '100% rollover (up to 800)'],
       current: currentPlan === 'creator',
       icon: '🏆',
     },
@@ -139,8 +139,8 @@ export default function BillingPage() {
       id: 'studio',
       name: 'Studio',
       price: 99,
-      credits: 200,
-      features: ['200 credits/month', 'Priority processing', 'Priority support', 'API access'],
+      credits: 1600,
+      features: ['1,600 credits/month', 'Priority processing', 'Priority support', 'API access', '100% rollover (up to 3,200)'],
       icon: '💎',
       current: currentPlan === 'studio',
     },
@@ -320,7 +320,7 @@ export default function BillingPage() {
       )}
 
       {/* Low Balance Warning */}
-      {credits < 10 && showLowBalanceWarning && (
+      {credits !== null && credits < 10 && showLowBalanceWarning && (
         <div className="border border-amber-500/20 bg-amber-500/5 rounded-lg p-4 mb-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <AlertCircle className="w-5 h-5 text-amber-500 flex-shrink-0" />
@@ -354,7 +354,7 @@ export default function BillingPage() {
           <h3 className="text-[#94A3B8] mb-4">Current Balance</h3>
           <div className="flex items-center gap-3 mb-2">
             <Zap className="w-8 h-8 text-[#00F0D9]" />
-            <span className="text-[#F1F5F9] text-4xl">{credits}</span>
+            <span className="text-[#F1F5F9] text-4xl">{credits === null ? '...' : credits}</span>
             <span className="text-[#94A3B8] text-xl">Credits</span>
           </div>
           <div className="text-[#94A3B8] text-sm mb-6">

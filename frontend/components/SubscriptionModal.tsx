@@ -15,6 +15,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { PaymentMethodSelector, PaymentMethodSelectorCompact } from '@/components/PaymentMethodSelector';
+import { createSubscription, cancelSubscription, SubscriptionTier, ApiError } from '@/lib/api';
 
 interface Plan {
   id: string;
@@ -67,18 +68,38 @@ export function SubscriptionModal({
   const daysRemaining = 18;
   const proratedCredit = 17.40;
 
-  const handlePrimaryAction = () => {
+  const handlePrimaryAction = async () => {
     setIsProcessing(true);
 
-    setTimeout(() => {
+    try {
       if (type === 'subscribe' || type === 'upgrade' || type === 'founding') {
-        window.location.href = `/subscription/success?plan=${selectedPlan?.id || 'creator'}`;
+        // Create subscription checkout session via Stripe
+        const tier = (selectedPlan?.id === 'studio' ? 'studio' : 'creator') as SubscriptionTier;
+        const response = await createSubscription(tier);
+        // Redirect to Stripe Checkout
+        window.location.href = response.checkout_url;
+      } else if (type === 'cancel') {
+        // Cancel subscription via API
+        const response = await cancelSubscription();
+        // Show success message and close
+        alert(response.message);
+        onClose();
+        window.location.reload();
       } else if (type === 'annual') {
+        // Annual billing not yet implemented - show placeholder
         window.location.href = `/subscription/success?plan=${currentPlan?.id || 'creator'}&annual=true`;
       } else {
         onClose();
       }
-    }, 1000);
+    } catch (error) {
+      console.error('Subscription action failed:', error);
+      if (error instanceof ApiError) {
+        alert(`Error: ${error.message}`);
+      } else {
+        alert('An error occurred. Please try again.');
+      }
+      setIsProcessing(false);
+    }
   };
 
   const renderSubscribeModal = () => (

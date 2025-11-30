@@ -304,3 +304,62 @@ export interface JobOutputResponse {
 export async function getJobOutput(jobId: string): Promise<JobOutputResponse> {
   return apiRequest<JobOutputResponse>(`/jobs/${jobId}/output`);
 }
+
+// Subscription endpoints
+export type SubscriptionTier = 'creator' | 'studio';
+export type SubscriptionStatusType = 'active' | 'canceled' | 'past_due' | 'unpaid';
+
+export interface SubscriptionTierInfo {
+  tier: SubscriptionTier;
+  name: string;
+  price_cents: number;
+  monthly_credits: number;
+  credits_rollover_cap: number;
+}
+
+export interface SubscriptionResponse {
+  subscription_id: string;
+  user_id: string;
+  tier: SubscriptionTier;
+  status: SubscriptionStatusType;
+  stripe_subscription_id: string;
+  monthly_credits: number;
+  current_period_start: string;
+  current_period_end: string;
+  cancel_at_period_end: boolean;
+  created_at: string;
+}
+
+export interface CreateSubscriptionResponse {
+  checkout_url: string;
+  session_id: string;
+}
+
+export interface CancelSubscriptionResponse {
+  subscription_id: string;
+  status: SubscriptionStatusType;
+  cancel_at_period_end: boolean;
+  current_period_end: string;
+  message: string;
+}
+
+export async function getSubscriptionTiers(): Promise<SubscriptionTierInfo[]> {
+  return apiRequest<SubscriptionTierInfo[]>('/subscriptions/tiers', { skipAuth: true });
+}
+
+export async function getCurrentSubscription(): Promise<SubscriptionResponse | null> {
+  return apiRequest<SubscriptionResponse | null>('/subscriptions/current');
+}
+
+export async function createSubscription(tier: SubscriptionTier): Promise<CreateSubscriptionResponse> {
+  return apiRequest<CreateSubscriptionResponse>('/subscriptions/create', {
+    method: 'POST',
+    body: JSON.stringify({ tier }),
+  });
+}
+
+export async function cancelSubscription(): Promise<CancelSubscriptionResponse> {
+  return apiRequest<CancelSubscriptionResponse>('/subscriptions/cancel', {
+    method: 'POST',
+  });
+}
