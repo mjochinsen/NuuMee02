@@ -46,15 +46,9 @@ export function SubscriptionModal({
   selectedPlan,
   isAnnual = false,
 }: SubscriptionModalProps) {
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('card-1');
   const [isProcessing, setIsProcessing] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
   const [otherReason, setOtherReason] = useState('');
-
-  const paymentMethods = [
-    { id: 'card-1', last4: '4242', brand: 'Visa', isDefault: true },
-    { id: 'card-2', last4: '5555', brand: 'Mastercard', isDefault: false },
-  ];
 
   const cancelReasons = [
     'Too expensive',
@@ -136,7 +130,7 @@ export function SubscriptionModal({
       </div>
 
       {/* Payment Method */}
-      <PaymentMethodSelectorCompact selectedMethod={selectedPaymentMethod} />
+      <PaymentMethodSelectorCompact />
 
       {/* Billing */}
       <div className="border-t border-[#334155] pt-4 mb-6">
@@ -215,13 +209,7 @@ export function SubscriptionModal({
       </div>
 
       {/* Payment Method */}
-      <div className="mb-6">
-        <h4 className="text-[#F1F5F9] mb-3">Payment method:</h4>
-        <div className="flex items-center justify-between p-3 rounded-lg border border-[#334155] bg-[#1E293B]">
-          <span className="text-[#F1F5F9]">💳 •••• 4242 (Visa)</span>
-          <button className="text-[#00F0D9] text-sm hover:underline">Change</button>
-        </div>
-      </div>
+      <PaymentMethodSelectorCompact />
 
       {/* Billing Adjustment */}
       <div className="border-t border-[#334155] pt-4 mb-6">
@@ -493,13 +481,7 @@ export function SubscriptionModal({
         </div>
 
         {/* Payment Method */}
-        <div className="mb-6">
-          <h4 className="text-[#F1F5F9] mb-3">Payment method:</h4>
-          <div className="flex items-center justify-between p-3 rounded-lg border border-[#334155] bg-[#1E293B]">
-            <span className="text-[#F1F5F9]">💳 •••• 4242 (Visa)</span>
-            <button className="text-[#00F0D9] text-sm hover:underline">Change</button>
-          </div>
-        </div>
+        <PaymentMethodSelectorCompact />
 
         {/* Billing */}
         <div className="border-t border-[#334155] pt-4 mb-6">
@@ -622,13 +604,7 @@ export function SubscriptionModal({
         </div>
 
         {/* Payment Method */}
-        <div className="mb-6">
-          <h4 className="text-[#F1F5F9] mb-3">Payment method:</h4>
-          <div className="flex items-center justify-between p-3 rounded-lg border border-[#334155] bg-[#1E293B]">
-            <span className="text-[#F1F5F9]">💳 •••• 4242 (Visa)</span>
-            <button className="text-[#00F0D9] text-sm hover:underline">Change</button>
-          </div>
-        </div>
+        <PaymentMethodSelectorCompact />
 
         {/* Billing */}
         <div className="border-t border-[#334155] pt-4 mb-6">

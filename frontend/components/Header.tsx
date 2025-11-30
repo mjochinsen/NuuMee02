@@ -17,8 +17,8 @@ export function Header() {
   const pathname = usePathname();
   const { user, profile, loading, signOut } = useAuth();
 
-  // Get credits from profile, default to 0 if not loaded
-  const credits = profile?.credits_balance ?? 0;
+  // Get credits from profile, null while loading
+  const credits = loading ? null : (profile?.credits_balance ?? 0);
 
   const isActive = (path: string) => pathname === path;
 
@@ -88,7 +88,7 @@ export function Header() {
               <Link href="/billing">
                 <button className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-[#3B1FE2] to-[#00F0D9] hover:opacity-90 transition-opacity">
                   <Zap className="w-4 h-4 text-white" />
-                  <span className="text-white text-sm font-medium">{credits} Credits</span>
+                  <span className="text-white text-sm font-medium">{credits === null ? '...' : credits} Credits</span>
                   <Plus className="w-4 h-4 text-white" />
                 </button>
               </Link>
@@ -163,18 +163,11 @@ export function Header() {
               </DropdownMenu>
             </>
           ) : (
-            <>
-              <Link href="/login">
-                <button className="flex items-center gap-2 px-4 py-2 rounded-lg border border-[#334155] text-[#94A3B8] hover:border-[#00F0D9] hover:text-[#00F0D9] transition-colors text-sm">
-                  Login
-                </button>
-              </Link>
-              <Link href="/signup">
-                <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-[#3B1FE2] to-[#00F0D9] text-white hover:opacity-90 transition-opacity text-sm font-medium">
-                  Sign Up
-                </button>
-              </Link>
-            </>
+            <Link href="/login">
+              <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-[#3B1FE2] to-[#00F0D9] text-white hover:opacity-90 transition-opacity text-sm font-medium">
+                Login / Sign Up
+              </button>
+            </Link>
           )}
         </div>
       </div>

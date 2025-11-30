@@ -24,13 +24,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -615,29 +608,13 @@ export default function BillingPage() {
         <div className="flex items-center justify-between">
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-2">
-              <Switch checked={autoRefill} onCheckedChange={setAutoRefill} />
+              <Switch checked={autoRefill} onCheckedChange={setAutoRefill} disabled />
               <span className="text-[#F1F5F9]">Auto-refill when balance drops below 10 credits</span>
+              <Badge variant="outline" className="border-amber-500/50 text-amber-400 text-xs">Coming Soon</Badge>
             </div>
-            {autoRefill && (
-              <div className="ml-11 flex items-center gap-3">
-                <span className="text-[#94A3B8] text-sm">Package:</span>
-                <Select defaultValue="popular">
-                  <SelectTrigger className="w-48 bg-[#1E293B] border-[#334155] text-[#F1F5F9]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-[#1E293B] border-[#334155]">
-                    {creditPackages.map((pkg) => (
-                      <SelectItem key={pkg.id} value={pkg.id} className="text-[#F1F5F9]">
-                        {pkg.name} ({pkg.credits} credits)
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Button size="sm" className="bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] hover:opacity-90 text-white">
-                  Save Settings
-                </Button>
-              </div>
-            )}
+            <p className="text-[#94A3B8] text-sm ml-11">
+              Automatic credit top-ups will be available soon. You'll be able to set a threshold and automatically purchase credits when your balance runs low.
+            </p>
           </div>
         </div>
       </div>
