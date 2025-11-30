@@ -1,6 +1,7 @@
 """Job management routes."""
 import os
 import uuid
+import logging
 from datetime import datetime, timezone
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -17,6 +18,9 @@ from .models import (
 )
 from ..auth.firebase import get_firestore_client
 from ..middleware.auth import get_current_user_id
+from ..tasks.queue import enqueue_job
+
+logger = logging.getLogger(__name__)
 
 
 router = APIRouter(prefix="/jobs", tags=["Jobs"])
@@ -187,12 +191,28 @@ async def create_job(
         transaction = db.transaction()
         new_balance = create_job_transaction(transaction, user_ref, job_ref, job_data, credits_to_charge)
 
+        # Enqueue job for processing
+        try:
+            task_name = enqueue_job(job_id)
+            logger.info(f"Job {job_id} enqueued: {task_name}")
+
+            # Update job status to queued
+            job_ref.update({
+                "status": JobStatus.QUEUED.value,
+                "updated_at": datetime.now(timezone.utc),
+            })
+            job_status = JobStatus.QUEUED
+        except Exception as e:
+            logger.error(f"Failed to enqueue job {job_id}: {e}")
+            # Job stays in pending state, can be retried later
+            job_status = JobStatus.PENDING
+
         # Return job response
         return JobResponse(
             id=job_id,
             user_id=user_id,
             job_type=request.job_type,
-            status=JobStatus.PENDING,
+            status=job_status,
             reference_image_path=request.reference_image_path,
             motion_video_path=request.motion_video_path,
             resolution=request.resolution,

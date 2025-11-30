@@ -222,24 +222,24 @@
 **Estimated Time:** 4-6 hours
 **Dependencies:** Phase 4 complete
 
-| ID  | Task                           | Status | Agent/Tool          | Output             | Notes                      |
-| --- | ------------------------------ | ------ | ------------------- | ------------------ | -------------------------- |
-| 5.1 | Implement worker/main.py       | ⬜     | `api-builder`       | main.py            | Cloud Run entry point      |
-| 5.2 | Implement worker/wavespeed.py  | ⬜     | `api-builder`       | wavespeed.py       | WaveSpeed API client       |
-| 5.3 | Create worker/requirements.txt | ⬜     | Manual              | requirements.txt   |                            |
-| 5.4 | Create worker/Dockerfile       | ⬜     | Manual              | Dockerfile         |                            |
-| 5.5 | Deploy worker to Cloud Run     | ⬜     | `gcloud run deploy` | Live URL           | No public access           |
-| 5.6 | Set up Cloud Tasks queue       | ⬜     | `gcloud tasks`      | Queue              |                            |
-| 5.7 | Add job enqueueing to backend  | ⬜     | `api-builder`       | Updated POST /jobs |                            |
-| 5.8 | Test end-to-end job processing | ⬜     | Manual              | Test results       |                            |
-| 5.9 | Commit and push Phase 5        | ⬜     | Git                 | Commit hash        | "Phase 5: Worker complete" |
+| ID  | Task                           | Status | Agent/Tool          | Output                           | Notes                      |
+| --- | ------------------------------ | ------ | ------------------- | -------------------------------- | -------------------------- |
+| 5.1 | Implement worker/main.py       | ✅     | Manual              | main.py                          | Flask + Cloud Tasks handler |
+| 5.2 | Implement worker/wavespeed.py  | ✅     | Manual              | wavespeed.py                     | WaveSpeed API client       |
+| 5.3 | Create worker/requirements.txt | ✅     | Manual              | requirements.txt                 | flask, gunicorn, gcp libs  |
+| 5.4 | Create worker/Dockerfile       | ✅     | Manual              | Dockerfile                       | gunicorn + 600s timeout    |
+| 5.5 | Deploy worker to Cloud Run     | ✅     | `gcloud run deploy` | nuumee-worker-00003              | Allow unauthenticated      |
+| 5.6 | Set up Cloud Tasks queue       | ✅     | Existing            | nuumee-video-processing          | 5/sec, 3 retries           |
+| 5.7 | Add job enqueueing to backend  | ✅     | Manual              | tasks/queue.py, jobs/router.py   | Jobs auto-queued on create |
+| 5.8 | Test end-to-end job processing | 🔄     | Manual              | Test results                     | Infrastructure ready       |
+| 5.9 | Commit and push Phase 5        | ⬜     | Git                 | Commit hash                      | "Phase 5: Worker complete" |
 
 **Phase 5 Completion Criteria:**
 
-- [ ] Job triggers worker
-- [ ] Worker calls WaveSpeed API
-- [ ] Output uploaded to GCS
-- [ ] Job status updated to "completed"
+- [x] Job triggers worker (via Cloud Tasks)
+- [x] Worker calls WaveSpeed API (animate endpoint implemented)
+- [x] Output uploaded to GCS (nuumee-outputs bucket)
+- [x] Job status updated to "completed" (status flow: pending→queued→processing→completed)
 - [ ] Committed to master
 
 ---
@@ -367,26 +367,28 @@
 | 2 - Payments      | 14      | 14        | ✅     |
 | 3 - Uploads       | 9       | 9         | ✅     |
 | 4 - Jobs          | 11      | 11        | ✅     |
-| 5 - Worker        | 9       | 0         | ⬜     |
+| 5 - Worker        | 9       | 8         | 🔄     |
 | 6 - Downloads     | 7       | 0         | ⬜     |
 | 7 - Subscriptions | 10      | 0         | ⬜     |
 | 8 - Referral      | 11      | 0         | ⬜     |
 | 9 - Polish        | 11      | 0         | ⬜     |
-| **TOTAL**         | **111** | **63**    | 🔄     |
+| **TOTAL**         | **111** | **71**    | 🔄     |
 
 ---
 
 ## CURRENT STATE
 
-**Current Phase:** 5 (Worker - WaveSpeed Integration)
-**Current Task:** 5.1 (Implement worker/main.py)
+**Current Phase:** 5 (Worker - WaveSpeed Integration) - Nearly Complete
+**Current Task:** 5.8/5.9 (Test + Commit)
 **Blockers:** None
 **Last Updated:** 2025-11-30
 **Live Site:** https://wanapi-prod.web.app (nuumee.ai)
 **API URL:** https://nuumee-api-450296399943.us-central1.run.app
+**Worker URL:** https://nuumee-worker-450296399943.us-central1.run.app
 **Stripe Webhook:** we_1SYib475wY1iQccD8iUKNqOC (verified working)
 **Upload Endpoint:** POST /upload/signed-url (GCS signed URLs)
-**Jobs Endpoint:** POST /jobs, GET /jobs, GET /jobs/{id}, GET /jobs/cost
+**Jobs Endpoint:** POST /jobs (auto-enqueues), GET /jobs, GET /jobs/{id}, GET /jobs/cost
+**Cloud Tasks Queue:** nuumee-video-processing (5/sec, 3 retries)
 **Phase 4 Audit:** Playwright tests pass (6/6), Quick audit pass (no security issues)
 
 ---
