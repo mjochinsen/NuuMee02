@@ -231,16 +231,16 @@
 | 5.5 | Deploy worker to Cloud Run     | ✅     | `gcloud run deploy` | nuumee-worker-00003              | Allow unauthenticated      |
 | 5.6 | Set up Cloud Tasks queue       | ✅     | Existing            | nuumee-video-processing          | 5/sec, 3 retries           |
 | 5.7 | Add job enqueueing to backend  | ✅     | Manual              | tasks/queue.py, jobs/router.py   | Jobs auto-queued on create |
-| 5.8 | Test end-to-end job processing | 🔄     | Manual              | Test results                     | Infrastructure ready       |
-| 5.9 | Commit and push Phase 5        | ⬜     | Git                 | Commit hash                      | "Phase 5: Worker complete" |
+| 5.8 | Test end-to-end job processing | ✅     | Manual + Agents     | 40 tests, 90% coverage           | All 4 job types working    |
+| 5.9 | Commit and push Phase 5        | ✅     | Git                 | ae0215b, e4f4590                 | "Phase 5: Worker complete" |
 
 **Phase 5 Completion Criteria:**
 
 - [x] Job triggers worker (via Cloud Tasks)
-- [x] Worker calls WaveSpeed API (animate endpoint implemented)
+- [x] Worker calls WaveSpeed API (all 4 endpoints: animate, extend, upscale, foley)
 - [x] Output uploaded to GCS (nuumee-outputs bucket)
 - [x] Job status updated to "completed" (status flow: pending→queued→processing→completed)
-- [ ] Committed to master
+- [x] Committed to branch (ae0215b, e4f4590)
 
 ---
 
@@ -367,19 +367,19 @@
 | 2 - Payments      | 14      | 14        | ✅     |
 | 3 - Uploads       | 9       | 9         | ✅     |
 | 4 - Jobs          | 11      | 11        | ✅     |
-| 5 - Worker        | 9       | 8         | 🔄     |
+| 5 - Worker        | 9       | 9         | ✅     |
 | 6 - Downloads     | 7       | 0         | ⬜     |
 | 7 - Subscriptions | 10      | 0         | ⬜     |
 | 8 - Referral      | 11      | 0         | ⬜     |
 | 9 - Polish        | 11      | 0         | ⬜     |
-| **TOTAL**         | **111** | **71**    | 🔄     |
+| **TOTAL**         | **111** | **72**    | 🔄     |
 
 ---
 
 ## CURRENT STATE
 
-**Current Phase:** 5 (Worker - WaveSpeed Integration) - Nearly Complete
-**Current Task:** 5.8/5.9 (Test + Commit)
+**Current Phase:** 6 (Downloads) - Ready to Start
+**Current Task:** 6.1 (Implement GET /jobs/{id}/output)
 **Blockers:** None
 **Last Updated:** 2025-11-30
 **Live Site:** https://wanapi-prod.web.app (nuumee.ai)
