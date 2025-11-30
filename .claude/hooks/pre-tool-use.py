@@ -142,7 +142,8 @@ elif tool_name == "Bash":
         # Auto-approve safe commands
         safe_prefixes = ["ls", "cat", "head", "tail", "grep", "find", "pwd",
                         "echo", "pnpm", "npm", "git status", "git log", "git diff",
-                        "python", "node", "tree", "wc", "which"]
+                        "git add", "git commit", "git push", "git checkout", "git branch",
+                        "python", "node", "tree", "wc", "which", "mkdir", "touch"]
         if any(command.strip().startswith(p) for p in safe_prefixes):
             decision = "allow"
 
