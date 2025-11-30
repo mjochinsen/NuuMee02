@@ -390,51 +390,60 @@ test.describe('Authentication Flow', () => {
     test('should redirect /jobs to login when unauthenticated', async ({ page }) => {
       // Attempt to access jobs page without auth
       await page.goto('/jobs');
+      await page.waitForLoadState('networkidle');
 
-      // Should redirect to login (or stay on jobs but show login required state)
-      // Note: This test may need adjustment based on actual auth guard implementation
-      await page.waitForTimeout(1000);
-
-      // Check if redirected to login OR if page shows auth required message
+      // Check for auth-required indicators: either redirected to login or shows sign-in prompt
       const url = page.url();
-      const hasLoginUrl = url.includes('/login');
-      const hasJobsUrl = url.includes('/jobs');
+      const redirectedToLogin = url.includes('/login');
+      const showsSignInPrompt = await page.locator('text=/sign in|log in|login/i').first().isVisible().catch(() => false);
+      const showsAuthRequired = await page.locator('text=/authentication required|please sign in/i').first().isVisible().catch(() => false);
 
-      // Either redirected to login or on jobs page (will be handled by auth guard)
-      expect(hasLoginUrl || hasJobsUrl).toBeTruthy();
+      // Page must either redirect to login OR show a sign-in prompt
+      expect(redirectedToLogin || showsSignInPrompt || showsAuthRequired).toBeTruthy();
     });
 
     test('should redirect /account to login when unauthenticated', async ({ page }) => {
       await page.goto('/account');
-      await page.waitForTimeout(1000);
+      await page.waitForLoadState('networkidle');
 
       const url = page.url();
-      const hasLoginUrl = url.includes('/login');
-      const hasAccountUrl = url.includes('/account');
+      const redirectedToLogin = url.includes('/login');
+      const showsSignInPrompt = await page.locator('text=/sign in|log in|login/i').first().isVisible().catch(() => false);
 
-      expect(hasLoginUrl || hasAccountUrl).toBeTruthy();
+      expect(redirectedToLogin || showsSignInPrompt).toBeTruthy();
     });
 
     test('should redirect /billing to login when unauthenticated', async ({ page }) => {
       await page.goto('/billing');
-      await page.waitForTimeout(1000);
+      await page.waitForLoadState('networkidle');
 
       const url = page.url();
-      const hasLoginUrl = url.includes('/login');
-      const hasBillingUrl = url.includes('/billing');
+      const redirectedToLogin = url.includes('/login');
+      const showsSignInPrompt = await page.locator('text=/sign in|log in|login/i').first().isVisible().catch(() => false);
 
-      expect(hasLoginUrl || hasBillingUrl).toBeTruthy();
+      expect(redirectedToLogin || showsSignInPrompt).toBeTruthy();
     });
 
     test('should redirect /api-keys to login when unauthenticated', async ({ page }) => {
       await page.goto('/api-keys');
-      await page.waitForTimeout(1000);
+      await page.waitForLoadState('networkidle');
 
       const url = page.url();
-      const hasLoginUrl = url.includes('/login');
-      const hasApiKeysUrl = url.includes('/api-keys');
+      const redirectedToLogin = url.includes('/login');
+      const showsSignInPrompt = await page.locator('text=/sign in|log in|login/i').first().isVisible().catch(() => false);
 
-      expect(hasLoginUrl || hasApiKeysUrl).toBeTruthy();
+      expect(redirectedToLogin || showsSignInPrompt).toBeTruthy();
+    });
+
+    test('should redirect /referral to login when unauthenticated', async ({ page }) => {
+      await page.goto('/referral');
+      await page.waitForLoadState('networkidle');
+
+      const url = page.url();
+      const redirectedToLogin = url.includes('/login');
+      const showsSignInPrompt = await page.locator('text=/sign in|log in|login/i').first().isVisible().catch(() => false);
+
+      expect(redirectedToLogin || showsSignInPrompt).toBeTruthy();
     });
   });
 

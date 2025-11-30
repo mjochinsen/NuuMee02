@@ -317,7 +317,7 @@
 | 8.10  | Remove mock UI from referral page     | ✅     | Manual                 | referral/page.tsx      | Leaderboard hidden, activity shows empty |
 | 8.11  | Run comprehensive audit               | ✅     | `/audit quick`         | No issues found        | Security: clean, TODOs: 0, Build: pass   |
 | 8.12  | Deploy and test                       | ✅     | `firebase deploy`      | wanapi-prod.web.app    | Deployed, auth-protected page works      |
-| 8.13  | Commit and push Phase 8               | ⬜     | Git                    | Commit hash            | "Phase 8: Referral complete"             |
+| 8.13  | Commit and push Phase 8               | ✅     | Git                    | ace5d00                | "Phase 8: Remove mock UI"                |
 
 **Phase 8 Completion Criteria:**
 
