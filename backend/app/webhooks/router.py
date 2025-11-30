@@ -7,7 +7,7 @@ from google.cloud import secretmanager, firestore
 import stripe
 
 from ..auth.firebase import get_firestore_client
-from ..subscriptions.models import SubscriptionTier, SubscriptionStatus, SUBSCRIPTION_TIERS
+from ..subscriptions.models import SubscriptionTier, SubscriptionStatus, get_subscription_tiers
 
 
 router = APIRouter(prefix="/webhooks", tags=["Webhooks"])
@@ -205,6 +205,8 @@ async def handle_subscription_created(session: dict):
     1. Creates subscription record in Firestore
     2. Grants initial monthly credits to user
     3. Updates user's subscription tier
+
+    Idempotency: Checks if subscription already exists before creating.
     """
     metadata = session.get("metadata", {})
     user_id = metadata.get("user_id")
@@ -212,24 +214,37 @@ async def handle_subscription_created(session: dict):
     monthly_credits_str = metadata.get("monthly_credits")
     stripe_subscription_id = session.get("subscription")
     stripe_customer_id = session.get("customer")
+    checkout_session_id = session.get("id")
 
     if not user_id or not tier or not stripe_subscription_id:
-        print(f"Missing metadata in subscription session: {session.get('id')}")
+        print(f"Missing metadata in subscription session: {checkout_session_id}")
         return
 
     try:
         monthly_credits = int(monthly_credits_str) if monthly_credits_str else 0
     except ValueError:
-        monthly_credits = SUBSCRIPTION_TIERS.get(SubscriptionTier(tier), {}).get("monthly_credits", 0)
+        tiers = get_subscription_tiers()
+        monthly_credits = tiers.get(SubscriptionTier(tier), {}).get("monthly_credits", 0)
 
     db = get_firestore_client()
     now = datetime.now(timezone.utc)
+
+    # IDEMPOTENCY CHECK: Check if subscription already exists for this Stripe subscription
+    existing_subs = db.collection("subscriptions")\
+        .where("stripe_subscription_id", "==", stripe_subscription_id)\
+        .limit(1)\
+        .get()
+
+    if list(existing_subs):
+        print(f"[IDEMPOTENCY] Subscription already exists for stripe_subscription_id: {stripe_subscription_id}")
+        return
 
     # Generate subscription ID
     subscription_id = f"sub_{uuid.uuid4().hex[:12]}"
 
     # Get tier config for rollover cap
-    tier_config = SUBSCRIPTION_TIERS.get(SubscriptionTier(tier), {})
+    tiers = get_subscription_tiers()
+    tier_config = tiers.get(SubscriptionTier(tier), {})
     credits_rollover_cap = tier_config.get("credits_rollover_cap", monthly_credits * 2)
 
     # Create subscription document
@@ -309,17 +324,21 @@ async def handle_invoice_paid(invoice: dict):
 
     This grants monthly credits on each successful payment.
     Skips the initial invoice (handled by handle_subscription_created).
+
+    Idempotency: Checks if credit transaction already exists for this invoice.
     """
+    invoice_id = invoice.get("id")
+
     # Check if this is a subscription invoice
     subscription_id = invoice.get("subscription")
     if not subscription_id:
-        print(f"Invoice {invoice.get('id')} is not for a subscription")
+        print(f"Invoice {invoice_id} is not for a subscription")
         return
 
     # Skip if this is the first invoice (initial subscription)
     billing_reason = invoice.get("billing_reason")
     if billing_reason == "subscription_create":
-        print(f"Skipping initial subscription invoice {invoice.get('id')}")
+        print(f"Skipping initial subscription invoice {invoice_id}")
         return
 
     # Only process renewal invoices
@@ -328,6 +347,17 @@ async def handle_invoice_paid(invoice: dict):
         return
 
     db = get_firestore_client()
+
+    # IDEMPOTENCY CHECK: Check if we already processed this invoice
+    existing_txn = db.collection("credit_transactions")\
+        .where("related_stripe_payment_id", "==", invoice.get("payment_intent"))\
+        .where("type", "==", "subscription_renewal")\
+        .limit(1)\
+        .get()
+
+    if list(existing_txn):
+        print(f"[IDEMPOTENCY] Invoice {invoice_id} already processed")
+        return
 
     # Find subscription by Stripe subscription ID
     subs_query = db.collection("subscriptions")\

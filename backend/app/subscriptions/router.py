@@ -4,14 +4,16 @@ import uuid
 import logging
 from datetime import datetime, timezone
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from google.cloud import firestore, secretmanager
 import stripe
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
 from .models import (
     SubscriptionTier,
     SubscriptionStatus,
-    SUBSCRIPTION_TIERS,
+    get_subscription_tiers,
     SubscriptionTierInfo,
     CreateSubscriptionRequest,
     CreateSubscriptionResponse,
@@ -24,6 +26,9 @@ from ..middleware.auth import get_current_user_id
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/subscriptions", tags=["Subscriptions"])
+
+# Rate limiter - uses IP address for key
+limiter = Limiter(key_func=get_remote_address)
 
 # Stripe API key loading (same pattern as credits router)
 _stripe_key_loaded = False
@@ -71,6 +76,7 @@ async def list_subscription_tiers():
     This endpoint does not require authentication.
     Returns details about available subscription plans.
     """
+    tiers = get_subscription_tiers()
     return [
         SubscriptionTierInfo(
             tier=tier,
@@ -79,12 +85,14 @@ async def list_subscription_tiers():
             monthly_credits=config["monthly_credits"],
             credits_rollover_cap=config["credits_rollover_cap"],
         )
-        for tier, config in SUBSCRIPTION_TIERS.items()
+        for tier, config in tiers.items()
     ]
 
 
 @router.post("/create", response_model=CreateSubscriptionResponse)
+@limiter.limit("5/minute")
 async def create_subscription(
+    request_obj: Request,
     request: CreateSubscriptionRequest,
     user_id: str = Depends(get_current_user_id),
 ):
@@ -127,9 +135,15 @@ async def create_subscription(
         )
 
     # Get tier configuration
-    tier_config = SUBSCRIPTION_TIERS.get(request.tier)
+    tiers = get_subscription_tiers()
+    tier_config = tiers.get(request.tier)
     if not tier_config:
         raise HTTPException(status_code=400, detail=f"Invalid subscription tier: {request.tier}")
+
+    # Validate Stripe price ID is configured
+    if not tier_config.get("stripe_price_id"):
+        logger.error(f"Missing Stripe price ID for tier: {request.tier}")
+        raise HTTPException(status_code=500, detail="Subscription tier not configured")
 
     # Get or create Stripe customer
     stripe_customer_id = user_data.get("stripe_customer_id")
@@ -240,7 +254,9 @@ async def get_current_subscription(
 
 
 @router.post("/cancel", response_model=CancelSubscriptionResponse)
+@limiter.limit("5/minute")
 async def cancel_subscription(
+    request: Request,
     user_id: str = Depends(get_current_user_id),
 ):
     """

@@ -1,7 +1,10 @@
 """NuuMee API - FastAPI Backend."""
 import os
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 
 from .auth.router import router as auth_router
 from .credits.router import router as credits_router
@@ -9,12 +12,17 @@ from .webhooks.router import router as webhooks_router
 from .upload.router import router as upload_router
 from .jobs.router import router as jobs_router
 from .subscriptions.router import router as subscriptions_router
+from .subscriptions.router import limiter
 
 app = FastAPI(
     title="NuuMee API",
     version="1.0.0",
     description="AI-powered video character replacement API"
 )
+
+# Add rate limiter state to app
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # CORS configuration
 cors_origins = os.getenv(

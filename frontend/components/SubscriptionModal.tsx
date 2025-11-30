@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { X, Check, AlertTriangle, Crown, Sparkles, ArrowRight } from 'lucide-react';
+import { toast } from 'sonner';
 import {
   Dialog,
   DialogContent,
@@ -82,7 +83,7 @@ export function SubscriptionModal({
         // Cancel subscription via API
         const response = await cancelSubscription();
         // Show success message and close
-        alert(response.message);
+        toast.success(response.message);
         onClose();
         window.location.reload();
       } else if (type === 'annual') {
@@ -94,9 +95,9 @@ export function SubscriptionModal({
     } catch (error) {
       console.error('Subscription action failed:', error);
       if (error instanceof ApiError) {
-        alert(`Error: ${error.message}`);
+        toast.error(error.message);
       } else {
-        alert('An error occurred. Please try again.');
+        toast.error('An error occurred. Please try again.');
       }
       setIsProcessing(false);
     }

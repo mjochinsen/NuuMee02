@@ -1,4 +1,5 @@
 """Pydantic models for subscription management."""
+import os
 from datetime import datetime
 from enum import Enum
 from typing import Optional
@@ -19,23 +20,76 @@ class SubscriptionStatus(str, Enum):
     UNPAID = "unpaid"
 
 
-# Subscription tier configuration
-SUBSCRIPTION_TIERS = {
-    SubscriptionTier.CREATOR: {
-        "name": "Creator",
-        "price_cents": 2900,  # $29/month
-        "monthly_credits": 400,
-        "stripe_price_id": "price_1SWSmxQBPfmhkssa6Z8nxFcN",  # Stripe Creator Plan
-        "credits_rollover_cap": 800,  # 2x monthly credits
-    },
-    SubscriptionTier.STUDIO: {
-        "name": "Studio",
-        "price_cents": 9900,  # $99/month
-        "monthly_credits": 1600,
-        "stripe_price_id": "price_1SZ311QBPfmhkssaioh8XeVc",  # Stripe Studio Plan
-        "credits_rollover_cap": 3200,  # 2x monthly credits
-    },
-}
+# Cache for Stripe price IDs
+_cached_price_ids = {}
+
+
+def _get_stripe_price_id(tier: str) -> str:
+    """
+    Get Stripe price ID from environment or Secret Manager.
+
+    Environment variables (checked first):
+    - STRIPE_CREATOR_PRICE_ID
+    - STRIPE_STUDIO_PRICE_ID
+
+    Secret Manager secrets (production):
+    - stripe-creator-price-id
+    - stripe-studio-price-id
+    """
+    global _cached_price_ids
+
+    if tier in _cached_price_ids:
+        return _cached_price_ids[tier]
+
+    env_var = f"STRIPE_{tier.upper()}_PRICE_ID"
+    price_id = os.getenv(env_var)
+
+    if price_id:
+        _cached_price_ids[tier] = price_id
+        return price_id
+
+    # Try Secret Manager in production
+    if os.getenv("USE_SECRET_MANAGER", "false").lower() == "true":
+        try:
+            from google.cloud import secretmanager
+            project_id = os.getenv("GCP_PROJECT_ID", "wanapi-prod")
+            client = secretmanager.SecretManagerServiceClient()
+            secret_name = f"stripe-{tier.lower()}-price-id"
+            name = f"projects/{project_id}/secrets/{secret_name}/versions/latest"
+            response = client.access_secret_version(request={"name": name})
+            price_id = response.payload.data.decode("UTF-8").strip()
+            _cached_price_ids[tier] = price_id
+            return price_id
+        except Exception as e:
+            print(f"Failed to get Stripe price ID from Secret Manager for {tier}: {e}")
+
+    return ""
+
+
+def get_subscription_tiers() -> dict:
+    """
+    Get subscription tier configuration with price IDs from environment/Secret Manager.
+
+    Price IDs are loaded from:
+    1. Environment variables (STRIPE_CREATOR_PRICE_ID, STRIPE_STUDIO_PRICE_ID)
+    2. Secret Manager (stripe-creator-price-id, stripe-studio-price-id)
+    """
+    return {
+        SubscriptionTier.CREATOR: {
+            "name": "Creator",
+            "price_cents": 2900,  # $29/month
+            "monthly_credits": 400,
+            "stripe_price_id": _get_stripe_price_id("creator"),
+            "credits_rollover_cap": 800,  # 2x monthly credits
+        },
+        SubscriptionTier.STUDIO: {
+            "name": "Studio",
+            "price_cents": 9900,  # $99/month
+            "monthly_credits": 1600,
+            "stripe_price_id": _get_stripe_price_id("studio"),
+            "credits_rollover_cap": 3200,  # 2x monthly credits
+        },
+    }
 
 
 class SubscriptionTierInfo(BaseModel):
