@@ -458,3 +458,28 @@ export async function requestAffiliatePayout(amount: number): Promise<PayoutResp
     body: JSON.stringify({ amount }),
   });
 }
+
+// Status/Health endpoints
+export type ServiceStatusType = 'operational' | 'degraded' | 'partial_outage' | 'major_outage' | 'maintenance';
+export type SystemStatusType = 'operational' | 'partial_outage' | 'major_outage' | 'maintenance';
+
+export interface ServiceHealth {
+  name: string;
+  status: ServiceStatusType;
+  latency_ms: number | null;
+  message: string | null;
+  last_checked: string;
+}
+
+export interface SystemHealthResponse {
+  status: SystemStatusType;
+  services: ServiceHealth[];
+  uptime_percentage: number;
+  last_incident: string | null;
+  last_incident_date: string | null;
+  checked_at: string;
+}
+
+export async function getSystemStatus(): Promise<SystemHealthResponse> {
+  return apiRequest<SystemHealthResponse>('/status', { skipAuth: true });
+}

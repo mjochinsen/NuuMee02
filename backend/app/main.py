@@ -15,6 +15,7 @@ from .subscriptions.router import router as subscriptions_router
 from .subscriptions.router import limiter
 from .referral.router import router as referral_router
 from .affiliate.router import router as affiliate_router
+from .status.router import router as status_router
 
 app = FastAPI(
     title="NuuMee API",
@@ -55,6 +56,7 @@ app.include_router(jobs_router, prefix="/api/v1")
 app.include_router(subscriptions_router, prefix="/api/v1")
 app.include_router(referral_router, prefix="/api/v1")
 app.include_router(affiliate_router, prefix="/api/v1")
+app.include_router(status_router, prefix="/api/v1")
 
 
 @app.get("/health")
