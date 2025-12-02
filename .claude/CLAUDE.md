@@ -104,10 +104,14 @@ Categories: insight, pattern, decision, bug, preference
 **Audit:** `/audit` (full) | `/audit quick` (security + TODOs)
 
 See [INFRASTRUCTURE_REFERENCE.md](../docs/agents/orchestration/systems/INFRASTRUCTURE_REFERENCE.md) for:
-
 - Sub-agent file write limitations
 - Hooks system (auto-approve, blocked ops, logs)
 - Agent inventory
+
+**Orchestration Patterns:**
+- [DELEGATION_CONTRACT.md](../docs/agents/orchestration/DELEGATION_CONTRACT.md) - 5-element contract
+- [ORCHESTRATOR_PATTERN.md](../docs/agents/orchestration/ORCHESTRATOR_PATTERN.md) - Orchestrator-workers
+- [CHECKPOINTING.md](../docs/agents/orchestration/CHECKPOINTING.md) - Recovery patterns
 
 ## Agent Routing
 
@@ -127,7 +131,7 @@ See [INFRASTRUCTURE_REFERENCE.md](../docs/agents/orchestration/systems/INFRASTRU
 
 **Model Selection:**
 
-- Use `opus` for: architecture decisions, complex debugging, multi-file refactors, planning
+- Use `opus` for: orchestration, architecture decisions, complex debugging, multi-file refactors, planning
 - Use `sonnet` for: standard implementation, simple fixes, routine tasks
 - Use `haiku` for: quick lookups, simple searches, validation checks
 
@@ -135,11 +139,14 @@ See [INFRASTRUCTURE_REFERENCE.md](../docs/agents/orchestration/systems/INFRASTRU
 
 Sub-agents are isolated. Their file writes NEVER persist.
 
-Sub-agents MUST return only:
+Every sub-agent delegation MUST include the 5-element contract:
+1. **OBJECTIVE** - specific goal
+2. **OUTPUT FORMAT** - FILE: path + code block
+3. **TOOLS** - allowed tools (never Write/Edit)
+4. **SOURCES** - files to reference
+5. **BOUNDARIES** - what NOT to do
 
-1. Exact file path
-2. Full code in fenced block
-3. One-line purpose summary
+See: [DELEGATION_CONTRACT.md](../docs/agents/orchestration/DELEGATION_CONTRACT.md)
 
 **KODY must write all files.**
 
@@ -173,7 +180,8 @@ Sub-agents MUST return only:
 | Learned something useful   | `/remember insight: ...`                |
 | Fixed tricky bug           | `/remember bug: cause was X, fix was Y` |
 | Need context on topic      | `/recall {topic}`                       |
-| Delegating code generation | Include contract in prompt              |
+| Delegating to sub-agent    | Use 5-element contract from DELEGATION_CONTRACT.md |
+| Task completed             | Checkpoint: TASK_TRACKER + `/remember`  |
 | Before committing          | `/audit quick`                          |
 | Starting domain work       | `/prime-frontend` or `/prime-backend`   |
 | Session handoff            | `/whats-next`                           |
