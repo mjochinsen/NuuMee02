@@ -2,7 +2,7 @@
 name: backend-orchestrator
 description: Meta-agent that orchestrates backend implementation. Use when building NuuMee backend. Coordinates api-builder, worker-builder, and test-builder in sequence with validation.
 tools: Task, Read, Bash
-model: sonnet
+model: opus
 color: cyan
 ---
 

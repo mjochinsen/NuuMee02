@@ -2,7 +2,7 @@
 name: workflow-coordinator
 description: Orchestrator for Figma-to-code page generation workflows. Use PROACTIVELY when user requests generating multiple pages, batch processing, or complex workflows. Manages the 4-agent pipeline (figma-extractor → ui-planner → frontend-dev → qa-reviewer) with error recovery and progress tracking.
 tools: [read, write, bash]
-model: sonnet
+model: opus
 color: purple
 success_metrics:
   - "All pages meet QA >=80% threshold"

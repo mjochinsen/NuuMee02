@@ -4,56 +4,54 @@ Systems built by FIBY. Use these in your sessions.
 
 ---
 
-## CRITICAL: Sub-Agent File Writes Do NOT Persist
+## CRITICAL: Delegation Contract (Anthropic Best Practices)
 
 **Sub-agents run in sandboxes. Their Write/Edit operations are discarded.**
 
-### Mandatory Contracts
+### 5-Element Delegation Contract
 
-**Sub-agent contract (code generation):**
+Every sub-agent prompt MUST include:
+
 ```
-DO NOT write or edit files. Instead:
-1. Return the exact file path
-2. Return complete content in fenced code block
-3. No placeholders or "..."
+OBJECTIVE: [specific goal]
+
+OUTPUT FORMAT:
+FILE: {path}
+```{language}
+{complete code}
 ```
+PURPOSE: {description}
 
-**KODY contract (receiving code):**
-```
-1. Extract file path from response
-2. Extract code block content
-3. Use Write tool to create file
-4. Verify file exists
-```
+TOOLS: [allowed tools]
+DO NOT USE: Write, Edit
 
-### Example
+SOURCES:
+- {file1} - {why}
+- {file2} - {why}
 
-```python
-# Sub-agent prompt
-Task(
-    subagent_type="frontend-dev",
-    prompt="""
-    Generate code for frontend/app/page.tsx
-
-    CONTRACT:
-    - DO NOT write the file
-    - Return: FILE: {path}
-    - Return: Complete code in fenced block
-    """
-)
-# KODY then writes: Write(file_path="...", content=extracted_code)
+BOUNDARIES:
+- DO NOT {scope limit 1}
+- DO NOT {scope limit 2}
+- ONLY {positive constraint}
 ```
 
-### Sub-Agent Use Cases
+### Why 5 Elements?
 
-| Task | Sub-Agent? |
-|------|------------|
-| Explore/analyze | YES |
-| Generate code | YES (returns text, KODY writes) |
-| Validate/audit | YES |
-| Create/edit files | NO - KODY must do it |
+From Anthropic's Multi-Agent Research:
+> "Each subagent requires an objective, an output format, guidance on
+> tools and sources to use, and clear task boundaries. Without detailed
+> instructions, agents duplicate work or misinterpret assignments."
 
-**Full details:** `docs/HOW_AGENTS_WORK.md`
+### KODY's Post-Delegation Flow
+
+1. **Extract** FILE: path from response
+2. **Extract** code block content
+3. **Validate** no placeholders ("...", "// rest here")
+4. **Write** using Write tool
+5. **Verify** file exists
+6. **Checkpoint** with /remember
+
+**Full contract:** `docs/agents/orchestration/DELEGATION_CONTRACT.md`
 
 ---
 
@@ -195,15 +193,57 @@ Task(
 
 ---
 
+## Orchestrator-Workers Pattern
+
+KODY acts as orchestrator, delegates to workers.
+
+```
+KODY (Orchestrator - opus)
+  ├── Decompose task into subtasks
+  ├── Delegate to workers (sonnet)
+  ├── Wait for completion
+  ├── Synthesize results
+  └── Write files + verify
+```
+
+### Key Pattern
+1. Orchestrator decomposes work
+2. Workers return code (no file writes)
+3. Orchestrator writes all files
+4. Checkpoint after each task
+
+**Full pattern:** `docs/agents/orchestration/ORCHESTRATOR_PATTERN.md`
+
+---
+
+## Checkpointing
+
+From Anthropic: "Resume from checkpoints rather than restarting."
+
+### Checkpoint Triggers
+- Task completed → update TASK_TRACKER + /remember
+- Phase completed → /whats-next + commit
+- Context large → summarize + store
+- Session ending → /whats-next
+
+### Recovery
+1. Read TASK_TRACKER.md
+2. /recall {domain}
+3. Resume from last task
+
+**Full guide:** `docs/agents/orchestration/CHECKPOINTING.md`
+
+---
+
 ## Full Documentation
 
 | Doc | Contents |
 |-----|----------|
-| `docs/agents/orchestration/systems/PRIME_SYSTEM.md` | Prime commands architecture |
+| `docs/agents/orchestration/DELEGATION_CONTRACT.md` | 5-element delegation |
+| `docs/agents/orchestration/ORCHESTRATOR_PATTERN.md` | Orchestrator-workers |
+| `docs/agents/orchestration/CHECKPOINTING.md` | Recovery & context |
+| `docs/agents/orchestration/systems/PRIME_SYSTEM.md` | Prime commands |
 | `docs/MEMORY_SYSTEM.md` | Memory system |
 | `docs/NIGHTLY_AUDITOR.md` | Auditor system |
 | `docs/HOW_TO_USE_HOOKS.md` | Hooks system |
-| `docs/HOW_AGENTS_WORK.md` | Agent invocation + limitations |
-| `docs/KODY_AGENT_INSTRUCTIONS.md` | KODY usage guide |
-| `docs/FIBY_AGENT_MASTER.md` | FIBY meta-agent |
-| `docs/FIBY_TEST.md` | FIBY testing instructions |
+| `docs/HOW_AGENTS_WORK.md` | Agent limitations |

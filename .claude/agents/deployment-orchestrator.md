@@ -2,7 +2,7 @@
 name: deployment-orchestrator
 description: Meta-agent that orchestrates Firebase deployment workflow. Use when user requests deploying to Firebase Hosting or nuumee.ai. Coordinates nextjs-static-export-configurer, firebase-hosting-preparer, deployment-validator, and documentation-generator agents.
 tools: Task, Read, Write, Bash
-model: sonnet
+model: opus
 color: purple
 ---
 

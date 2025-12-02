@@ -2,7 +2,7 @@
 name: milestone-orchestrator
 description: Orchestrate milestone completion using architect → implementer → validator loop. Prevents context degradation across 87 tasks.
 tools: Task, Read, Write
-model: sonnet
+model: opus
 color: cyan
 ---
 
