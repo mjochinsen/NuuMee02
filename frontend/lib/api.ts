@@ -679,3 +679,46 @@ export async function syncBillingPeriod(): Promise<SyncBillingPeriodResponse> {
     method: 'POST',
   });
 }
+
+// Data Export
+export interface DataExportData {
+  profile: Record<string, unknown>;
+  subscriptions: Record<string, unknown>[];
+  transactions: Record<string, unknown>[];
+  jobs: Record<string, unknown>[];
+  exported_at: string;
+}
+
+export interface DataExportResponse {
+  message: string;
+  data: DataExportData;
+}
+
+export async function exportUserData(): Promise<DataExportResponse> {
+  return apiRequest<DataExportResponse>('/auth/export');
+}
+
+// Delete Account
+export interface DeleteAccountRequest {
+  reason?: string;
+  feedback?: string;
+}
+
+export interface DeleteAccountResponse {
+  message: string;
+  deleted_data: {
+    user_profile: number;
+    subscriptions: number;
+    transactions: number;
+    jobs: number;
+    stripe_subscription_canceled: boolean;
+    firebase_auth_deleted: boolean;
+  };
+}
+
+export async function deleteAccount(request: DeleteAccountRequest = {}): Promise<DeleteAccountResponse> {
+  return apiRequest<DeleteAccountResponse>('/auth/account', {
+    method: 'DELETE',
+    body: JSON.stringify(request),
+  });
+}

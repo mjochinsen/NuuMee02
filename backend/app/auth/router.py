@@ -1,13 +1,37 @@
 """Auth router with register, login, and me endpoints."""
 import secrets
 import string
+import logging
 from datetime import datetime, timezone
+from typing import Optional
 from fastapi import APIRouter, HTTPException, Depends, Request
+from pydantic import BaseModel
 from firebase_admin import auth as firebase_auth
+import stripe
 
 from .firebase import verify_id_token, get_firestore_client
 from .models import TokenRequest, UserProfile, RegisterResponse, LoginResponse, UpdateProfileRequest, UpdateProfileResponse
 from ..middleware.auth import get_current_user_id
+
+logger = logging.getLogger(__name__)
+
+
+class DeleteAccountRequest(BaseModel):
+    """Request to delete user account."""
+    reason: Optional[str] = None
+    feedback: Optional[str] = None
+
+
+class DeleteAccountResponse(BaseModel):
+    """Response after deleting account."""
+    message: str
+    deleted_data: dict
+
+
+class DataExportResponse(BaseModel):
+    """Response with exported user data."""
+    message: str
+    data: dict
 
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -276,4 +300,211 @@ async def update_profile(
     return UpdateProfileResponse(
         message="Profile updated successfully",
         user=firestore_doc_to_user_profile(user_data, uid)
+    )
+
+
+@router.get("/export", response_model=DataExportResponse)
+async def export_user_data(uid: str = Depends(get_current_user_id)):
+    """
+    Export all user data.
+
+    Returns a JSON object containing:
+    - Profile information
+    - Subscription details
+    - Transaction history
+    - Job history (last 100)
+    """
+    db = get_firestore_client()
+
+    # Get user profile
+    user_ref = db.collection("users").document(uid)
+    user_doc = user_ref.get()
+
+    if not user_doc.exists:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user_data = user_doc.to_dict()
+
+    # Remove sensitive fields
+    safe_user_data = {k: v for k, v in user_data.items()
+                      if k not in ["stripe_customer_id", "webhook_secret"]}
+
+    # Convert Firestore timestamps to ISO strings
+    for key, value in safe_user_data.items():
+        if hasattr(value, 'timestamp'):
+            safe_user_data[key] = datetime.fromtimestamp(
+                value.timestamp(), tz=timezone.utc
+            ).isoformat()
+
+    # Get subscriptions
+    subscriptions = []
+    subs_query = db.collection("subscriptions").where("user_id", "==", uid).get()
+    for sub_doc in subs_query:
+        sub_data = sub_doc.to_dict()
+        for key, value in sub_data.items():
+            if hasattr(value, 'timestamp'):
+                sub_data[key] = datetime.fromtimestamp(
+                    value.timestamp(), tz=timezone.utc
+                ).isoformat()
+        subscriptions.append(sub_data)
+
+    # Get transactions (last 100)
+    transactions = []
+    txn_query = db.collection("credit_transactions")\
+        .where("user_id", "==", uid)\
+        .order_by("created_at", direction="DESCENDING")\
+        .limit(100)\
+        .get()
+    for txn_doc in txn_query:
+        txn_data = txn_doc.to_dict()
+        for key, value in txn_data.items():
+            if hasattr(value, 'timestamp'):
+                txn_data[key] = datetime.fromtimestamp(
+                    value.timestamp(), tz=timezone.utc
+                ).isoformat()
+        transactions.append(txn_data)
+
+    # Get jobs (last 100)
+    jobs = []
+    jobs_query = db.collection("jobs")\
+        .where("user_id", "==", uid)\
+        .order_by("created_at", direction="DESCENDING")\
+        .limit(100)\
+        .get()
+    for job_doc in jobs_query:
+        job_data = job_doc.to_dict()
+        # Remove internal fields
+        job_data.pop("internal_status", None)
+        for key, value in job_data.items():
+            if hasattr(value, 'timestamp'):
+                job_data[key] = datetime.fromtimestamp(
+                    value.timestamp(), tz=timezone.utc
+                ).isoformat()
+        jobs.append(job_data)
+
+    export_data = {
+        "profile": safe_user_data,
+        "subscriptions": subscriptions,
+        "transactions": transactions,
+        "jobs": jobs,
+        "exported_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+    return DataExportResponse(
+        message="Data exported successfully",
+        data=export_data
+    )
+
+
+@router.delete("/account", response_model=DeleteAccountResponse)
+async def delete_account(
+    request: DeleteAccountRequest,
+    uid: str = Depends(get_current_user_id)
+):
+    """
+    Permanently delete user account and all associated data.
+
+    This will:
+    1. Cancel any active Stripe subscription
+    2. Delete user from Firebase Auth
+    3. Delete all Firestore data (user profile, subscriptions, transactions, jobs)
+    4. Store deletion feedback for improvement
+
+    WARNING: This action is irreversible!
+    """
+    import os
+    db = get_firestore_client()
+
+    # Get user document
+    user_ref = db.collection("users").document(uid)
+    user_doc = user_ref.get()
+
+    if not user_doc.exists:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user_data = user_doc.to_dict()
+    deleted_counts = {
+        "user_profile": 0,
+        "subscriptions": 0,
+        "transactions": 0,
+        "jobs": 0,
+        "stripe_subscription_canceled": False,
+        "firebase_auth_deleted": False,
+    }
+
+    # 1. Cancel Stripe subscription if exists
+    stripe_customer_id = user_data.get("stripe_customer_id")
+    if stripe_customer_id:
+        stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
+        try:
+            # List and cancel all active subscriptions
+            subscriptions = stripe.Subscription.list(
+                customer=stripe_customer_id,
+                status="active",
+                limit=10
+            )
+            for sub in subscriptions.data:
+                stripe.Subscription.delete(sub.id)
+                deleted_counts["stripe_subscription_canceled"] = True
+                logger.info(f"Canceled Stripe subscription {sub.id} for user {uid}")
+        except stripe.error.StripeError as e:
+            logger.warning(f"Failed to cancel Stripe subscription for user {uid}: {e}")
+            # Continue with deletion even if Stripe fails
+
+    # 2. Delete Firestore data
+
+    # Delete subscriptions
+    subs_query = db.collection("subscriptions").where("user_id", "==", uid).get()
+    for sub_doc in subs_query:
+        sub_doc.reference.delete()
+        deleted_counts["subscriptions"] += 1
+
+    # Delete transactions
+    txn_query = db.collection("credit_transactions").where("user_id", "==", uid).get()
+    for txn_doc in txn_query:
+        txn_doc.reference.delete()
+        deleted_counts["transactions"] += 1
+
+    # Delete jobs
+    jobs_query = db.collection("jobs").where("user_id", "==", uid).get()
+    for job_doc in jobs_query:
+        job_doc.reference.delete()
+        deleted_counts["jobs"] += 1
+
+    # Store deletion feedback (if provided) before deleting user
+    if request.reason or request.feedback:
+        feedback_data = {
+            "user_id": uid,
+            "email": user_data.get("email"),
+            "subscription_tier": user_data.get("subscription_tier"),
+            "reason": request.reason,
+            "feedback": request.feedback,
+            "deleted_at": datetime.now(timezone.utc),
+        }
+        db.collection("account_deletion_feedback").add(feedback_data)
+
+    # Delete user profile
+    user_ref.delete()
+    deleted_counts["user_profile"] = 1
+
+    # 3. Delete from Firebase Auth
+    try:
+        firebase_auth.delete_user(uid)
+        deleted_counts["firebase_auth_deleted"] = True
+        logger.info(f"Deleted Firebase Auth user {uid}")
+    except firebase_auth.UserNotFoundError:
+        logger.warning(f"Firebase Auth user {uid} not found (already deleted?)")
+    except Exception as e:
+        logger.error(f"Failed to delete Firebase Auth user {uid}: {e}")
+        # This is critical - if Firebase Auth deletion fails, re-raise
+        raise HTTPException(
+            status_code=500,
+            detail=f"Account partially deleted. Firebase Auth deletion failed: {str(e)}"
+        )
+
+    logger.info(f"Account {uid} deleted successfully: {deleted_counts}")
+
+    return DeleteAccountResponse(
+        message="Account deleted successfully. All your data has been permanently removed.",
+        deleted_data=deleted_counts
     )

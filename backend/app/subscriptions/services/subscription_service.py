@@ -4,6 +4,7 @@ import logging
 from datetime import datetime, timezone
 from typing import Optional, Tuple
 from google.cloud import firestore
+import stripe
 
 from ..models import SubscriptionTier, SubscriptionStatus, get_subscription_tiers
 
@@ -82,6 +83,8 @@ class SubscriptionService:
         balance_before: int,
         balance_after: int,
         stripe_subscription_id: str,
+        amount_cents: Optional[int] = None,
+        receipt_url: Optional[str] = None,
     ) -> None:
         """Record a tier change transaction."""
         tx_type = "subscription_upgrade" if credits_added > 0 else "subscription_downgrade"
@@ -94,17 +97,34 @@ class SubscriptionService:
         else:
             description += " (credits preserved)"
 
+        # Try to get invoice/receipt info from Stripe if not provided
+        if credits_added > 0 and (amount_cents is None or receipt_url is None):
+            try:
+                # Fetch the latest invoice for this subscription
+                invoices = stripe.Invoice.list(
+                    subscription=stripe_subscription_id,
+                    limit=1
+                )
+                if invoices.data:
+                    latest_invoice = invoices.data[0]
+                    if amount_cents is None:
+                        amount_cents = latest_invoice.get("amount_paid", 0)
+                    if receipt_url is None:
+                        receipt_url = latest_invoice.get("hosted_invoice_url")
+            except Exception as e:
+                logger.warning(f"Failed to fetch invoice for tier change: {e}")
+
         db.collection("credit_transactions").add({
             "user_id": user_id,
             "type": tx_type,
             "amount": credits_added,
-            "amount_cents": None,
+            "amount_cents": amount_cents,
             "status": "completed",
             "balance_before": balance_before,
             "balance_after": balance_after,
             "description": description,
             "related_stripe_payment_id": stripe_subscription_id,
-            "receipt_url": None,
+            "receipt_url": receipt_url,
             "created_at": firestore.SERVER_TIMESTAMP,
         })
 
@@ -177,17 +197,36 @@ class SubscriptionService:
         tx_type = "billing_switch_annual" if annual else "billing_switch_monthly"
         billing_period = "year" if annual else "month"
 
-        db.collection("transactions").add({
+        # Try to get invoice/receipt info from Stripe
+        amount_cents = None
+        receipt_url = None
+        try:
+            invoices = stripe.Invoice.list(
+                subscription=stripe_subscription_id,
+                limit=1
+            )
+            if invoices.data:
+                latest_invoice = invoices.data[0]
+                amount_cents = latest_invoice.get("amount_paid", 0)
+                receipt_url = latest_invoice.get("hosted_invoice_url")
+        except Exception as e:
+            logger.warning(f"Failed to fetch invoice for billing switch: {e}")
+
+        db.collection("credit_transactions").add({
             "user_id": user_id,
             "type": tx_type,
             "amount": 0,
-            "credits_change": 0,
+            "amount_cents": amount_cents,
+            "status": "completed",
+            "balance_before": None,
+            "balance_after": None,
             "description": f"Switched to {'annual' if annual else 'monthly'} billing",
+            "related_stripe_payment_id": stripe_subscription_id,
+            "receipt_url": receipt_url,
             "metadata": {
                 "subscription_id": subscription_id,
                 "tier": tier,
                 "new_billing_period": billing_period,
-                "stripe_subscription_id": stripe_subscription_id,
             },
             "created_at": firestore.SERVER_TIMESTAMP,
         })

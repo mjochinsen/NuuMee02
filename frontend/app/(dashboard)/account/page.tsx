@@ -44,14 +44,19 @@ import {
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/components/AuthProvider';
-import { updateProfile, ApiError } from '@/lib/api';
+import { useRouter } from 'next/navigation';
+import { updateProfile, exportUserData, deleteAccount, cancelSubscription, ApiError } from '@/lib/api';
 
 type TabType = 'profile' | 'notifications' | 'security' | 'privacy' | 'delete';
 
 
 export default function AccountSettingsPage() {
-  const { user, profile, loading, refreshProfile } = useAuth();
+  const router = useRouter();
+  const { user, profile, loading, refreshProfile, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState<TabType>('profile');
+  const [isExporting, setIsExporting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isDowngrading, setIsDowngrading] = useState(false);
 
   // Initialize state from auth profile (real data)
   const [fullName, setFullName] = useState('');
@@ -186,8 +191,83 @@ export default function AccountSettingsPage() {
   };
 
 
-  const handleRequestDataExport = () => {
-    alert('Data export requested. Check your email in 10 minutes.');
+  const handleRequestDataExport = async () => {
+    setIsExporting(true);
+    try {
+      const response = await exportUserData();
+      // Download as JSON file
+      const dataStr = JSON.stringify(response.data, null, 2);
+      const blob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `nuumee-data-export-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success('Data exported successfully!');
+    } catch (error) {
+      console.error('Failed to export data:', error);
+      if (error instanceof ApiError) {
+        toast.error(error.message);
+      } else {
+        toast.error('Failed to export data');
+      }
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleDowngradeToFree = async () => {
+    if (profile?.subscription_tier === 'free') {
+      toast.info('You are already on the free plan');
+      return;
+    }
+
+    setIsDowngrading(true);
+    try {
+      const response = await cancelSubscription();
+      toast.success(response.message || 'Your subscription will be canceled at the end of the billing period');
+      if (refreshProfile) {
+        await refreshProfile();
+      }
+    } catch (error) {
+      console.error('Failed to downgrade:', error);
+      if (error instanceof ApiError) {
+        toast.error(error.message);
+      } else {
+        toast.error('Failed to downgrade to free plan');
+      }
+    } finally {
+      setIsDowngrading(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    setIsDeleting(true);
+    try {
+      await deleteAccount({
+        reason: deleteReason || undefined,
+        feedback: deleteFeedback || undefined,
+      });
+      toast.success('Account deleted successfully');
+      setShowDeleteConfirmModal(false);
+      // Sign out and redirect to home
+      if (signOut) {
+        await signOut();
+      }
+      router.push('/');
+    } catch (error) {
+      console.error('Failed to delete account:', error);
+      if (error instanceof ApiError) {
+        toast.error(error.message);
+      } else {
+        toast.error('Failed to delete account');
+      }
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const handleTestWebhook = () => {
@@ -1010,17 +1090,37 @@ export default function AccountSettingsPage() {
                   </ul>
                   <div className="flex gap-2">
                     <Button
+                      onClick={handleRequestDataExport}
+                      disabled={isExporting}
                       variant="outline"
                       className="border-[#334155] text-[#F1F5F9] hover:border-[#00F0D9] hover:text-[#00F0D9]"
                     >
-                      <Download className="w-4 h-4 mr-2" />
-                      Download My Data
+                      {isExporting ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Exporting...
+                        </>
+                      ) : (
+                        <>
+                          <Download className="w-4 h-4 mr-2" />
+                          Download My Data
+                        </>
+                      )}
                     </Button>
                     <Button
+                      onClick={handleDowngradeToFree}
+                      disabled={isDowngrading || profile?.subscription_tier === 'free'}
                       variant="outline"
                       className="border-[#334155] text-[#F1F5F9] hover:border-[#00F0D9] hover:text-[#00F0D9]"
                     >
-                      Downgrade to Free
+                      {isDowngrading ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Processing...
+                        </>
+                      ) : (
+                        'Downgrade to Free'
+                      )}
                     </Button>
                   </div>
                 </div>
@@ -1259,19 +1359,24 @@ export default function AccountSettingsPage() {
                 setShowDeleteConfirmModal(false);
                 setDeleteConfirmText('');
               }}
+              disabled={isDeleting}
               className="border-[#334155] text-[#F1F5F9] hover:border-[#00F0D9] hover:text-[#00F0D9]"
             >
               Cancel
             </Button>
             <Button
-              onClick={() => {
-                alert('Account deleted');
-                setShowDeleteConfirmModal(false);
-              }}
-              disabled={deleteConfirmText !== 'DELETE'}
+              onClick={handleDeleteAccount}
+              disabled={deleteConfirmText !== 'DELETE' || isDeleting}
               className="bg-red-500 hover:bg-red-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Yes, Delete My Account
+              {isDeleting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                'Yes, Delete My Account'
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

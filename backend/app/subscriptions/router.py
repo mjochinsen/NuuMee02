@@ -639,7 +639,7 @@ async def sync_subscription_from_stripe(
             subscription_id = sub_doc.to_dict().get("subscription_id")
         else:
             # Create new subscription document
-            subscription_id = generate_subscription_id()
+            subscription_id = SubscriptionService.generate_subscription_id()
             tiers = get_subscription_tiers()
             tier_config = tiers.get(SubscriptionTier(tier), {})
             credits_rollover_cap = tier_config.get("credits_rollover_cap", monthly_credits * 2)
