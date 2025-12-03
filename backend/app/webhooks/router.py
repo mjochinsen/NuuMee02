@@ -581,6 +581,28 @@ async def handle_subscription_deleted(subscription: dict):
             "updated_at": firestore.SERVER_TIMESTAMP,
         })
 
+        # Create transaction record for subscription cancellation
+        tier = sub_data.get("tier", "unknown")
+        transaction_data = {
+            "user_id": user_id,
+            "type": "subscription_cancel",
+            "amount": 0,  # No credit change on cancel
+            "amount_cents": 0,
+            "status": "completed",
+            "description": f"Subscription canceled - {tier.capitalize() if isinstance(tier, str) else tier} plan",
+            "balance_before": None,
+            "balance_after": None,
+            "related_stripe_payment_id": stripe_subscription_id,
+            "metadata": {
+                "subscription_id": sub_data.get("subscription_id"),
+                "tier": tier,
+                "stripe_subscription_id": stripe_subscription_id,
+                "canceled_at": firestore.SERVER_TIMESTAMP,
+            },
+            "created_at": firestore.SERVER_TIMESTAMP,
+        }
+        db.collection("credit_transactions").add(transaction_data)
+
     print(f"Subscription {stripe_subscription_id} deleted for user {user_id}")
 
 

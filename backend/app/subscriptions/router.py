@@ -527,22 +527,29 @@ async def switch_billing_period(
         })
 
         # Create transaction record for billing period switch
+        # IMPORTANT: Use credit_transactions collection (not transactions) for visibility in billing history
         transaction_type = "billing_switch_annual" if switch_request.annual else "billing_switch_monthly"
         transaction_data = {
             "user_id": user_id,
             "type": transaction_type,
-            "amount": 0,  # Will be prorated by Stripe
-            "credits_change": 0,
-            "description": f"Switched to {'annual' if switch_request.annual else 'monthly'} billing",
+            "amount": 0,  # No credit change, billing cycle only
+            "amount_cents": 0,  # Stripe handles prorated charges separately
+            "status": "completed",
+            "description": f"Switched to {'annual' if switch_request.annual else 'monthly'} billing" +
+                          (" - Save 20%!" if switch_request.annual else ""),
+            "balance_before": None,  # No credit change
+            "balance_after": None,
+            "related_stripe_payment_id": stripe_subscription_id,
             "metadata": {
                 "subscription_id": sub_data.get("subscription_id"),
                 "tier": current_tier.value,
+                "previous_billing_period": "year" if not switch_request.annual else "month",
                 "new_billing_period": billing_period,
                 "stripe_subscription_id": stripe_subscription_id,
             },
             "created_at": firestore.SERVER_TIMESTAMP,
         }
-        db.collection("transactions").add(transaction_data)
+        db.collection("credit_transactions").add(transaction_data)
 
         return SwitchBillingPeriodResponse(
             subscription_id=sub_data.get("subscription_id"),

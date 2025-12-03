@@ -513,7 +513,7 @@ export async function getSystemStatus(): Promise<SystemHealthResponse> {
 }
 
 // Transaction endpoints
-export type TransactionType = 'purchase' | 'subscription' | 'subscription_renewal' | 'subscription_upgrade' | 'subscription_downgrade' | 'subscription_cancel' | 'referral' | 'job_usage' | 'refund' | 'bonus';
+export type TransactionType = 'purchase' | 'subscription' | 'subscription_renewal' | 'subscription_upgrade' | 'subscription_downgrade' | 'subscription_cancel' | 'billing_switch_annual' | 'billing_switch_monthly' | 'referral' | 'job_usage' | 'refund' | 'bonus';
 export type TransactionStatus = 'completed' | 'pending' | 'failed' | 'refunded';
 
 export interface CreditTransaction {
