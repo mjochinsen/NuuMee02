@@ -117,6 +117,39 @@ async def handle_stripe_webhook(
     return {"received": True}
 
 
+def _get_payment_method_details(session: dict) -> dict:
+    """
+    Extract payment method details (card last4, brand) and receipt URL from a checkout session.
+
+    Returns dict with card_last4, card_brand, receipt_url if available.
+    """
+    details = {}
+
+    # Get payment intent to find payment method and latest charge
+    payment_intent_id = session.get("payment_intent")
+    if payment_intent_id:
+        try:
+            payment_intent = stripe.PaymentIntent.retrieve(
+                payment_intent_id,
+                expand=["payment_method", "latest_charge"]
+            )
+            pm = payment_intent.get("payment_method")
+            if pm and isinstance(pm, dict):
+                card = pm.get("card", {})
+                if card:
+                    details["card_last4"] = card.get("last4")
+                    details["card_brand"] = card.get("brand")
+
+            # Get receipt URL from the latest charge
+            latest_charge = payment_intent.get("latest_charge")
+            if latest_charge and isinstance(latest_charge, dict):
+                details["receipt_url"] = latest_charge.get("receipt_url")
+        except Exception as e:
+            print(f"Failed to get payment method details: {e}")
+
+    return details
+
+
 async def handle_checkout_completed(session: dict):
     """
     Handle successful checkout completion.
@@ -124,7 +157,7 @@ async def handle_checkout_completed(session: dict):
     This function:
     1. Retrieves user by customer_id
     2. Adds credits to user's balance
-    3. Creates a credit transaction record
+    3. Creates a credit transaction record (with card last4 in metadata)
     """
     # Extract metadata
     metadata = session.get("metadata", {})
@@ -141,6 +174,9 @@ async def handle_checkout_completed(session: dict):
     except ValueError:
         print(f"Invalid credits value: {credits_str}")
         return
+
+    # Get payment method details (card last4, brand)
+    payment_details = _get_payment_method_details(session)
 
     # Get Firestore client
     db = get_firestore_client()
@@ -166,12 +202,14 @@ async def handle_checkout_completed(session: dict):
             "updated_at": firestore.SERVER_TIMESTAMP
         })
 
-        # Create credit transaction record
-        transaction.set(txn_ref, {
+        # Create credit transaction record with payment method metadata
+        txn_data = {
             "transaction_id": txn_ref.id,
             "user_id": user_id,
             "type": "purchase",
             "amount": credits,
+            "amount_cents": session.get("amount_total"),  # Dollar amount in cents
+            "status": "completed",
             "balance_before": current_balance,
             "balance_after": new_balance,
             "description": f"{package_id.capitalize()} credit package purchase",
@@ -179,10 +217,20 @@ async def handle_checkout_completed(session: dict):
             "related_transaction_id": None,
             "related_stripe_payment_id": session.get("payment_intent"),
             "related_referral_code": None,
-            "created_at": firestore.SERVER_TIMESTAMP
-        })
+            "receipt_url": payment_details.get("receipt_url"),  # Stripe receipt URL
+            "created_at": firestore.SERVER_TIMESTAMP,
+            "metadata": {},
+        }
 
-        print(f"Added {credits} credits to user {user_id}. New balance: {new_balance}")
+        # Add card details to metadata if available
+        if payment_details.get("card_last4"):
+            txn_data["metadata"]["card_last4"] = payment_details["card_last4"]
+        if payment_details.get("card_brand"):
+            txn_data["metadata"]["card_brand"] = payment_details["card_brand"]
+
+        transaction.set(txn_ref, txn_data)
+
+        print(f"Added {credits} credits to user {user_id}. New balance: {new_balance}. Receipt: {payment_details.get('receipt_url')}")
 
     # Execute transaction
     user_ref = db.collection("users").document(user_id)
@@ -205,6 +253,7 @@ async def handle_subscription_created(session: dict):
     1. Creates subscription record in Firestore
     2. Grants initial monthly credits to user
     3. Updates user's subscription tier
+    4. Stores payment method details in transaction metadata
 
     Idempotency: Checks if subscription already exists before creating.
     """
@@ -212,9 +261,13 @@ async def handle_subscription_created(session: dict):
     user_id = metadata.get("user_id")
     tier = metadata.get("tier")
     monthly_credits_str = metadata.get("monthly_credits")
+    billing_period = metadata.get("billing_period", "month")  # "month" or "year"
     stripe_subscription_id = session.get("subscription")
     stripe_customer_id = session.get("customer")
     checkout_session_id = session.get("id")
+
+    # Get payment method details (card last4, brand)
+    payment_details = _get_payment_method_details(session)
 
     if not user_id or not tier or not stripe_subscription_id:
         print(f"Missing metadata in subscription session: {checkout_session_id}")
@@ -282,19 +335,23 @@ async def handle_subscription_created(session: dict):
         transaction.update(user_ref, {
             "credits_balance": new_balance,
             "subscription_tier": tier,
+            "billing_period": billing_period,  # "month" or "year"
             "stripe_customer_id": stripe_customer_id,
+            "stripe_subscription_id": stripe_subscription_id,
             "updated_at": firestore.SERVER_TIMESTAMP,
         })
 
         # Create subscription document
         transaction.set(sub_ref, sub_data)
 
-        # Create credit transaction record
-        transaction.set(txn_ref, {
+        # Create credit transaction record with payment method metadata
+        txn_data = {
             "transaction_id": txn_ref.id,
             "user_id": user_id,
             "type": "subscription",
             "amount": monthly_credits,
+            "amount_cents": session.get("amount_total"),  # Dollar amount in cents
+            "status": "completed",
             "balance_before": current_balance,
             "balance_after": new_balance,
             "description": f"{tier.capitalize()} subscription - initial credits",
@@ -302,10 +359,20 @@ async def handle_subscription_created(session: dict):
             "related_transaction_id": None,
             "related_stripe_payment_id": stripe_subscription_id,
             "related_referral_code": None,
+            "receipt_url": payment_details.get("receipt_url"),  # Stripe receipt URL
             "created_at": firestore.SERVER_TIMESTAMP,
-        })
+            "metadata": {},
+        }
 
-        print(f"Created subscription for user {user_id}, tier {tier}, granted {monthly_credits} credits")
+        # Add card details to metadata if available
+        if payment_details.get("card_last4"):
+            txn_data["metadata"]["card_last4"] = payment_details["card_last4"]
+        if payment_details.get("card_brand"):
+            txn_data["metadata"]["card_brand"] = payment_details["card_brand"]
+
+        transaction.set(txn_ref, txn_data)
+
+        print(f"Created subscription for user {user_id}, tier {tier}, granted {monthly_credits} credits. Receipt: {payment_details.get('receipt_url')}")
 
     user_ref = db.collection("users").document(user_id)
     sub_ref = db.collection("subscriptions").document(subscription_id)
@@ -423,12 +490,14 @@ async def handle_invoice_paid(invoice: dict):
             update_data["current_period_end"] = period_end
         transaction.update(sub_ref, update_data)
 
-        # Create credit transaction record
-        transaction.set(txn_ref, {
+        # Create credit transaction record with payment method metadata
+        txn_data = {
             "transaction_id": txn_ref.id,
             "user_id": user_id,
             "type": "subscription_renewal",
             "amount": monthly_credits,
+            "amount_cents": invoice.get("amount_paid"),  # Dollar amount in cents
+            "status": "completed",
             "balance_before": current_balance,
             "balance_after": new_balance,
             "description": f"{tier.capitalize()} subscription renewal credits",
@@ -436,8 +505,28 @@ async def handle_invoice_paid(invoice: dict):
             "related_transaction_id": None,
             "related_stripe_payment_id": invoice.get("payment_intent"),
             "related_referral_code": None,
+            "receipt_url": invoice.get("hosted_invoice_url"),  # Stripe invoice URL
             "created_at": firestore.SERVER_TIMESTAMP,
-        })
+            "metadata": {},
+        }
+
+        # Get card details from invoice's charge
+        charge_id = invoice.get("charge")
+        if charge_id:
+            try:
+                charge = stripe.Charge.retrieve(charge_id)
+                pm_details = charge.get("payment_method_details", {})
+                card = pm_details.get("card", {})
+                if card:
+                    txn_data["metadata"]["card_last4"] = card.get("last4")
+                    txn_data["metadata"]["card_brand"] = card.get("brand")
+                # Get receipt URL from charge if not in invoice
+                if not txn_data["receipt_url"]:
+                    txn_data["receipt_url"] = charge.get("receipt_url")
+            except Exception as e:
+                print(f"Failed to get charge details: {e}")
+
+        transaction.set(txn_ref, txn_data)
 
         print(f"Added {monthly_credits} renewal credits to user {user_id}. New balance: {new_balance}")
 

@@ -27,6 +27,8 @@ async function apiRequest<T>(
     const token = await getIdToken();
     if (token) {
       (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
+    } else {
+      console.warn(`[API] No auth token available for ${endpoint} - user may not be logged in`);
     }
   }
 
@@ -68,23 +70,33 @@ export class ApiError extends Error {
 
 // Auth endpoints
 export interface UserProfile {
-  uid: string;
+  user_id: string;
   email: string;
+  email_verified: boolean;
   display_name: string | null;
-  photo_url: string | null;
+  avatar_url: string | null;
+  company: string | null;
+  location: string | null;
+  bio: string | null;
   credits_balance: number;
   subscription_tier: string;
+  billing_period: string | null;  // "month" or "year", null for free tier
   referral_code: string;
+  referred_by: string | null;
+  is_affiliate: boolean;
+  affiliate_status: string;
   created_at: string;
-  last_login_at: string;
+  updated_at: string;
 }
 
 export interface RegisterResponse {
-  uid: string;
-  email: string;
-  credits_balance: number;
-  referral_code: string;
   message: string;
+  user: UserProfile;
+}
+
+export interface LoginResponse {
+  message: string;
+  user: UserProfile;
 }
 
 export async function registerUser(idToken: string): Promise<RegisterResponse> {
@@ -96,11 +108,12 @@ export async function registerUser(idToken: string): Promise<RegisterResponse> {
 }
 
 export async function loginUser(idToken: string): Promise<UserProfile> {
-  return apiRequest<UserProfile>('/auth/login', {
+  const response = await apiRequest<LoginResponse>('/auth/login', {
     method: 'POST',
     body: JSON.stringify({ id_token: idToken }),
     skipAuth: true, // We're passing token in body
   });
+  return response.user;
 }
 
 export async function getMe(): Promise<UserProfile> {
@@ -351,16 +364,31 @@ export async function getCurrentSubscription(): Promise<SubscriptionResponse | n
   return apiRequest<SubscriptionResponse | null>('/subscriptions/current');
 }
 
-export async function createSubscription(tier: SubscriptionTier): Promise<CreateSubscriptionResponse> {
+export async function createSubscription(tier: SubscriptionTier, annual: boolean = false, founding: boolean = false): Promise<CreateSubscriptionResponse> {
   return apiRequest<CreateSubscriptionResponse>('/subscriptions/create', {
     method: 'POST',
-    body: JSON.stringify({ tier }),
+    body: JSON.stringify({ tier, annual, founding }),
   });
 }
 
 export async function cancelSubscription(): Promise<CancelSubscriptionResponse> {
   return apiRequest<CancelSubscriptionResponse>('/subscriptions/cancel', {
     method: 'POST',
+  });
+}
+
+export interface UpgradeSubscriptionResponse {
+  subscription_id: string;
+  old_tier: SubscriptionTier;
+  new_tier: SubscriptionTier;
+  message: string;
+  credits_added: number;
+}
+
+export async function upgradeSubscription(newTier: SubscriptionTier): Promise<UpgradeSubscriptionResponse> {
+  return apiRequest<UpgradeSubscriptionResponse>('/subscriptions/upgrade', {
+    method: 'POST',
+    body: JSON.stringify({ new_tier: newTier }),
   });
 }
 
@@ -485,18 +513,22 @@ export async function getSystemStatus(): Promise<SystemHealthResponse> {
 }
 
 // Transaction endpoints
-export type TransactionType = 'purchase' | 'subscription' | 'subscription_renewal' | 'referral' | 'job_usage' | 'refund' | 'bonus';
+export type TransactionType = 'purchase' | 'subscription' | 'subscription_renewal' | 'subscription_upgrade' | 'subscription_downgrade' | 'subscription_cancel' | 'referral' | 'job_usage' | 'refund' | 'bonus';
+export type TransactionStatus = 'completed' | 'pending' | 'failed' | 'refunded';
 
 export interface CreditTransaction {
   transaction_id: string;
   type: TransactionType;
   amount: number;
+  amount_cents: number | null;  // Dollar amount in cents (for purchases/subscriptions)
+  status: TransactionStatus;
   balance_before: number | null;
   balance_after: number | null;
   description: string | null;
   related_stripe_payment_id: string | null;
   related_referral_code: string | null;
   related_job_id: string | null;
+  receipt_url: string | null;  // Stripe receipt URL for purchases
   created_at: string;
 }
 
@@ -521,4 +553,129 @@ export async function getTransactions(
     params.append('transaction_type', type);
   }
   return apiRequest<TransactionListResponse>(`/transactions?${params.toString()}`);
+}
+
+// Profile update
+export interface UpdateProfileRequest {
+  display_name?: string;
+  company?: string;
+  location?: string;
+  bio?: string;
+}
+
+export interface UpdateProfileResponse {
+  message: string;
+  user: UserProfile;
+}
+
+export async function updateProfile(data: UpdateProfileRequest): Promise<UpdateProfileResponse> {
+  return apiRequest<UpdateProfileResponse>('/auth/me', {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  });
+}
+
+// Auto-refill settings
+export interface AutoRefillSettings {
+  enabled: boolean;
+  threshold: number;
+  package_id: string;
+}
+
+export interface AutoRefillResponse {
+  message: string;
+  settings: AutoRefillSettings;
+}
+
+export async function getAutoRefillSettings(): Promise<AutoRefillSettings> {
+  return apiRequest<AutoRefillSettings>('/credits/auto-refill');
+}
+
+export async function updateAutoRefillSettings(settings: AutoRefillSettings): Promise<AutoRefillResponse> {
+  return apiRequest<AutoRefillResponse>('/credits/auto-refill', {
+    method: 'PUT',
+    body: JSON.stringify(settings),
+  });
+}
+
+// Receipt endpoint
+export interface ReceiptResponse {
+  session_id: string;
+  transaction_id: string;
+  package_name: string;
+  credits: number;
+  amount_cents: number;
+  currency: string;
+  payment_method_last4: string | null;
+  payment_method_brand: string | null;
+  customer_email: string;
+  created_at: string;
+  receipt_url: string | null;
+}
+
+export async function getReceipt(sessionId: string): Promise<ReceiptResponse> {
+  return apiRequest<ReceiptResponse>(`/credits/receipt/${sessionId}`);
+}
+
+// Payment methods
+export interface PaymentMethodCard {
+  brand: string;
+  last4: string;
+  exp_month: number;
+  exp_year: number;
+}
+
+export interface PaymentMethod {
+  id: string;
+  type: string;
+  card: PaymentMethodCard | null;
+  is_default: boolean;
+  created_at: string;
+}
+
+export interface PaymentMethodsResponse {
+  payment_methods: PaymentMethod[];
+  default_payment_method_id: string | null;
+}
+
+export async function getPaymentMethods(): Promise<PaymentMethodsResponse> {
+  return apiRequest<PaymentMethodsResponse>('/credits/payment-methods');
+}
+
+// Switch billing period (monthly <-> annual)
+export interface SwitchBillingPeriodResponse {
+  subscription_id: string;
+  billing_period: string;
+  message: string;
+}
+
+export async function switchBillingPeriod(annual: boolean): Promise<SwitchBillingPeriodResponse> {
+  return apiRequest<SwitchBillingPeriodResponse>('/subscriptions/switch-billing-period', {
+    method: 'POST',
+    body: JSON.stringify({ annual }),
+  });
+}
+
+// Customer Portal Response
+export interface CustomerPortalResponse {
+  url: string;
+}
+
+// Create Stripe Customer Portal session
+export async function createCustomerPortalSession(): Promise<CustomerPortalResponse> {
+  return apiRequest<CustomerPortalResponse>('/subscriptions/customer-portal', {
+    method: 'POST',
+  });
+}
+
+// Sync billing period from Stripe
+export interface SyncBillingPeriodResponse {
+  billing_period: string | null;
+  message: string;
+}
+
+export async function syncBillingPeriod(): Promise<SyncBillingPeriodResponse> {
+  return apiRequest<SyncBillingPeriodResponse>('/subscriptions/sync-billing-period', {
+    method: 'POST',
+  });
 }

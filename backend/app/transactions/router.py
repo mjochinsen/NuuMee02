@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, Query
 
 from .models import (
     TransactionType,
+    TransactionStatus,
     CreditTransaction,
     TransactionListResponse,
 )
@@ -97,16 +98,26 @@ async def list_transactions(
             # Handle unknown types
             txn_type_enum = TransactionType.PURCHASE
 
+        # Map status to enum (default to completed for existing transactions)
+        txn_status = data.get("status", "completed")
+        try:
+            txn_status_enum = TransactionStatus(txn_status)
+        except ValueError:
+            txn_status_enum = TransactionStatus.COMPLETED
+
         transactions.append(CreditTransaction(
             transaction_id=data.get("transaction_id", doc.id),
             type=txn_type_enum,
             amount=data.get("amount", 0),
+            amount_cents=data.get("amount_cents"),
+            status=txn_status_enum,
             balance_before=data.get("balance_before"),
             balance_after=data.get("balance_after"),
             description=data.get("description"),
             related_stripe_payment_id=data.get("related_stripe_payment_id"),
             related_referral_code=data.get("related_referral_code"),
             related_job_id=data.get("related_job_id"),
+            receipt_url=data.get("receipt_url"),
             created_at=created_at,
         ))
 

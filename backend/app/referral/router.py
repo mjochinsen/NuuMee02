@@ -58,10 +58,13 @@ def create_credit_transaction(
         "user_id": user_id,
         "type": "referral",
         "amount": amount,
+        "amount_cents": None,  # Referral bonuses have no dollar amount
+        "status": "completed",
         "balance_before": balance_before,
         "balance_after": balance_after,
         "description": description,
         "related_referral_code": related_referral_code,
+        "receipt_url": None,  # No receipt for referral bonuses
         "created_at": firestore.SERVER_TIMESTAMP,
     }
 

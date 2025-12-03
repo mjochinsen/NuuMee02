@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import {
   CreditCard,
   Zap,
@@ -19,6 +20,7 @@ import {
   ChevronRight,
   ArrowUpRight,
   ArrowDownRight,
+  ExternalLink,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,8 +35,9 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/components/AuthProvider';
-import { createCheckoutSession, ApiError, getTransactions, CreditTransaction, TransactionType } from '@/lib/api';
+import { createCheckoutSession, ApiError, getTransactions, CreditTransaction, TransactionType, TransactionStatus, getAutoRefillSettings, updateAutoRefillSettings, AutoRefillSettings, getPaymentMethods, PaymentMethod, createCustomerPortalSession, syncBillingPeriod } from '@/lib/api';
 import { BuyCreditsModal } from '@/components/BuyCreditsModal';
 import { SubscriptionModal } from '@/components/SubscriptionModal';
 
@@ -59,12 +62,23 @@ interface SubscriptionPlan {
 
 
 export default function BillingPage() {
-  const { profile, user, loading } = useAuth();
+  const { profile, user, loading, refreshProfile } = useAuth();
   const router = useRouter();
   const credits = loading ? null : (profile?.credits_balance ?? 0);
   const creditValue = (credits ?? 0) * 0.50;
   const currentPlan = profile?.subscription_tier || 'free';
+  const billingPeriod = profile?.billing_period;  // "month", "year", or null
+  // For paid subscribers with missing billing_period, default to monthly display
+  // but show sync button and sync before billing operations
+  const hasMissingBillingPeriod = currentPlan !== 'free' && !billingPeriod;
+  const isAnnual = billingPeriod === 'year';
   const nextBillingDate = 'Dec 11';
+
+  // State for billing period sync
+  const [isSyncingBillingPeriod, setIsSyncingBillingPeriod] = useState(false);
+
+  // Billing cycle toggle state (monthly vs annually)
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'annually'>('monthly');
 
   const [showLowBalanceWarning, setShowLowBalanceWarning] = useState(true);
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
@@ -72,10 +86,14 @@ export default function BillingPage() {
   const [showAddCardModal, setShowAddCardModal] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState<CreditPackage | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null);
-  const [autoRefill, setAutoRefill] = useState(false);
+  const [autoRefillEnabled, setAutoRefillEnabled] = useState(false);
+  const [autoRefillThreshold, setAutoRefillThreshold] = useState(10);
+  const [autoRefillPackage, setAutoRefillPackage] = useState('starter');
+  const [autoRefillLoading, setAutoRefillLoading] = useState(false);
+  const [autoRefillSaving, setAutoRefillSaving] = useState(false);
   const [isBuyModalOpen, setIsBuyModalOpen] = useState(false);
   const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
-  const [subscriptionModalType, setSubscriptionModalType] = useState<'subscribe' | 'upgrade' | 'downgrade' | 'cancel' | 'annual' | 'founding'>('subscribe');
+  const [subscriptionModalType, setSubscriptionModalType] = useState<'subscribe' | 'upgrade' | 'downgrade' | 'cancel' | 'annual' | 'monthly' | 'founding'>('subscribe');
   const [selectedSubscriptionPlan, setSelectedSubscriptionPlan] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -89,12 +107,20 @@ export default function BillingPage() {
   const [hasMoreTransactions, setHasMoreTransactions] = useState(false);
   const transactionPageSize = 10;
 
+  // Payment methods state
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+  const [paymentMethodsLoading, setPaymentMethodsLoading] = useState(true);
+
   const creditPackages: CreditPackage[] = [
     { id: 'starter', name: 'Starter', credits: 120, price: 10, pricePerCredit: 0.083 },
     { id: 'popular', name: 'Popular', credits: 400, price: 30, pricePerCredit: 0.075, popular: true },
     { id: 'pro', name: 'Pro', credits: 1100, price: 75, pricePerCredit: 0.068 },
     { id: 'mega', name: 'Mega', credits: 2500, price: 150, pricePerCredit: 0.060 },
   ];
+
+  // Dynamic pricing based on billing cycle (20% savings for annual)
+  const getMonthlyPrice = (basePrice: number): number => basePrice;
+  const getAnnualPrice = (basePrice: number): number => Math.round(basePrice * 0.8); // 20% off
 
   const subscriptionPlans: SubscriptionPlan[] = [
     {
@@ -109,7 +135,7 @@ export default function BillingPage() {
     {
       id: 'creator',
       name: 'Creator',
-      price: 29,
+      price: billingCycle === 'monthly' ? 29 : getAnnualPrice(29),
       credits: 400,
       features: ['400 credits/month', 'No watermarks', 'Standard processing', 'Email support', '100% rollover (up to 800)'],
       current: currentPlan === 'creator',
@@ -118,7 +144,7 @@ export default function BillingPage() {
     {
       id: 'studio',
       name: 'Studio',
-      price: 99,
+      price: billingCycle === 'monthly' ? 99 : getAnnualPrice(99),
       credits: 1600,
       features: ['1,600 credits/month', 'Priority processing', 'Priority support', 'API access', '100% rollover (up to 3,200)'],
       icon: '💎',
@@ -154,12 +180,126 @@ export default function BillingPage() {
     fetchTransactions();
   }, [fetchTransactions]);
 
+  // Fetch auto-refill settings
+  const fetchAutoRefillSettings = useCallback(async () => {
+    if (!user) return;
+
+    setAutoRefillLoading(true);
+    try {
+      const settings = await getAutoRefillSettings();
+      setAutoRefillEnabled(settings.enabled);
+      setAutoRefillThreshold(settings.threshold);
+      setAutoRefillPackage(settings.package_id);
+    } catch (error) {
+      console.error('Failed to fetch auto-refill settings:', error);
+    } finally {
+      setAutoRefillLoading(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    fetchAutoRefillSettings();
+  }, [fetchAutoRefillSettings]);
+
+  // Fetch payment methods
+  const fetchPaymentMethods = useCallback(async () => {
+    if (!user) return;
+
+    setPaymentMethodsLoading(true);
+    try {
+      const response = await getPaymentMethods();
+      setPaymentMethods(response.payment_methods);
+    } catch (error) {
+      console.error('Failed to fetch payment methods:', error);
+    } finally {
+      setPaymentMethodsLoading(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    fetchPaymentMethods();
+  }, [fetchPaymentMethods]);
+
+  // Open Stripe Customer Portal
+  const handleManagePaymentMethods = async () => {
+    try {
+      const response = await createCustomerPortalSession();
+      window.location.href = response.url;
+    } catch (error) {
+      console.error('Failed to open customer portal:', error);
+      if (error instanceof ApiError) {
+        toast.error(error.message);
+      } else {
+        toast.error('Failed to open payment portal. Please try again.');
+      }
+    }
+  };
+
+  // Sync billing period from Stripe (for legacy users with missing data)
+  const handleSyncBillingPeriod = async (): Promise<string | null> => {
+    setIsSyncingBillingPeriod(true);
+    try {
+      const response = await syncBillingPeriod();
+      if (response.billing_period) {
+        toast.success(`Billing period synced: ${response.billing_period === 'year' ? 'Annual' : 'Monthly'}`);
+        // Refresh profile to get updated billing_period
+        if (refreshProfile) {
+          await refreshProfile();
+        }
+        return response.billing_period;
+      }
+      return null;
+    } catch (error) {
+      console.error('Failed to sync billing period:', error);
+      if (error instanceof ApiError) {
+        toast.error(error.message);
+      } else {
+        toast.error('Failed to sync billing period. Please try again.');
+      }
+      return null;
+    } finally {
+      setIsSyncingBillingPeriod(false);
+    }
+  };
+
+  // Auto-sync billing period if missing for paid subscribers
+  useEffect(() => {
+    if (hasMissingBillingPeriod && !isSyncingBillingPeriod) {
+      console.log('Detected missing billing_period for paid subscriber, syncing from Stripe...');
+      handleSyncBillingPeriod();
+    }
+  }, [hasMissingBillingPeriod]);
+
+  // Save auto-refill settings
+  const handleSaveAutoRefill = async () => {
+    setAutoRefillSaving(true);
+    try {
+      await updateAutoRefillSettings({
+        enabled: autoRefillEnabled,
+        threshold: autoRefillThreshold,
+        package_id: autoRefillPackage,
+      });
+    } catch (error) {
+      console.error('Failed to save auto-refill settings:', error);
+      if (error instanceof ApiError) {
+        setErrorMessage(error.message);
+      }
+    } finally {
+      setAutoRefillSaving(false);
+    }
+  };
+
   // Helper to format transaction type for display
-  const getTransactionTypeLabel = (type: TransactionType): string => {
-    const labels: Record<TransactionType, string> = {
+  const getTransactionTypeLabel = (type: TransactionType | string): string => {
+    const labels: Record<string, string> = {
       purchase: 'Credit Purchase',
       subscription: 'Subscription Credits',
       subscription_renewal: 'Subscription Renewal',
+      subscription_upgrade: 'Plan Upgrade',
+      subscription_downgrade: 'Plan Downgrade',
+      subscription_cancel: 'Plan Canceled',
+      billing_switch_annual: 'Switched to Annual',
+      billing_switch_monthly: 'Switched to Monthly',
       referral: 'Referral Bonus',
       job_usage: 'Job Usage',
       refund: 'Refund',
@@ -169,11 +309,16 @@ export default function BillingPage() {
   };
 
   // Helper to get transaction type badge color
-  const getTransactionBadgeColor = (type: TransactionType): string => {
-    const colors: Record<TransactionType, string> = {
+  const getTransactionBadgeColor = (type: TransactionType | string): string => {
+    const colors: Record<string, string> = {
       purchase: 'bg-blue-500/20 text-blue-400',
       subscription: 'bg-purple-500/20 text-purple-400',
       subscription_renewal: 'bg-purple-500/20 text-purple-400',
+      subscription_upgrade: 'bg-green-500/20 text-green-400',
+      subscription_downgrade: 'bg-amber-500/20 text-amber-400',
+      subscription_cancel: 'bg-red-500/20 text-red-400',
+      billing_switch_annual: 'bg-green-500/20 text-green-400',
+      billing_switch_monthly: 'bg-blue-500/20 text-blue-400',
       referral: 'bg-green-500/20 text-green-400',
       job_usage: 'bg-orange-500/20 text-orange-400',
       refund: 'bg-amber-500/20 text-amber-400',
@@ -192,6 +337,46 @@ export default function BillingPage() {
       hour: '2-digit',
       minute: '2-digit',
     });
+  };
+
+  // Helper to format date with time for table
+  const formatDateWithTime = (dateString: string): string => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  // Helper to get status badge color
+  const getStatusBadgeColor = (status: TransactionStatus | string): string => {
+    const colors: Record<string, string> = {
+      completed: 'bg-green-500/20 text-green-400 border-green-500/30',
+      pending: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
+      failed: 'bg-red-500/20 text-red-400 border-red-500/30',
+      refunded: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+    };
+    return colors[status] || 'bg-gray-500/20 text-gray-400 border-gray-500/30';
+  };
+
+  // Helper to format status label
+  const getStatusLabel = (status: TransactionStatus | string): string => {
+    const labels: Record<string, string> = {
+      completed: 'Success',
+      pending: 'Pending',
+      failed: 'Failed',
+      refunded: 'Refunded',
+    };
+    return labels[status] || status;
+  };
+
+  // Helper to format dollar amount
+  const formatAmount = (amountCents: number | null): string => {
+    if (amountCents === null || amountCents === undefined) return '-';
+    return `$${(amountCents / 100).toFixed(2)}`;
   };
 
 
@@ -227,25 +412,38 @@ export default function BillingPage() {
   };
 
   const handleUpgradePlan = (plan: SubscriptionPlan) => {
+    // Calculate monthly and annual prices based on base price (29 for creator, 99 for studio)
+    const basePrice = plan.id === 'studio' ? 99 : plan.id === 'creator' ? 29 : 0;
+    const monthlyPrice = basePrice;
+    const annualPrice = Math.round(basePrice * 0.8 * 12); // 20% off for annual
+
     setSelectedSubscriptionPlan({
       id: plan.id,
       name: plan.name,
-      price: plan.price,
+      price: billingCycle === 'monthly' ? monthlyPrice : Math.round(basePrice * 0.8),
+      annualPrice: annualPrice,
       credits: plan.credits,
       icon: plan.icon,
       features: plan.features,
       effectiveRate: 0.073,
+      billingCycle: billingCycle, // Pass the selected billing cycle
     });
 
-    const currentPlanIndex = subscriptionPlans.findIndex(p => p.current);
-    const newPlanIndex = subscriptionPlans.findIndex(p => p.id === plan.id);
-
-    if (newPlanIndex > currentPlanIndex) {
-      setSubscriptionModalType('upgrade');
-    } else if (newPlanIndex < currentPlanIndex) {
-      setSubscriptionModalType('downgrade');
+    // Users on Free tier need 'subscribe', not 'upgrade' (they don't have a subscription yet)
+    if (currentPlan === 'free') {
+      // If user selected annual billing, use 'annual' type for new subscription
+      setSubscriptionModalType(billingCycle === 'annually' ? 'annual' : 'subscribe');
     } else {
-      setSubscriptionModalType('subscribe');
+      const currentPlanIndex = subscriptionPlans.findIndex(p => p.current);
+      const newPlanIndex = subscriptionPlans.findIndex(p => p.id === plan.id);
+
+      if (newPlanIndex > currentPlanIndex) {
+        setSubscriptionModalType('upgrade');
+      } else if (newPlanIndex < currentPlanIndex) {
+        setSubscriptionModalType('downgrade');
+      } else {
+        setSubscriptionModalType('subscribe');
+      }
     }
 
     setIsSubscriptionModalOpen(true);
@@ -377,50 +575,79 @@ export default function BillingPage() {
           <div className="text-[#94A3B8] text-sm mb-6">
             Next billing: {nextBillingDate}
           </div>
-          <Button
-            variant="outline"
-            className="w-full border-[#334155] text-[#F1F5F9] hover:border-[#00F0D9] hover:text-[#00F0D9]"
-            onClick={() => {
-              setSelectedSubscriptionPlan({
-                id: 'studio',
-                name: 'Studio',
-                price: 99,
-                credits: 1600,
-                icon: '💎',
-                features: [
-                  '1,200 more credits per month',
-                  'Up to 8K resolution',
-                  '24/7 premium support',
-                  'Priority processing queue',
-                  'Advanced API access',
-                  'Custom models',
-                  'Videos stored 90 days (vs 30)',
-                ],
-                effectiveRate: 0.062,
-              });
-              setSubscriptionModalType('upgrade');
-              setIsSubscriptionModalOpen(true);
-            }}
-          >
-            Upgrade Plan
-          </Button>
-          <button
-            className="text-[#94A3B8] text-sm hover:text-[#F1F5F9] mt-3 w-full text-center"
-            onClick={() => {
-              setSelectedSubscriptionPlan({
-                id: currentPlan,
-                name: currentPlan.charAt(0).toUpperCase() + currentPlan.slice(1),
-                price: currentPlan === 'creator' ? 29 : currentPlan === 'studio' ? 99 : 0,
-                credits: currentPlan === 'creator' ? 400 : currentPlan === 'studio' ? 1600 : 25,
-                icon: currentPlan === 'studio' ? '💎' : currentPlan === 'creator' ? '🏆' : '⭐',
-                features: [],
-              });
-              setSubscriptionModalType('cancel');
-              setIsSubscriptionModalOpen(true);
-            }}
-          >
-            Cancel Subscription
-          </button>
+          {/* Only show Upgrade button if not already on Studio (highest plan) */}
+          {currentPlan !== 'studio' && (
+            <Button
+              variant="outline"
+              className="w-full border-[#334155] text-[#F1F5F9] hover:border-[#00F0D9] hover:text-[#00F0D9]"
+              onClick={() => {
+                // Determine upgrade target based on current plan
+                const isOnFree = currentPlan === 'free';
+                const targetPlan = isOnFree ? {
+                  id: 'creator',
+                  name: 'Creator',
+                  price: 29,
+                  credits: 400,
+                  icon: '🏆',
+                  features: [
+                    '400 credits per month',
+                    'No watermarks',
+                    'Standard processing',
+                    'Email support',
+                    '100% rollover (up to 800)',
+                  ],
+                  effectiveRate: 0.073,
+                } : {
+                  id: 'studio',
+                  name: 'Studio',
+                  price: 99,
+                  credits: 1600,
+                  icon: '💎',
+                  features: [
+                    '1,200 more credits per month',
+                    'Up to 8K resolution',
+                    '24/7 premium support',
+                    'Priority processing queue',
+                    'Advanced API access',
+                    'Custom models',
+                    'Videos stored 90 days (vs 30)',
+                  ],
+                  effectiveRate: 0.062,
+                };
+                setSelectedSubscriptionPlan(targetPlan);
+                setSubscriptionModalType(isOnFree ? 'subscribe' : 'upgrade');
+                setIsSubscriptionModalOpen(true);
+              }}
+            >
+              {currentPlan === 'free' ? 'Subscribe to Creator' : 'Upgrade to Studio'}
+            </Button>
+          )}
+          {/* Show "Highest Plan" badge for Studio users */}
+          {currentPlan === 'studio' && (
+            <div className="w-full text-center py-2 px-4 rounded-lg bg-gradient-to-r from-[#00F0D9]/10 to-[#3B1FE2]/10 border border-[#00F0D9]/30">
+              <span className="text-[#00F0D9] text-sm">You're on the highest plan</span>
+            </div>
+          )}
+          {/* Only show cancel for paid plans */}
+          {currentPlan !== 'free' && (
+            <button
+              className="text-[#94A3B8] text-sm hover:text-[#F1F5F9] mt-3 w-full text-center"
+              onClick={() => {
+                setSelectedSubscriptionPlan({
+                  id: currentPlan,
+                  name: currentPlan.charAt(0).toUpperCase() + currentPlan.slice(1),
+                  price: currentPlan === 'creator' ? 29 : currentPlan === 'studio' ? 99 : 0,
+                  credits: currentPlan === 'creator' ? 400 : currentPlan === 'studio' ? 1600 : 25,
+                  icon: currentPlan === 'studio' ? '💎' : currentPlan === 'creator' ? '🏆' : '⭐',
+                  features: [],
+                });
+                setSubscriptionModalType('cancel');
+                setIsSubscriptionModalOpen(true);
+              }}
+            >
+              Cancel Subscription
+            </button>
+          )}
         </div>
       </div>
 
@@ -472,9 +699,21 @@ export default function BillingPage() {
 
       {/* Subscription Plans */}
       <div className="border border-[#334155] rounded-2xl p-8 bg-[#0F172A] mb-8">
-        <div className="flex items-center gap-2 mb-6">
-          <Crown className="w-5 h-5 text-[#00F0D9]" />
-          <h2 className="text-[#F1F5F9]">Subscription Plans</h2>
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-2">
+            <Crown className="w-5 h-5 text-[#00F0D9]" />
+            <h2 className="text-[#F1F5F9]">Subscription Plans</h2>
+          </div>
+          {/* Billing Cycle Toggle */}
+          <Tabs value={billingCycle} onValueChange={(v) => setBillingCycle(v as 'monthly' | 'annually')} className="inline-block">
+            <TabsList className="bg-[#1E293B] border border-[#334155]">
+              <TabsTrigger value="monthly" className="data-[state=active]:bg-[#334155] text-sm">Monthly</TabsTrigger>
+              <TabsTrigger value="annually" className="data-[state=active]:bg-[#334155] text-sm">
+                Annually
+                <Badge className="ml-2 bg-green-500/20 text-green-400 border-green-500/30 text-xs">Save 20%</Badge>
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
@@ -500,8 +739,13 @@ export default function BillingPage() {
                   ${plan.price}
                 </div>
                 <div className="text-[#94A3B8] text-sm">
-                  {plan.price === 0 ? 'forever' : 'per month'}
+                  {plan.price === 0 ? 'forever' : billingCycle === 'annually' ? '/mo (billed annually)' : 'per month'}
                 </div>
+                {billingCycle === 'annually' && plan.price > 0 && (
+                  <div className="text-green-400 text-xs mt-1">
+                    Save ${Math.round((plan.id === 'studio' ? 99 : 29) * 0.2 * 12)}/year
+                  </div>
+                )}
               </div>
 
               <ul className="space-y-3 mb-6">
@@ -530,25 +774,26 @@ export default function BillingPage() {
 
         {/* Special Offers */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          {/* Annual Billing */}
-          <div className="border border-green-500/30 rounded-xl p-6 bg-gradient-to-br from-green-500/5 to-transparent">
-            <div className="flex items-center gap-2 mb-2">
-              <Sparkles className="w-5 h-5 text-green-500" />
-              <h3 className="text-[#F1F5F9]">Save 20% with Annual Billing</h3>
+          {/* Current Billing Status - Only show for paid subscribers */}
+          {currentPlan !== 'free' && (
+            <div className={`border rounded-xl p-6 bg-gradient-to-br ${isAnnual ? 'border-[#00F0D9]/30 from-[#00F0D9]/5' : 'border-blue-500/30 from-blue-500/5'} to-transparent`}>
+              <div className="flex items-center gap-2 mb-2">
+                <Sparkles className={`w-5 h-5 ${isAnnual ? 'text-[#00F0D9]' : 'text-blue-400'}`} />
+                <h3 className="text-[#F1F5F9]">
+                  {isAnnual ? 'Annual Billing Active' : 'Monthly Billing Active'}
+                </h3>
+              </div>
+              <p className="text-[#94A3B8] text-sm mb-4">
+                {isAnnual
+                  ? 'You\'re saving 20% with annual billing!'
+                  : 'Switch to annual using the toggle above to save 20%'}
+              </p>
+              <div className="flex items-center gap-2 text-sm text-[#94A3B8]">
+                <Check className="w-4 h-4 text-[#00F0D9]" />
+                <span>Next billing: {nextBillingDate}</span>
+              </div>
             </div>
-            <p className="text-[#94A3B8] text-sm mb-4">
-              Switch to annual billing and save $72/year
-            </p>
-            <Button
-              onClick={() => {
-                setSubscriptionModalType('annual');
-                setIsSubscriptionModalOpen(true);
-              }}
-              className="bg-gradient-to-r from-green-500 to-green-600 hover:opacity-90 text-white"
-            >
-              Switch to Annual
-            </Button>
-          </div>
+          )}
 
           {/* Founding Member */}
           <div className="border border-amber-500/30 rounded-xl p-6 bg-gradient-to-br from-amber-500/5 to-transparent">
@@ -605,15 +850,73 @@ export default function BillingPage() {
 
       {/* Auto-Refill Option */}
       <div className="border border-[#334155] rounded-2xl p-6 bg-[#0F172A] mb-8">
-        <div className="flex items-center justify-between">
-          <div className="flex-1">
-            <div className="flex items-center gap-3 mb-2">
-              <Switch checked={autoRefill} onCheckedChange={setAutoRefill} disabled />
-              <span className="text-[#F1F5F9]">Auto-refill when balance drops below 10 credits</span>
-              <Badge variant="outline" className="border-amber-500/50 text-amber-400 text-xs">Coming Soon</Badge>
+        <div className="flex items-center gap-2 mb-4">
+          <Zap className="w-5 h-5 text-[#00F0D9]" />
+          <h2 className="text-[#F1F5F9]">Auto-Refill</h2>
+        </div>
+
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <Switch
+              checked={autoRefillEnabled}
+              onCheckedChange={setAutoRefillEnabled}
+              disabled={autoRefillLoading}
+            />
+            <span className="text-[#F1F5F9]">Enable auto-refill</span>
+          </div>
+
+          {autoRefillEnabled && (
+            <div className="ml-11 space-y-4 border-l-2 border-[#334155] pl-4">
+              <div className="space-y-2">
+                <Label className="text-[#94A3B8]">Refill when balance drops below</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    min={5}
+                    max={100}
+                    value={autoRefillThreshold}
+                    onChange={(e) => setAutoRefillThreshold(Number(e.target.value))}
+                    className="w-24 bg-[#1E293B] border-[#334155] text-[#F1F5F9]"
+                  />
+                  <span className="text-[#94A3B8]">credits</span>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-[#94A3B8]">Package to purchase</Label>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                  {creditPackages.map((pkg) => (
+                    <button
+                      key={pkg.id}
+                      onClick={() => setAutoRefillPackage(pkg.id)}
+                      className={`p-3 rounded-lg border text-left transition-colors ${
+                        autoRefillPackage === pkg.id
+                          ? 'border-[#00F0D9] bg-[#00F0D9]/10'
+                          : 'border-[#334155] hover:border-[#00F0D9]/50'
+                      }`}
+                    >
+                      <p className="text-[#F1F5F9] font-medium">{pkg.name}</p>
+                      <p className="text-[#94A3B8] text-sm">{pkg.credits} credits</p>
+                      <p className="text-[#00F0D9] text-sm">${pkg.price}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
-            <p className="text-[#94A3B8] text-sm ml-11">
-              Automatic credit top-ups will be available soon. You'll be able to set a threshold and automatically purchase credits when your balance runs low.
+          )}
+
+          <div className="flex items-center gap-3 pt-2">
+            <Button
+              onClick={handleSaveAutoRefill}
+              disabled={autoRefillSaving || autoRefillLoading}
+              className="bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] hover:opacity-90 text-white"
+            >
+              {autoRefillSaving ? 'Saving...' : 'Save Settings'}
+            </Button>
+            <p className="text-[#94A3B8] text-sm">
+              {autoRefillEnabled
+                ? `Credits will be purchased automatically when your balance drops below ${autoRefillThreshold} credits.`
+                : 'Enable auto-refill to never run out of credits.'}
             </p>
           </div>
         </div>
@@ -621,23 +924,109 @@ export default function BillingPage() {
 
       {/* Payment Methods */}
       <div className="border border-[#334155] rounded-2xl p-8 bg-[#0F172A] mb-8">
-        <div className="flex items-center gap-2 mb-6">
-          <CreditCard className="w-5 h-5 text-[#00F0D9]" />
-          <h2 className="text-[#F1F5F9]">Payment Methods</h2>
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-2">
+            <CreditCard className="w-5 h-5 text-[#00F0D9]" />
+            <h2 className="text-[#F1F5F9]">Payment Methods</h2>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={fetchPaymentMethods}
+              disabled={paymentMethodsLoading}
+              className="text-[#94A3B8] hover:text-[#F1F5F9]"
+            >
+              <RefreshCw className={`w-4 h-4 mr-2 ${paymentMethodsLoading ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleManagePaymentMethods}
+              className="border-[#00F0D9]/50 text-[#00F0D9] hover:bg-[#00F0D9]/10"
+            >
+              <ExternalLink className="w-4 h-4 mr-2" />
+              Manage in Stripe
+            </Button>
+          </div>
         </div>
 
-        {/* Coming Soon Notice */}
-        <div className="border border-amber-500/30 bg-amber-500/5 rounded-xl p-4 mb-6">
-          <p className="text-amber-400 text-sm text-center">
-            Payment methods are managed by Stripe. During checkout, you can save your card for future purchases.
+        {/* Info Notice */}
+        <div className="border border-[#334155] bg-[#1E293B] rounded-xl p-4 mb-6">
+          <p className="text-[#94A3B8] text-sm text-center">
+            Payment methods are saved automatically. Click "Manage in Stripe" to add, remove, or update cards.
           </p>
         </div>
 
-        <div className="text-center text-[#94A3B8] py-8">
-          <CreditCard className="w-12 h-12 mx-auto mb-3 opacity-50" />
-          <p>No saved payment methods</p>
-          <p className="text-sm mt-1">Your payment methods will appear here after your first purchase</p>
-        </div>
+        {/* Loading State */}
+        {paymentMethodsLoading && paymentMethods.length === 0 && (
+          <div className="text-center text-[#94A3B8] py-8">
+            <RefreshCw className="w-8 h-8 mx-auto mb-3 animate-spin opacity-50" />
+            <p>Loading payment methods...</p>
+          </div>
+        )}
+
+        {/* Empty State */}
+        {!paymentMethodsLoading && paymentMethods.length === 0 && (
+          <div className="text-center text-[#94A3B8] py-8">
+            <CreditCard className="w-12 h-12 mx-auto mb-3 opacity-50" />
+            <p>No saved payment methods</p>
+            <p className="text-sm mt-1">Your payment methods will appear here after your first purchase</p>
+          </div>
+        )}
+
+        {/* Payment Methods List */}
+        {paymentMethods.length > 0 && (
+          <div className="space-y-3">
+            {paymentMethods.map((method) => (
+              <div
+                key={method.id}
+                className={`flex items-center justify-between p-4 rounded-xl border ${
+                  method.is_default
+                    ? 'border-[#00F0D9]/50 bg-[#00F0D9]/5'
+                    : 'border-[#334155] bg-[#1E293B]'
+                }`}
+              >
+                <div className="flex items-center gap-4">
+                  {/* Card Brand Icon */}
+                  <div className="w-12 h-8 rounded bg-white flex items-center justify-center">
+                    {method.card?.brand === 'visa' && (
+                      <span className="text-blue-600 font-bold text-sm">VISA</span>
+                    )}
+                    {method.card?.brand === 'mastercard' && (
+                      <span className="text-red-500 font-bold text-sm">MC</span>
+                    )}
+                    {method.card?.brand === 'amex' && (
+                      <span className="text-blue-500 font-bold text-sm">AMEX</span>
+                    )}
+                    {method.card?.brand === 'discover' && (
+                      <span className="text-orange-500 font-bold text-sm">DISC</span>
+                    )}
+                    {!['visa', 'mastercard', 'amex', 'discover'].includes(method.card?.brand || '') && (
+                      <CreditCard className="w-6 h-6 text-gray-600" />
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-[#F1F5F9]">
+                      {method.card?.brand?.charAt(0).toUpperCase()}{method.card?.brand?.slice(1)} •••• {method.card?.last4}
+                    </p>
+                    <p className="text-[#94A3B8] text-sm">
+                      Expires {method.card?.exp_month}/{method.card?.exp_year}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {method.is_default && (
+                    <Badge className="bg-[#00F0D9]/20 text-[#00F0D9] border-[#00F0D9]/30">
+                      Default
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Transaction History */}
@@ -688,48 +1077,77 @@ export default function BillingPage() {
           </div>
         )}
 
-        {/* Transaction List */}
+        {/* Transaction List - Table Format */}
         {transactions.length > 0 && (
-          <div className="space-y-3">
-            {transactions.map((txn) => (
-              <div
-                key={txn.transaction_id}
-                className="flex items-center justify-between p-4 border border-[#334155] rounded-xl bg-[#1E293B] hover:border-[#00F0D9]/30 transition-colors"
-              >
-                <div className="flex items-center gap-4">
-                  <div className={`p-2 rounded-lg ${txn.amount >= 0 ? 'bg-green-500/10' : 'bg-orange-500/10'}`}>
-                    {txn.amount >= 0 ? (
-                      <ArrowDownRight className="w-5 h-5 text-green-400" />
+          <div className="overflow-x-auto">
+            {/* Table Header */}
+            <div className="grid grid-cols-12 gap-4 px-4 py-3 text-sm font-medium text-[#94A3B8] border-b border-[#334155]">
+              <div className="col-span-2">Date</div>
+              <div className="col-span-3">Description</div>
+              <div className="col-span-2 text-right">Amount</div>
+              <div className="col-span-2 text-right">Credits</div>
+              <div className="col-span-2 text-center">Status</div>
+              <div className="col-span-1 text-center">Actions</div>
+            </div>
+
+            {/* Table Rows */}
+            <div className="divide-y divide-[#334155]">
+              {transactions.map((txn) => (
+                <div
+                  key={txn.transaction_id}
+                  className="grid grid-cols-12 gap-4 px-4 py-4 items-center hover:bg-[#1E293B]/50 transition-colors"
+                >
+                  {/* Date */}
+                  <div className="col-span-2 text-[#94A3B8] text-sm">
+                    {formatDateWithTime(txn.created_at)}
+                  </div>
+
+                  {/* Description */}
+                  <div className="col-span-3">
+                    <div className="text-[#F1F5F9] text-sm font-medium truncate">
+                      {txn.description || getTransactionTypeLabel(txn.type)}
+                    </div>
+                    <Badge className={`text-xs mt-1 ${getTransactionBadgeColor(txn.type)}`}>
+                      {getTransactionTypeLabel(txn.type)}
+                    </Badge>
+                  </div>
+
+                  {/* Amount (Dollar) */}
+                  <div className="col-span-2 text-right text-[#F1F5F9] text-sm">
+                    {formatAmount(txn.amount_cents)}
+                  </div>
+
+                  {/* Credits */}
+                  <div className={`col-span-2 text-right text-sm font-semibold ${txn.amount >= 0 ? 'text-green-400' : 'text-orange-400'}`}>
+                    {txn.amount >= 0 ? '+' : ''}{txn.amount}
+                  </div>
+
+                  {/* Status */}
+                  <div className="col-span-2 text-center">
+                    <Badge className={`text-xs border ${getStatusBadgeColor(txn.status || 'completed')}`}>
+                      {getStatusLabel(txn.status || 'completed')}
+                    </Badge>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="col-span-1 text-center">
+                    {txn.receipt_url ? (
+                      <a
+                        href={txn.receipt_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-[#00F0D9] hover:bg-[#00F0D9]/10 transition-colors"
+                        title="View Invoice"
+                      >
+                        <FileText className="w-4 h-4" />
+                      </a>
                     ) : (
-                      <ArrowUpRight className="w-5 h-5 text-orange-400" />
+                      <span className="text-[#64748B]">-</span>
                     )}
                   </div>
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-[#F1F5F9] font-medium">
-                        {txn.description || getTransactionTypeLabel(txn.type)}
-                      </span>
-                      <Badge className={`text-xs ${getTransactionBadgeColor(txn.type)}`}>
-                        {getTransactionTypeLabel(txn.type)}
-                      </Badge>
-                    </div>
-                    <div className="text-[#94A3B8] text-sm">
-                      {formatDate(txn.created_at)}
-                    </div>
-                  </div>
                 </div>
-                <div className="text-right">
-                  <div className={`text-lg font-semibold ${txn.amount >= 0 ? 'text-green-400' : 'text-orange-400'}`}>
-                    {txn.amount >= 0 ? '+' : ''}{txn.amount} credits
-                  </div>
-                  {txn.balance_after !== null && (
-                    <div className="text-[#94A3B8] text-sm">
-                      Balance: {txn.balance_after}
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
 
             {/* Pagination */}
             {(transactionPage > 1 || hasMoreTransactions) && (
@@ -996,6 +1414,7 @@ export default function BillingPage() {
           ] : [],
         }}
         selectedPlan={selectedSubscriptionPlan}
+        isAnnual={billingCycle === 'annually'}
       />
     </main>
   );
