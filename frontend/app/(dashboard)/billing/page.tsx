@@ -72,7 +72,18 @@ export default function BillingPage() {
   const [isSyncingBillingPeriod, setIsSyncingBillingPeriod] = useState(false);
 
   // Billing cycle toggle state (monthly vs annually)
+  // Initialize to user's current billing period, or 'monthly' for free users
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annually'>('monthly');
+
+  // Sync toggle state with user's actual billing period when profile loads
+  useEffect(() => {
+    if (billingPeriod === 'year') {
+      setBillingCycle('annually');
+    } else if (billingPeriod === 'month') {
+      setBillingCycle('monthly');
+    }
+    // For free users or unknown, keep the default 'monthly'
+  }, [billingPeriod]);
 
   const [showLowBalanceWarning, setShowLowBalanceWarning] = useState(true);
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
@@ -159,6 +170,104 @@ export default function BillingPage() {
       current: currentPlan === 'studio',
     },
   ];
+
+  // Helper to determine button label and action based on context
+  // Handles: same plan different billing, upgrades, downgrades, new subscriptions
+  const getButtonConfig = (plan: SubscriptionPlan): {
+    label: string;
+    disabled: boolean;
+    action: 'none' | 'switch-annual' | 'switch-monthly' | 'upgrade' | 'downgrade' | 'subscribe';
+    variant: 'active' | 'primary' | 'switch';
+  } => {
+    const selectedIsAnnual = billingCycle === 'annually';
+    const userIsAnnual = isAnnual;
+    const isSamePlan = plan.current;
+    const isFreeUser = currentPlan === 'free';
+
+    // Free plan card - always show "Current" for free users, "Downgrade" for others
+    if (plan.id === 'free') {
+      if (isFreeUser) {
+        return { label: 'Current Plan', disabled: true, action: 'none', variant: 'active' };
+      }
+      return { label: 'Downgrade', disabled: false, action: 'downgrade', variant: 'primary' };
+    }
+
+    // Current plan - check if billing cycle switch is needed
+    if (isSamePlan) {
+      // User is on this plan - check if they want to switch billing cycle
+      if (selectedIsAnnual && !userIsAnnual) {
+        // User is monthly, toggle shows annual → offer switch to annual
+        return { label: 'Switch to Annual (Save 20%)', disabled: false, action: 'switch-annual', variant: 'switch' };
+      }
+      if (!selectedIsAnnual && userIsAnnual) {
+        // User is annual, toggle shows monthly → offer switch to monthly
+        return { label: 'Switch to Monthly', disabled: false, action: 'switch-monthly', variant: 'switch' };
+      }
+      // Same plan, same billing cycle
+      return { label: 'Current Plan', disabled: true, action: 'none', variant: 'active' };
+    }
+
+    // Different plan - determine upgrade vs downgrade
+    const planTiers = { free: 0, creator: 1, studio: 2 };
+    const currentTier = planTiers[currentPlan as keyof typeof planTiers] ?? 0;
+    const targetTier = planTiers[plan.id as keyof typeof planTiers] ?? 0;
+
+    if (targetTier > currentTier) {
+      return { label: 'Upgrade', disabled: false, action: 'upgrade', variant: 'primary' };
+    }
+    if (targetTier < currentTier) {
+      return { label: 'Downgrade', disabled: false, action: 'downgrade', variant: 'primary' };
+    }
+
+    // Fallback for free users selecting paid plans
+    return { label: 'Get Started', disabled: false, action: 'subscribe', variant: 'primary' };
+  };
+
+  // Handle plan button click based on computed action
+  const handlePlanButtonClick = (plan: SubscriptionPlan) => {
+    const config = getButtonConfig(plan);
+
+    if (config.disabled || config.action === 'none') return;
+
+    // Calculate prices for the modal
+    const basePrice = plan.id === 'studio' ? 99 : plan.id === 'creator' ? 29 : 0;
+    const monthlyPrice = basePrice;
+    const annualPrice = Math.round(basePrice * 0.8 * 12);
+
+    const planForModal = {
+      id: plan.id,
+      name: plan.name,
+      price: billingCycle === 'monthly' ? monthlyPrice : Math.round(basePrice * 0.8),
+      annualPrice: annualPrice,
+      credits: plan.credits,
+      icon: plan.icon,
+      features: plan.features,
+      effectiveRate: 0.073,
+      billingCycle: billingCycle,
+    };
+
+    setSelectedSubscriptionPlan(planForModal);
+
+    switch (config.action) {
+      case 'switch-annual':
+        setSubscriptionModalType('annual');
+        break;
+      case 'switch-monthly':
+        setSubscriptionModalType('monthly');
+        break;
+      case 'upgrade':
+        setSubscriptionModalType('upgrade');
+        break;
+      case 'downgrade':
+        setSubscriptionModalType('downgrade');
+        break;
+      case 'subscribe':
+        setSubscriptionModalType(billingCycle === 'annually' ? 'annual' : 'subscribe');
+        break;
+    }
+
+    setIsSubscriptionModalOpen(true);
+  };
 
   // Open Stripe Customer Portal
   const handleManagePaymentMethods = async () => {
@@ -510,9 +619,20 @@ export default function BillingPage() {
                 <span className="text-4xl mb-2 block">{plan.icon}</span>
                 <h3 className="text-[#F1F5F9] mb-1">{plan.name}</h3>
                 {plan.current && (
-                  <Badge className="bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] text-white border-0 mb-2">
-                    CURRENT
-                  </Badge>
+                  <div className="flex items-center justify-center gap-2 flex-wrap">
+                    <Badge className="bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] text-white border-0">
+                      CURRENT
+                    </Badge>
+                    {/* Show billing period for paid plans */}
+                    {plan.id !== 'free' && billingPeriod && (
+                      <Badge className={isAnnual
+                        ? 'bg-green-500/20 text-green-400 border-green-500/30'
+                        : 'bg-blue-500/20 text-blue-400 border-blue-500/30'
+                      }>
+                        {isAnnual ? 'Annual' : 'Monthly'}
+                      </Badge>
+                    )}
+                  </div>
                 )}
               </div>
 
@@ -539,17 +659,25 @@ export default function BillingPage() {
                 ))}
               </ul>
 
-              <Button
-                onClick={() => !plan.current && handleUpgradePlan(plan)}
-                disabled={plan.current}
-                className={plan.current
-                  ? 'w-full border-[#334155] text-[#94A3B8]'
-                  : 'w-full bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] hover:opacity-90 text-white'
-                }
-                variant={plan.current ? 'outline' : 'default'}
-              >
-                {plan.current ? 'Active' : plan.price > 29 ? 'Upgrade' : 'Select'}
-              </Button>
+              {(() => {
+                const config = getButtonConfig(plan);
+                return (
+                  <Button
+                    onClick={() => handlePlanButtonClick(plan)}
+                    disabled={config.disabled}
+                    className={
+                      config.variant === 'active'
+                        ? 'w-full border-[#334155] text-[#94A3B8]'
+                        : config.variant === 'switch'
+                          ? 'w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:opacity-90 text-white'
+                          : 'w-full bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] hover:opacity-90 text-white'
+                    }
+                    variant={config.variant === 'active' ? 'outline' : 'default'}
+                  >
+                    {config.label}
+                  </Button>
+                );
+              })()}
             </div>
           ))}
         </div>
