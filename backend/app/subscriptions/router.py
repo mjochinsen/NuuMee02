@@ -1,11 +1,10 @@
 """Subscription management routes."""
 import os
-import uuid
 import logging
 from datetime import datetime, timezone
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Request
-from google.cloud import firestore, secretmanager
+from google.cloud import firestore
 import stripe
 from slowapi import Limiter
 from slowapi.util import get_remote_address
@@ -24,6 +23,7 @@ from .models import (
     SwitchBillingPeriodRequest,
     SwitchBillingPeriodResponse,
 )
+from .services import StripeService, SubscriptionService
 from ..auth.firebase import get_firestore_client
 from ..middleware.auth import get_current_user_id
 
@@ -33,43 +33,6 @@ router = APIRouter(prefix="/subscriptions", tags=["Subscriptions"])
 
 # Rate limiter - uses IP address for key
 limiter = Limiter(key_func=get_remote_address)
-
-# Stripe API key loading (same pattern as credits router)
-_stripe_key_loaded = False
-
-
-def _ensure_stripe_key():
-    """Ensure Stripe API key is set."""
-    global _stripe_key_loaded
-    if _stripe_key_loaded:
-        return
-
-    project_id = os.getenv("GCP_PROJECT_ID", "wanapi-prod")
-
-    # Check if using Secret Manager
-    if os.getenv("USE_SECRET_MANAGER", "false").lower() == "true":
-        try:
-            client = secretmanager.SecretManagerServiceClient()
-            name = f"projects/{project_id}/secrets/stripe-secret-key/versions/latest"
-            response = client.access_secret_version(request={"name": name})
-            key = response.payload.data.decode("UTF-8").strip()
-            if key:
-                stripe.api_key = key
-                _stripe_key_loaded = True
-                return
-        except Exception as e:
-            print(f"Failed to get Stripe key from Secret Manager: {e}")
-
-    # Fallback to environment variable (local dev)
-    key = os.getenv("STRIPE_SECRET_KEY")
-    if key:
-        stripe.api_key = key
-        _stripe_key_loaded = True
-
-
-def generate_subscription_id() -> str:
-    """Generate a unique subscription ID."""
-    return f"sub_{uuid.uuid4().hex[:12]}"
 
 
 @router.get("/tiers", response_model=list[SubscriptionTierInfo])
@@ -113,7 +76,7 @@ async def create_subscription(
     - Create subscription record
     - Grant initial credits
     """
-    _ensure_stripe_key()
+    StripeService.ensure_api_key()
     db = get_firestore_client()
 
     # Get user document
@@ -126,13 +89,8 @@ async def create_subscription(
     user_data = user_doc.to_dict()
 
     # Check for existing active subscription
-    existing_sub = db.collection("subscriptions")\
-        .where("user_id", "==", user_id)\
-        .where("status", "==", SubscriptionStatus.ACTIVE.value)\
-        .limit(1)\
-        .get()
-
-    if list(existing_sub):
+    existing_sub = SubscriptionService.get_active_subscription(db, user_id)
+    if existing_sub:
         raise HTTPException(
             status_code=400,
             detail="User already has an active subscription. Cancel current subscription first."
@@ -153,12 +111,11 @@ async def create_subscription(
     stripe_customer_id = user_data.get("stripe_customer_id")
     if not stripe_customer_id:
         try:
-            customer = stripe.Customer.create(
+            stripe_customer_id = StripeService.get_or_create_customer(
+                stripe_customer_id=None,
                 email=user_data.get("email"),
-                metadata={"user_id": user_id},
+                user_id=user_id,
             )
-            stripe_customer_id = customer.id
-
             # Store customer ID
             user_ref.update({
                 "stripe_customer_id": stripe_customer_id,
@@ -170,59 +127,42 @@ async def create_subscription(
 
     # Get frontend URL for redirects
     frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
+    billing_period = "year" if sub_request.annual else "month"
 
-    # Create Stripe checkout session for subscription
+    # Prepare metadata
+    metadata = {
+        "user_id": user_id,
+        "tier": sub_request.tier.value,
+        "monthly_credits": str(tier_config["monthly_credits"]),
+        "billing_period": billing_period,
+        "founding_member": "true" if sub_request.founding else "false",
+    }
+
+    # Handle founding member coupon
+    coupon_id = None
+    if sub_request.founding:
+        coupon_id = os.getenv("STRIPE_FOUNDING_COUPON_ID", "FOUNDING20")
+        try:
+            StripeService.ensure_coupon_exists(
+                coupon_id,
+                percent_off=20,
+                name="Founding Member - 20% Lifetime Discount",
+            )
+        except stripe.error.StripeError as e:
+            logger.warning(f"Failed to ensure coupon: {e}")
+            coupon_id = None  # Continue without coupon
+
+    # Create checkout session
     try:
-        # Base session params
-        session_params = {
-            "customer": stripe_customer_id,
-            "mode": "subscription",
-            "payment_method_types": ["card"],
-            "line_items": [{
-                "price": tier_config["stripe_price_id"],
-                "quantity": 1,
-            }],
-            "success_url": f"{frontend_url}/billing?subscription=success",
-            "cancel_url": f"{frontend_url}/billing?subscription=canceled",
-            "metadata": {
-                "user_id": user_id,
-                "tier": sub_request.tier.value,
-                "monthly_credits": str(tier_config["monthly_credits"]),
-                "billing_period": "year" if sub_request.annual else "month",
-                "founding_member": "true" if sub_request.founding else "false",
-            },
-            "subscription_data": {
-                "metadata": {
-                    "user_id": user_id,
-                    "tier": sub_request.tier.value,
-                    "monthly_credits": str(tier_config["monthly_credits"]),
-                    "billing_period": "year" if sub_request.annual else "month",
-                    "founding_member": "true" if sub_request.founding else "false",
-                },
-            },
-        }
-
-        # Apply founding member discount (20% off forever)
-        if sub_request.founding:
-            # Get or create the founding member coupon
-            founding_coupon_id = os.getenv("STRIPE_FOUNDING_COUPON_ID", "FOUNDING20")
-            try:
-                # Try to retrieve existing coupon
-                stripe.Coupon.retrieve(founding_coupon_id)
-            except stripe.error.InvalidRequestError:
-                # Create the coupon if it doesn't exist
-                stripe.Coupon.create(
-                    id=founding_coupon_id,
-                    percent_off=20,
-                    duration="forever",
-                    name="Founding Member - 20% Lifetime Discount",
-                    metadata={"type": "founding_member"},
-                )
-                logger.info(f"Created founding member coupon: {founding_coupon_id}")
-
-            session_params["discounts"] = [{"coupon": founding_coupon_id}]
-
-        session = stripe.checkout.Session.create(**session_params)
+        session = StripeService.create_checkout_session(
+            customer_id=stripe_customer_id,
+            price_id=tier_config["stripe_price_id"],
+            success_url=f"{frontend_url}/billing?subscription=success",
+            cancel_url=f"{frontend_url}/billing?subscription=canceled",
+            metadata=metadata,
+            subscription_metadata=metadata,
+            coupon_id=coupon_id,
+        )
 
         return CreateSubscriptionResponse(
             checkout_url=session.url,
@@ -246,29 +186,22 @@ async def get_current_subscription(
     db = get_firestore_client()
 
     # Query for active subscription
-    subs_query = db.collection("subscriptions")\
-        .where("user_id", "==", user_id)\
-        .where("status", "in", [SubscriptionStatus.ACTIVE.value, SubscriptionStatus.PAST_DUE.value])\
-        .limit(1)\
-        .get()
-
-    subs_list = list(subs_query)
-    if not subs_list:
+    result = SubscriptionService.get_active_subscription(db, user_id)
+    if not result:
         return None
 
-    sub_data = subs_list[0].to_dict()
+    _, sub_data = result
 
     # Handle Firestore timestamps
-    current_period_start = sub_data.get("current_period_start")
-    current_period_end = sub_data.get("current_period_end")
-    created_at = sub_data.get("created_at")
-
-    if hasattr(current_period_start, 'timestamp'):
-        current_period_start = datetime.fromtimestamp(current_period_start.timestamp(), tz=timezone.utc)
-    if hasattr(current_period_end, 'timestamp'):
-        current_period_end = datetime.fromtimestamp(current_period_end.timestamp(), tz=timezone.utc)
-    if hasattr(created_at, 'timestamp'):
-        created_at = datetime.fromtimestamp(created_at.timestamp(), tz=timezone.utc)
+    current_period_start = SubscriptionService.convert_firestore_timestamp(
+        sub_data.get("current_period_start")
+    )
+    current_period_end = SubscriptionService.convert_firestore_timestamp(
+        sub_data.get("current_period_end")
+    )
+    created_at = SubscriptionService.convert_firestore_timestamp(
+        sub_data.get("created_at")
+    )
 
     return SubscriptionResponse(
         subscription_id=sub_data.get("subscription_id"),
@@ -302,25 +235,18 @@ async def upgrade_subscription(
 
     Note: Downgrades take effect immediately but may have prorated credits.
     """
-    _ensure_stripe_key()
+    StripeService.ensure_api_key()
     db = get_firestore_client()
 
     # Find current active subscription
-    subs_query = db.collection("subscriptions")\
-        .where("user_id", "==", user_id)\
-        .where("status", "==", SubscriptionStatus.ACTIVE.value)\
-        .limit(1)\
-        .get()
-
-    subs_list = list(subs_query)
-    if not subs_list:
+    result = SubscriptionService.get_active_subscription(db, user_id)
+    if not result:
         raise HTTPException(
             status_code=404,
             detail="No active subscription found. Please subscribe first."
         )
 
-    sub_doc = subs_list[0]
-    sub_data = sub_doc.to_dict()
+    sub_doc, sub_data = result
     old_tier = SubscriptionTier(sub_data.get("tier"))
     stripe_subscription_id = sub_data.get("stripe_subscription_id")
 
@@ -337,7 +263,6 @@ async def upgrade_subscription(
     # Get tier configurations
     tiers = get_subscription_tiers()
     new_tier_config = tiers.get(upgrade_request.new_tier)
-    old_tier_config = tiers.get(old_tier)
 
     if not new_tier_config:
         raise HTTPException(status_code=400, detail=f"Invalid tier: {upgrade_request.new_tier}")
@@ -346,104 +271,66 @@ async def upgrade_subscription(
         logger.error(f"Missing Stripe price ID for tier: {upgrade_request.new_tier}")
         raise HTTPException(status_code=500, detail="Subscription tier not configured")
 
-    # Retrieve the Stripe subscription to get the subscription item ID
+    new_credits = new_tier_config.get("monthly_credits", 0)
+
     try:
-        stripe_sub = stripe.Subscription.retrieve(stripe_subscription_id)
+        # Retrieve and update Stripe subscription
+        stripe_sub = StripeService.get_subscription(stripe_subscription_id)
         subscription_item_id = stripe_sub["items"]["data"][0]["id"]
 
-        # Update the subscription with new price (Stripe handles proration)
-        updated_sub = stripe.Subscription.modify(
+        StripeService.modify_subscription(
             stripe_subscription_id,
-            items=[{
-                "id": subscription_item_id,
-                "price": new_tier_config["stripe_price_id"],
-            }],
-            proration_behavior="create_prorations",  # Immediate proration
+            items=[{"id": subscription_item_id, "price": new_tier_config["stripe_price_id"]}],
+            proration_behavior="create_prorations",
             metadata={
                 "user_id": user_id,
                 "tier": upgrade_request.new_tier.value,
-                "monthly_credits": str(new_tier_config["monthly_credits"]),
+                "monthly_credits": str(new_credits),
             },
         )
 
-        # Calculate credits difference for upgrades/downgrades
-        # IMPORTANT: This prevents gaming by switching back and forth
-        credits_added = 0
-        old_credits = old_tier_config.get("monthly_credits", 0) if old_tier_config else 0
-        new_credits = new_tier_config.get("monthly_credits", 0)
-
-        # Get user data
+        # Get user data and calculate credits
         user_ref = db.collection("users").document(user_id)
         user_doc = user_ref.get()
+        credits_added = 0
 
         if user_doc.exists:
             user_data = user_doc.to_dict()
             current_balance = user_data.get("credits_balance", 0)
 
-            if new_credits > old_credits:
-                # Upgrading - grant the difference in credits immediately
-                credits_added = new_credits - old_credits
-                new_balance = current_balance + credits_added
+            # Calculate credits change
+            credits_added, new_balance, action = SubscriptionService.calculate_tier_change_credits(
+                old_tier, upgrade_request.new_tier, current_balance
+            )
 
-                user_ref.update({
-                    "credits_balance": new_balance,
-                    "subscription_tier": upgrade_request.new_tier.value,
-                    "updated_at": firestore.SERVER_TIMESTAMP,
-                })
+            # Update user subscription
+            SubscriptionService.update_user_subscription(
+                db, user_id,
+                tier=upgrade_request.new_tier.value,
+                credits_balance=new_balance if credits_added > 0 else None,
+            )
 
-                # Log the credit transaction
-                db.collection("credit_transactions").add({
-                    "user_id": user_id,
-                    "type": "subscription_upgrade",
-                    "amount": credits_added,
-                    "amount_cents": None,  # Proration handled by Stripe, no direct charge here
-                    "status": "completed",
-                    "balance_before": current_balance,
-                    "balance_after": new_balance,
-                    "description": f"Upgraded from {old_tier.value.capitalize()} to {upgrade_request.new_tier.value.capitalize()} (+{credits_added} credits)",
-                    "related_stripe_payment_id": stripe_subscription_id,
-                    "receipt_url": None,  # No direct receipt for tier change
-                    "created_at": firestore.SERVER_TIMESTAMP,
-                })
-            else:
-                # Downgrading - DO NOT remove any credits!
-                # Users keep all their purchased/earned credits.
-                # The anti-gaming protection is: no bonus credits on downgrade.
-                # Future renewals will grant the lower tier's monthly credits.
-                new_balance = current_balance  # Keep ALL existing credits
-
-                user_ref.update({
-                    "subscription_tier": upgrade_request.new_tier.value,
-                    "updated_at": firestore.SERVER_TIMESTAMP,
-                })
-
-                # Log the downgrade (no credits removed)
-                db.collection("credit_transactions").add({
-                    "user_id": user_id,
-                    "type": "subscription_downgrade",
-                    "amount": 0,
-                    "amount_cents": None,  # No charge for downgrade
-                    "status": "completed",
-                    "balance_before": current_balance,
-                    "balance_after": new_balance,
-                    "description": f"Downgraded from {old_tier.value.capitalize()} to {upgrade_request.new_tier.value.capitalize()} (credits preserved)",
-                    "related_stripe_payment_id": stripe_subscription_id,
-                    "receipt_url": None,  # No receipt for downgrade
-                    "created_at": firestore.SERVER_TIMESTAMP,
-                })
+            # Log the transaction
+            SubscriptionService.create_tier_change_transaction(
+                db, user_id, old_tier, upgrade_request.new_tier,
+                credits_added, current_balance, new_balance, stripe_subscription_id
+            )
         else:
-            # User not found - just update tier
             logger.warning(f"User {user_id} not found when updating credits")
 
-        # Update local subscription record
-        sub_doc.reference.update({
-            "tier": upgrade_request.new_tier.value,
-            "monthly_credits": new_credits,
-            "credits_rollover_cap": new_tier_config.get("credits_rollover_cap", new_credits * 2),
-            "updated_at": firestore.SERVER_TIMESTAMP,
-        })
+        # Update subscription record
+        SubscriptionService.update_subscription_record(
+            sub_doc,
+            tier=upgrade_request.new_tier.value,
+            monthly_credits=new_credits,
+            credits_rollover_cap=new_tier_config.get("credits_rollover_cap", new_credits * 2),
+        )
 
+        # Determine action type
+        tiers_config = get_subscription_tiers()
+        old_credits = tiers_config.get(old_tier, {}).get("monthly_credits", 0)
         action = "upgraded" if new_credits > old_credits else "changed"
+
         return UpgradeSubscriptionResponse(
             subscription_id=sub_data.get("subscription_id"),
             old_tier=old_tier,
@@ -469,7 +356,7 @@ async def cancel_subscription(
     The subscription will remain active until the end of the current billing period.
     User will retain access and credits until then.
     """
-    _ensure_stripe_key()
+    StripeService.ensure_api_key()
     db = get_firestore_client()
 
     # First, check user document for subscription info
@@ -491,18 +378,10 @@ async def cancel_subscription(
     sub_doc = None
     sub_data = None
 
-    # Query for active subscription in subscriptions collection
-    subs_query = db.collection("subscriptions")\
-        .where("user_id", "==", user_id)\
-        .where("status", "==", SubscriptionStatus.ACTIVE.value)\
-        .limit(1)\
-        .get()
-
-    subs_list = list(subs_query)
-    if subs_list:
-        sub_doc = subs_list[0]
-        sub_data = sub_doc.to_dict()
-        # Prefer subscription_id from subscriptions collection if user doc doesn't have it
+    # Query for active subscription
+    result = SubscriptionService.get_active_subscription(db, user_id)
+    if result:
+        sub_doc, sub_data = result
         if not stripe_subscription_id:
             stripe_subscription_id = sub_data.get("stripe_subscription_id")
 
@@ -511,13 +390,9 @@ async def cancel_subscription(
         stripe_customer_id = user_data.get("stripe_customer_id")
         if stripe_customer_id:
             try:
-                subscriptions = stripe.Subscription.list(
-                    customer=stripe_customer_id,
-                    status="active",
-                    limit=1
-                )
-                if subscriptions.data:
-                    stripe_subscription_id = subscriptions.data[0].id
+                subscriptions = StripeService.list_active_subscriptions(stripe_customer_id, limit=1)
+                if subscriptions:
+                    stripe_subscription_id = subscriptions[0].id
                     logger.info(f"Found subscription {stripe_subscription_id} from Stripe for user {user_id}")
             except stripe.error.StripeError as e:
                 logger.warning(f"Failed to list subscriptions from Stripe: {e}")
@@ -530,32 +405,30 @@ async def cancel_subscription(
 
     # Cancel at period end via Stripe
     try:
-        stripe_sub = stripe.Subscription.modify(
+        stripe_sub = StripeService.modify_subscription(
             stripe_subscription_id,
             cancel_at_period_end=True,
         )
 
         # Update local subscription record (if it exists)
         if sub_doc:
-            sub_doc.reference.update({
-                "cancel_at_period_end": True,
-                "updated_at": firestore.SERVER_TIMESTAMP,
-            })
+            SubscriptionService.update_subscription_record(sub_doc, cancel_at_period_end=True)
 
         # Also update the user document to mark subscription as canceling
-        user_ref.update({
-            "subscription_cancel_at_period_end": True,
-            "updated_at": firestore.SERVER_TIMESTAMP,
-        })
+        SubscriptionService.update_user_subscription(
+            db, user_id,
+            tier=user_subscription_tier,
+            cancel_at_period_end=True,
+        )
 
         # Get current_period_end from Stripe subscription (most accurate)
         current_period_end = None
         if stripe_sub.current_period_end:
             current_period_end = datetime.fromtimestamp(stripe_sub.current_period_end, tz=timezone.utc)
         elif sub_data and sub_data.get("current_period_end"):
-            current_period_end = sub_data.get("current_period_end")
-            if hasattr(current_period_end, 'timestamp'):
-                current_period_end = datetime.fromtimestamp(current_period_end.timestamp(), tz=timezone.utc)
+            current_period_end = SubscriptionService.convert_firestore_timestamp(
+                sub_data.get("current_period_end")
+            )
 
         subscription_id = sub_doc.id if sub_doc else stripe_subscription_id
 
@@ -587,7 +460,7 @@ async def switch_billing_period(
     2. Updates the Stripe subscription to use the corresponding price
     3. Stripe prorates the difference (customer pays difference or gets credit)
     """
-    _ensure_stripe_key()
+    StripeService.ensure_api_key()
     db = get_firestore_client()
 
     # Find current active subscription
@@ -697,7 +570,7 @@ async def sync_subscription_from_stripe(
 
     Useful for recovering from webhook failures or manual testing.
     """
-    _ensure_stripe_key()
+    StripeService.ensure_api_key()
     db = get_firestore_client()
 
     # Get user document
@@ -823,7 +696,7 @@ async def sync_billing_period(
 
     Useful for fixing missing billing_period on legacy accounts.
     """
-    _ensure_stripe_key()
+    StripeService.ensure_api_key()
     db = get_firestore_client()
 
     # Get user document
@@ -918,7 +791,7 @@ async def create_customer_portal_session(
     - Download invoices
     - Manage subscriptions
     """
-    _ensure_stripe_key()
+    StripeService.ensure_api_key()
     db = get_firestore_client()
 
     # Get user document
