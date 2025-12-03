@@ -15,9 +15,16 @@ import { Badge } from '@/components/ui/badge';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { PaymentMethodSelector, PaymentMethodSelectorCompact } from '@/components/PaymentMethodSelector';
+import { PaymentMethodSelectorCompact } from '@/components/PaymentMethodSelector';
 import { SuccessModal } from '@/components/SuccessModal';
 import { createSubscription, cancelSubscription, upgradeSubscription, switchBillingPeriod, SubscriptionTier, ApiError } from '@/lib/api';
+import {
+  PlanComparisonCard,
+  FeatureList,
+  BillingSection,
+  InfoBanner,
+  ActionButtons,
+} from '@/components/subscription-modal';
 
 interface Plan {
   id: string;
@@ -182,149 +189,49 @@ export function SubscriptionModal({
         </div>
       </div>
 
-      {/* What's Included */}
-      <div className="mb-6">
-        <h4 className="text-[#F1F5F9] mb-3">What's included:</h4>
-        <div className="space-y-2">
-          {selectedPlan?.features.map((feature, idx) => (
-            <div key={idx} className="flex items-start gap-2 text-[#94A3B8]">
-              <Check className="w-4 h-4 text-[#00F0D9] flex-shrink-0 mt-0.5" />
-              <span>{feature}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Payment Method */}
+      <FeatureList features={selectedPlan?.features || []} title="What's included:" />
       <PaymentMethodSelectorCompact />
-
-      {/* Billing */}
-      <div className="border-t border-[#334155] pt-4 mb-6">
-        <h4 className="text-[#F1F5F9] mb-3">Billing:</h4>
-        <div className="space-y-2">
-          <div className="flex justify-between text-[#94A3B8]">
-            <span>First charge today</span>
-            <span className="text-[#F1F5F9]">${selectedPlan?.price}.00</span>
-          </div>
-          <div className="flex justify-between text-[#94A3B8]">
-            <span>Then ${selectedPlan?.price}/month on {nextBillingDate}</span>
-            <span className="text-[#F1F5F9]">${selectedPlan?.price}.00</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Notice */}
-      <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 mb-6">
-        <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0" />
-        <span className="text-amber-500 text-sm">You can cancel anytime</span>
-      </div>
-
-      {/* Actions */}
-      <div className="flex gap-3">
-        <Button
-          variant="outline"
-          className="flex-1 border-[#334155] text-[#F1F5F9] hover:border-[#00F0D9]"
-          onClick={onClose}
-          disabled={isProcessing}
-        >
-          Cancel
-        </Button>
-        <Button
-          className="flex-1 bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] hover:opacity-90 text-white"
-          onClick={handlePrimaryAction}
-          disabled={isProcessing}
-        >
-          {isProcessing ? 'Processing...' : 'Proceed to Payment'}
-        </Button>
-      </div>
+      <BillingSection
+        items={[
+          { label: 'First charge today', amount: `$${selectedPlan?.price}.00` },
+          { label: `Then $${selectedPlan?.price}/month on ${nextBillingDate}`, amount: `$${selectedPlan?.price}.00` },
+        ]}
+      />
+      <InfoBanner text="You can cancel anytime" variant="amber" />
+      <ActionButtons
+        primaryLabel="Proceed to Payment"
+        onPrimary={handlePrimaryAction}
+        onSecondary={onClose}
+        isLoading={isProcessing}
+      />
     </>
   );
 
   const renderUpgradeModal = () => (
     <>
-      {/* Plan Comparison */}
-      <div className="p-6 rounded-xl bg-[#0F172A] border border-[#334155] mb-6">
-        <div className="flex items-center justify-between">
-          <div className="text-center flex-1">
-            <div className="text-sm text-[#94A3B8] mb-1">Current Plan</div>
-            <div className="text-xl text-[#F1F5F9] mb-1">{currentPlan?.name}</div>
-            <div className="text-[#94A3B8]">${currentPlan?.price}/mo</div>
-            <div className="text-sm text-[#00F0D9]">{currentPlan?.credits} credits</div>
-          </div>
-          <ArrowRight className="w-6 h-6 text-[#00F0D9] flex-shrink-0" />
-          <div className="text-center flex-1">
-            <div className="text-sm text-[#94A3B8] mb-1">New Plan</div>
-            <div className="text-xl text-[#F1F5F9] mb-1">{selectedPlan?.name}</div>
-            <div className="text-[#94A3B8]">${selectedPlan?.price}/mo</div>
-            <div className="text-sm text-[#00F0D9]">{selectedPlan?.credits} credits</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Additional Benefits */}
-      <div className="mb-6">
-        <h4 className="text-[#F1F5F9] mb-3">Additional benefits:</h4>
-        <div className="space-y-2">
-          {selectedPlan?.features.slice(0, 7).map((feature, idx) => (
-            <div key={idx} className="flex items-start gap-2 text-[#94A3B8]">
-              <Check className="w-4 h-4 text-[#00F0D9] flex-shrink-0 mt-0.5" />
-              <span>{feature}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Payment Method */}
+      <PlanComparisonCard
+        currentPlan={{ name: currentPlan?.name || '', price: currentPlan?.price || 0, credits: currentPlan?.credits || 0 }}
+        newPlan={{ name: selectedPlan?.name || '', price: selectedPlan?.price || 0, credits: selectedPlan?.credits || 0 }}
+      />
+      <FeatureList features={selectedPlan?.features.slice(0, 7) || []} title="Additional benefits:" />
       <PaymentMethodSelectorCompact />
-
-      {/* Billing Adjustment */}
-      <div className="border-t border-[#334155] pt-4 mb-6">
-        <h4 className="text-[#F1F5F9] mb-3">Billing adjustment:</h4>
-        <div className="space-y-2">
-          <div className="flex justify-between text-[#94A3B8]">
-            <span>{selectedPlan?.name} Plan</span>
-            <span className="text-[#F1F5F9]">${selectedPlan?.price}.00</span>
-          </div>
-          <div className="flex justify-between text-[#94A3B8]">
-            <span>Prorated credit ({daysRemaining} days)</span>
-            <span className="text-[#00F0D9]">-${proratedCredit.toFixed(2)}</span>
-          </div>
-          <div className="h-px bg-[#334155] my-2"></div>
-          <div className="flex justify-between text-[#F1F5F9] text-lg">
-            <span>Charge today</span>
-            <span>${((selectedPlan?.price || 0) - proratedCredit).toFixed(2)}</span>
-          </div>
-          <div className="flex justify-between text-[#94A3B8] text-sm">
-            <span>Next billing: {nextBillingDate}</span>
-            <span className="text-[#F1F5F9]">${selectedPlan?.price}.00</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Notice */}
-      <div className="flex items-center gap-2 p-3 rounded-lg bg-[#00F0D9]/10 border border-[#00F0D9]/30 mb-6">
-        <Sparkles className="w-4 h-4 text-[#00F0D9] flex-shrink-0" />
-        <span className="text-[#00F0D9] text-sm">Your 200 unused credits will carry over</span>
-      </div>
-
-      {/* Actions */}
-      <div className="flex gap-3">
-        <Button
-          variant="outline"
-          className="flex-1 border-[#334155] text-[#F1F5F9] hover:border-[#00F0D9]"
-          onClick={onClose}
-          disabled={isProcessing}
-        >
-          Cancel
-        </Button>
-        <Button
-          className="flex-1 bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] hover:opacity-90 text-white"
-          onClick={handlePrimaryAction}
-          disabled={isProcessing}
-        >
-          {isProcessing ? 'Processing...' : 'Proceed to Payment'}
-        </Button>
-      </div>
+      <BillingSection
+        items={[
+          { label: `${selectedPlan?.name} Plan`, amount: `$${selectedPlan?.price}.00` },
+          { label: `Prorated credit (${daysRemaining} days)`, amount: `-$${proratedCredit.toFixed(2)}`, isCredit: true },
+        ]}
+        totalLabel="Charge today"
+        totalAmount={`$${((selectedPlan?.price || 0) - proratedCredit).toFixed(2)}`}
+        footerLabel={`Next billing: ${nextBillingDate}`}
+        footerAmount={`$${selectedPlan?.price}.00`}
+      />
+      <InfoBanner text="Your 200 unused credits will carry over" variant="cyan" />
+      <ActionButtons
+        primaryLabel="Proceed to Payment"
+        onPrimary={handlePrimaryAction}
+        onSecondary={onClose}
+        isLoading={isProcessing}
+      />
     </>
   );
 
@@ -353,42 +260,25 @@ export function SubscriptionModal({
             </div>
           </div>
 
-          {/* What You'll Lose */}
-          <div className="mb-6">
-            <h4 className="text-[#F1F5F9] mb-3">You will lose:</h4>
-            <div className="space-y-2">
-              {[
-                `${currentPlan?.credits || 400} credits per month`,
-                'Watermark-free videos',
-                'Priority processing',
-                'Higher resolution options',
-              ].map((feature, idx) => (
-                <div key={idx} className="flex items-start gap-2 text-[#94A3B8]">
-                  <X className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-                  <span>{feature}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Actions */}
-          <div className="flex gap-3">
-            <Button
-              variant="outline"
-              className="flex-1 border-[#334155] text-[#F1F5F9] hover:border-[#00F0D9]"
-              onClick={onClose}
-              disabled={isProcessing}
-            >
-              Keep My Plan
-            </Button>
-            <Button
-              className="flex-1 bg-gradient-to-r from-amber-500 to-amber-600 hover:opacity-90 text-white"
-              onClick={handlePrimaryAction}
-              disabled={isProcessing}
-            >
-              {isProcessing ? 'Processing...' : 'Confirm Downgrade to Free'}
-            </Button>
-          </div>
+          <FeatureList
+            features={[
+              `${currentPlan?.credits || 400} credits per month`,
+              'Watermark-free videos',
+              'Priority processing',
+              'Higher resolution options',
+            ]}
+            title="You will lose:"
+            iconType="x"
+            iconColor="text-red-500"
+          />
+          <ActionButtons
+            primaryLabel="Confirm Downgrade to Free"
+            primaryVariant="amber"
+            onPrimary={handlePrimaryAction}
+            secondaryLabel="Keep My Plan"
+            onSecondary={onClose}
+            isLoading={isProcessing}
+          />
         </>
       );
     }
@@ -396,30 +286,12 @@ export function SubscriptionModal({
     // Regular downgrade (Studio -> Creator)
     return (
       <>
-        {/* Warning */}
-        <div className="flex items-center gap-2 p-4 rounded-lg bg-amber-500/10 border border-amber-500/30 mb-6">
-          <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0" />
-          <span className="text-amber-500">Are you sure?</span>
-        </div>
-
-        {/* Plan Comparison */}
-        <div className="p-6 rounded-xl bg-[#0F172A] border border-[#334155] mb-6">
-          <div className="flex items-center justify-between">
-            <div className="text-center flex-1">
-              <div className="text-sm text-[#94A3B8] mb-1">Current Plan</div>
-              <div className="text-xl text-[#F1F5F9] mb-1">{currentPlan?.name}</div>
-              <div className="text-[#94A3B8]">${currentPlan?.price}/mo</div>
-              <div className="text-sm text-[#00F0D9]">{currentPlan?.credits} credits</div>
-            </div>
-            <ArrowRight className="w-6 h-6 text-amber-500 flex-shrink-0" />
-            <div className="text-center flex-1">
-              <div className="text-sm text-[#94A3B8] mb-1">New Plan</div>
-              <div className="text-xl text-[#F1F5F9] mb-1">{selectedPlan?.name}</div>
-              <div className="text-[#94A3B8]">${selectedPlan?.price}/mo</div>
-              <div className="text-sm text-[#00F0D9]">{selectedPlan?.credits} credits</div>
-            </div>
-          </div>
-        </div>
+        <InfoBanner text="Are you sure?" variant="amber" />
+        <PlanComparisonCard
+          currentPlan={{ name: currentPlan?.name || '', price: currentPlan?.price || 0, credits: currentPlan?.credits || 0 }}
+          newPlan={{ name: selectedPlan?.name || '', price: selectedPlan?.price || 0, credits: selectedPlan?.credits || 0 }}
+          arrowColor="text-amber-500"
+        />
 
         {/* Credit Adjustment Warning */}
         <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 mb-6">
@@ -429,38 +301,20 @@ export function SubscriptionModal({
           </p>
         </div>
 
-        {/* You Will Lose */}
-        <div className="mb-6">
-          <h4 className="text-[#F1F5F9] mb-3">You will lose:</h4>
-          <div className="space-y-2">
-            {[
-              '1,200 credits per month',
-              '8K resolution',
-              '24/7 premium support',
-              'Priority processing',
-              'Custom models',
-              'Extended video storage (90 days)',
-            ].map((feature, idx) => (
-              <div key={idx} className="flex items-start gap-2 text-[#94A3B8]">
-                <X className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-                <span>{feature}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* You Will Keep */}
-        <div className="mb-6">
-          <h4 className="text-[#F1F5F9] mb-3">You will keep:</h4>
-          <div className="space-y-2">
-            {selectedPlan?.features.slice(0, 5).map((feature, idx) => (
-              <div key={idx} className="flex items-start gap-2 text-[#94A3B8]">
-                <Check className="w-4 h-4 text-[#00F0D9] flex-shrink-0 mt-0.5" />
-                <span>{feature}</span>
-              </div>
-            ))}
-          </div>
-        </div>
+        <FeatureList
+          features={[
+            '1,200 credits per month',
+            '8K resolution',
+            '24/7 premium support',
+            'Priority processing',
+            'Custom models',
+            'Extended video storage (90 days)',
+          ]}
+          title="You will lose:"
+          iconType="x"
+          iconColor="text-red-500"
+        />
+        <FeatureList features={selectedPlan?.features.slice(0, 5) || []} title="You will keep:" />
 
         {/* Billing */}
         <div className="border-t border-[#334155] pt-4 mb-6">
@@ -474,24 +328,13 @@ export function SubscriptionModal({
           </div>
         </div>
 
-        {/* Actions */}
-        <div className="flex gap-3">
-          <Button
-            variant="outline"
-            className="flex-1 border-[#334155] text-[#F1F5F9] hover:border-[#00F0D9]"
-            onClick={onClose}
-            disabled={isProcessing}
-          >
-            Cancel
-          </Button>
-          <Button
-            className="flex-1 bg-gradient-to-r from-amber-500 to-amber-600 hover:opacity-90 text-white"
-            onClick={handlePrimaryAction}
-            disabled={isProcessing}
-          >
-            {isProcessing ? 'Processing...' : 'Confirm Downgrade'}
-          </Button>
-        </div>
+        <ActionButtons
+          primaryLabel="Confirm Downgrade"
+          primaryVariant="amber"
+          onPrimary={handlePrimaryAction}
+          onSecondary={onClose}
+          isLoading={isProcessing}
+        />
       </>
     );
   };
@@ -587,18 +430,13 @@ export function SubscriptionModal({
   const renderAnnualModal = () => {
     const monthlyCost = currentPlan?.price || 29;
     const annualCost = currentPlan?.annualPrice || 276;
-    const monthlySavings = monthlyCost - (annualCost / 12);
     const annualSavings = (monthlyCost * 12) - annualCost;
 
     return (
       <>
-        {/* Savings Banner */}
-        <div className="flex items-center gap-2 p-4 rounded-lg bg-[#00F0D9]/10 border border-[#00F0D9]/30 mb-6">
-          <Sparkles className="w-5 h-5 text-[#00F0D9] flex-shrink-0" />
-          <span className="text-[#00F0D9]">💰 Save 20% with annual billing</span>
-        </div>
+        <InfoBanner text="💰 Save 20% with annual billing" variant="cyan" />
 
-        {/* Plan Comparison */}
+        {/* Plan Comparison - billing cycle specific */}
         <div className="p-6 rounded-xl bg-[#0F172A] border border-[#334155] mb-6">
           <div className="flex items-center justify-between mb-4">
             <div className="text-center flex-1">
@@ -622,64 +460,29 @@ export function SubscriptionModal({
           </div>
         </div>
 
-        {/* Payment Method */}
         <PaymentMethodSelectorCompact />
-
-        {/* Billing */}
-        <div className="border-t border-[#334155] pt-4 mb-6">
-          <h4 className="text-[#F1F5F9] mb-3">Billing:</h4>
-          <div className="space-y-2">
-            <div className="flex justify-between text-[#94A3B8]">
-              <span>Annual charge today</span>
-              <span className="text-[#F1F5F9]">${annualCost}.00</span>
-            </div>
-            <div className="flex justify-between text-[#94A3B8]">
-              <span>Prorated credit ({daysRemaining} days)</span>
-              <span className="text-[#00F0D9]">-${proratedCredit.toFixed(2)}</span>
-            </div>
-            <div className="h-px bg-[#334155] my-2"></div>
-            <div className="flex justify-between text-[#F1F5F9] text-lg">
-              <span>Charge today</span>
-              <span>${(annualCost - proratedCredit).toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between text-[#94A3B8] text-sm">
-              <span>Next billing: Nov 11, 2026</span>
-              <span className="text-[#F1F5F9]">${annualCost}.00</span>
-            </div>
-          </div>
-        </div>
+        <BillingSection
+          items={[
+            { label: 'Annual charge today', amount: `$${annualCost}.00` },
+            { label: `Prorated credit (${daysRemaining} days)`, amount: `-$${proratedCredit.toFixed(2)}`, isCredit: true },
+          ]}
+          totalLabel="Charge today"
+          totalAmount={`$${(annualCost - proratedCredit).toFixed(2)}`}
+          footerLabel="Next billing: Nov 11, 2026"
+          footerAmount={`$${annualCost}.00`}
+        />
 
         {/* Benefits */}
         <div className="space-y-2 p-4 rounded-lg bg-[#1E293B] border border-[#334155] mb-6">
-          {[
-            'Same features, better price',
-            'Cancel anytime, prorated refund',
-          ].map((benefit) => (
-            <div key={benefit} className="flex items-center gap-2 text-[#94A3B8]">
-              <Check className="w-4 h-4 text-[#00F0D9]" />
-              <span>{benefit}</span>
-            </div>
-          ))}
+          <FeatureList features={['Same features, better price', 'Cancel anytime, prorated refund']} />
         </div>
 
-        {/* Actions */}
-        <div className="flex gap-3">
-          <Button
-            variant="outline"
-            className="flex-1 border-[#334155] text-[#F1F5F9] hover:border-[#00F0D9]"
-            onClick={onClose}
-            disabled={isProcessing}
-          >
-            Cancel
-          </Button>
-          <Button
-            className="flex-1 bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] hover:opacity-90 text-white"
-            onClick={handlePrimaryAction}
-            disabled={isProcessing}
-          >
-            {isProcessing ? 'Processing...' : 'Switch to Annual'}
-          </Button>
-        </div>
+        <ActionButtons
+          primaryLabel="Switch to Annual"
+          onPrimary={handlePrimaryAction}
+          onSecondary={onClose}
+          isLoading={isProcessing}
+        />
       </>
     );
   };
@@ -690,13 +493,9 @@ export function SubscriptionModal({
 
     return (
       <>
-        {/* Info Banner */}
-        <div className="flex items-center gap-2 p-4 rounded-lg bg-blue-500/10 border border-blue-500/30 mb-6">
-          <AlertCircle className="w-5 h-5 text-blue-400 flex-shrink-0" />
-          <span className="text-blue-400">Switching to monthly billing</span>
-        </div>
+        <InfoBanner text="Switching to monthly billing" variant="blue" />
 
-        {/* Plan Comparison */}
+        {/* Plan Comparison - billing cycle specific */}
         <div className="p-6 rounded-xl bg-[#0F172A] border border-[#334155] mb-6">
           <div className="flex items-center justify-between mb-4">
             <div className="text-center flex-1">
@@ -723,37 +522,24 @@ export function SubscriptionModal({
         {/* What happens */}
         <div className="space-y-2 p-4 rounded-lg bg-[#1E293B] border border-[#334155] mb-6">
           <h4 className="text-[#F1F5F9] mb-2">What happens:</h4>
-          {[
-            'Prorated credit applied for remaining annual period',
-            'Switch to monthly billing on next renewal',
-            'Same features, just different billing cycle',
-            'Can switch back to annual anytime',
-          ].map((item) => (
-            <div key={item} className="flex items-center gap-2 text-[#94A3B8]">
-              <Check className="w-4 h-4 text-blue-400" />
-              <span>{item}</span>
-            </div>
-          ))}
+          <FeatureList
+            features={[
+              'Prorated credit applied for remaining annual period',
+              'Switch to monthly billing on next renewal',
+              'Same features, just different billing cycle',
+              'Can switch back to annual anytime',
+            ]}
+            iconColor="text-blue-400"
+          />
         </div>
 
-        {/* Actions */}
-        <div className="flex gap-3">
-          <Button
-            variant="outline"
-            className="flex-1 border-[#334155] text-[#F1F5F9] hover:border-blue-400"
-            onClick={onClose}
-            disabled={isProcessing}
-          >
-            Keep Annual
-          </Button>
-          <Button
-            className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 hover:opacity-90 text-white"
-            onClick={handlePrimaryAction}
-            disabled={isProcessing}
-          >
-            {isProcessing ? 'Processing...' : 'Switch to Monthly'}
-          </Button>
-        </div>
+        <ActionButtons
+          primaryLabel="Switch to Monthly"
+          onPrimary={handlePrimaryAction}
+          secondaryLabel="Keep Annual"
+          onSecondary={onClose}
+          isLoading={isProcessing}
+        />
       </>
     );
   };
@@ -786,7 +572,7 @@ export function SubscriptionModal({
           <div className="text-[#00F0D9]">{selectedPlan?.credits} credits per month</div>
         </div>
 
-        {/* Exclusive Benefits */}
+        {/* Exclusive Benefits - using Sparkles icon */}
         <div className="mb-6">
           <h4 className="text-[#F1F5F9] mb-3">Exclusive Founding Member Benefits:</h4>
           <div className="space-y-2">
@@ -806,61 +592,25 @@ export function SubscriptionModal({
           </div>
         </div>
 
-        {/* Regular Features */}
-        <div className="mb-6">
-          <h4 className="text-[#F1F5F9] mb-3">Plus all {selectedPlan?.name} Plan features:</h4>
-          <div className="space-y-2">
-            {selectedPlan?.features.slice(0, 6).map((feature, idx) => (
-              <div key={idx} className="flex items-start gap-2 text-[#94A3B8]">
-                <Check className="w-4 h-4 text-[#00F0D9] flex-shrink-0 mt-0.5" />
-                <span>{feature}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Payment Method */}
+        <FeatureList
+          features={selectedPlan?.features.slice(0, 6) || []}
+          title={`Plus all ${selectedPlan?.name} Plan features:`}
+        />
         <PaymentMethodSelectorCompact />
-
-        {/* Billing */}
-        <div className="border-t border-[#334155] pt-4 mb-6">
-          <h4 className="text-[#F1F5F9] mb-3">Billing:</h4>
-          <div className="space-y-2">
-            <div className="flex justify-between text-[#94A3B8]">
-              <span>First charge today</span>
-              <span className="text-[#F1F5F9]">${foundingPrice}</span>
-            </div>
-            <div className="flex justify-between text-[#94A3B8]">
-              <span>Then ${foundingPrice}/month forever</span>
-              <span className="text-[#F1F5F9]">${foundingPrice}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Urgency */}
-        <div className="flex items-center gap-2 p-4 rounded-lg bg-amber-500/10 border border-amber-500/30 mb-6">
-          <Sparkles className="w-5 h-5 text-amber-500 flex-shrink-0" />
-          <span className="text-amber-500">⚡ Only {spotsLeft} Founding Member spots left!</span>
-        </div>
-
-        {/* Actions */}
-        <div className="flex gap-3">
-          <Button
-            variant="outline"
-            className="flex-1 border-[#334155] text-[#F1F5F9] hover:border-[#00F0D9]"
-            onClick={onClose}
-            disabled={isProcessing}
-          >
-            Cancel
-          </Button>
-          <Button
-            className="flex-1 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:opacity-90 text-white"
-            onClick={handlePrimaryAction}
-            disabled={isProcessing}
-          >
-            {isProcessing ? 'Processing...' : 'Proceed to Payment'}
-          </Button>
-        </div>
+        <BillingSection
+          items={[
+            { label: 'First charge today', amount: `$${foundingPrice}` },
+            { label: `Then $${foundingPrice}/month forever`, amount: `$${foundingPrice}` },
+          ]}
+        />
+        <InfoBanner text={`⚡ Only ${spotsLeft} Founding Member spots left!`} variant="amber" />
+        <ActionButtons
+          primaryLabel="Proceed to Payment"
+          primaryVariant="amber"
+          onPrimary={handlePrimaryAction}
+          onSecondary={onClose}
+          isLoading={isProcessing}
+        />
       </>
     );
   };
