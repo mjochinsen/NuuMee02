@@ -429,17 +429,18 @@ def generate_signed_download_url(bucket_name: str, blob_path: str, expiration: i
         lifetime=3600,
     )
 
-    # Create storage client with signing credentials
-    client = storage.Client(credentials=signing_credentials, project=project)
+    # Create storage client
+    client = storage.Client(project=project)
     bucket = client.bucket(bucket_name)
     blob = bucket.blob(blob_path)
 
+    # Generate signed URL using impersonated credentials
+    # Pass credentials object directly (same approach as upload router)
     url = blob.generate_signed_url(
         version="v4",
         expiration=timedelta(seconds=expiration),
         method="GET",
-        service_account_email=sa_email,
-        access_token=signing_credentials.token,
+        credentials=signing_credentials,
     )
     return url
 

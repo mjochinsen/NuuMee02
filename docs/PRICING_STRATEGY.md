@@ -237,6 +237,53 @@ Total: 3.75 credits
 
 ---
 
+## 11. Stripe Checkout Behavior
+
+### When Stripe Checkout Opens (Payment Screen)
+
+| Action | Opens Stripe? | Reason |
+|--------|---------------|--------|
+| **Buy Credits** | YES | One-time payment, needs card details |
+| **New Subscription (Free → Creator/Studio)** | YES | First-time subscription, needs payment method |
+| **Founding Member** | YES | First-time subscription with 20% discount coupon |
+| **Upgrade (Creator → Studio)** | NO | Modifies existing Stripe subscription, uses payment method on file |
+| **Downgrade (Studio → Creator)** | NO | Modifies existing Stripe subscription, Stripe handles proration |
+| **Downgrade to Free** | NO | This is cancellation, no payment needed |
+| **Switch to Annual** | YES | Different Stripe price ID, creates new checkout session |
+| **Cancel Subscription** | NO | Cancels at period end, no payment involved |
+
+### How It Works
+
+1. **New Subscriptions**: Create a Stripe Checkout Session with `mode: "subscription"`. User is redirected to Stripe's hosted payment page.
+
+2. **Plan Changes (Upgrade/Downgrade)**: Use `stripe.Subscription.modify()` to change the price ID. Stripe automatically:
+   - Prorates the billing (charges difference for upgrade, credits for downgrade)
+   - Uses the existing payment method on file
+   - No redirect needed
+
+3. **Cancellation**: Use `stripe.Subscription.modify()` with `cancel_at_period_end: true`. User retains access until the current billing period ends.
+
+### Stripe Price IDs (Production)
+
+| Plan | Billing | Stripe Price ID | Monthly Cost |
+|------|---------|-----------------|--------------|
+| Creator | Monthly | `price_1SXnPS75wY1iQccD48Lb3yoN` | $29/month |
+| Studio | Monthly | `price_1SXnPT75wY1iQccDZriGoJEv` | $99/month |
+| Creator | Annual | `price_creator_annual` | $278/year (20% off) |
+| Studio | Annual | `price_studio_annual` | $948/year (20% off) |
+
+*Note: Annual price IDs need to be created in Stripe Dashboard*
+
+### Credit Adjustments on Plan Changes
+
+| Change | Credits Action |
+|--------|----------------|
+| Upgrade (Creator→Studio) | +1200 credits immediately (difference) |
+| Downgrade (Studio→Creator) | Credits capped at 400 (prevents gaming) |
+| Cancel | Credits retained until period end |
+
+---
+
 ## ✅ FINAL STATUS
 
 This pricing file is now:

@@ -10,17 +10,9 @@ import {
   Check,
   AlertCircle,
   X,
-  Plus,
-  FileText,
   Crown,
   Sparkles,
   Building2,
-  RefreshCw,
-  ChevronLeft,
-  ChevronRight,
-  ArrowUpRight,
-  ArrowDownRight,
-  ExternalLink,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -37,10 +29,11 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/components/AuthProvider';
-import { createCheckoutSession, ApiError, CreditTransaction, TransactionType, TransactionStatus, PaymentMethod, createCustomerPortalSession, syncBillingPeriod } from '@/lib/api';
+import { createCheckoutSession, ApiError, createCustomerPortalSession, syncBillingPeriod } from '@/lib/api';
 import { BuyCreditsModal } from '@/components/BuyCreditsModal';
 import { SubscriptionModal } from '@/components/SubscriptionModal';
 import { useTransactions, usePaymentMethods, useAutoRefill } from './hooks';
+import { BalanceCard, ActivePlanCard, PaymentMethodsSection, TransactionHistorySection } from './components';
 
 interface CreditPackage {
   id: string;
@@ -217,97 +210,6 @@ export default function BillingPage() {
     }
   }, [hasMissingBillingPeriod]);
 
-  // Helper to format transaction type for display
-  const getTransactionTypeLabel = (type: TransactionType | string): string => {
-    const labels: Record<string, string> = {
-      purchase: 'Credit Purchase',
-      subscription: 'Subscription Credits',
-      subscription_renewal: 'Subscription Renewal',
-      subscription_upgrade: 'Plan Upgrade',
-      subscription_downgrade: 'Plan Downgrade',
-      subscription_cancel: 'Plan Canceled',
-      billing_switch_annual: 'Switched to Annual',
-      billing_switch_monthly: 'Switched to Monthly',
-      referral: 'Referral Bonus',
-      job_usage: 'Job Usage',
-      refund: 'Refund',
-      bonus: 'Bonus Credits',
-    };
-    return labels[type] || type;
-  };
-
-  // Helper to get transaction type badge color
-  const getTransactionBadgeColor = (type: TransactionType | string): string => {
-    const colors: Record<string, string> = {
-      purchase: 'bg-blue-500/20 text-blue-400',
-      subscription: 'bg-purple-500/20 text-purple-400',
-      subscription_renewal: 'bg-purple-500/20 text-purple-400',
-      subscription_upgrade: 'bg-green-500/20 text-green-400',
-      subscription_downgrade: 'bg-amber-500/20 text-amber-400',
-      subscription_cancel: 'bg-red-500/20 text-red-400',
-      billing_switch_annual: 'bg-green-500/20 text-green-400',
-      billing_switch_monthly: 'bg-blue-500/20 text-blue-400',
-      referral: 'bg-green-500/20 text-green-400',
-      job_usage: 'bg-orange-500/20 text-orange-400',
-      refund: 'bg-amber-500/20 text-amber-400',
-      bonus: 'bg-cyan-500/20 text-cyan-400',
-    };
-    return colors[type] || 'bg-gray-500/20 text-gray-400';
-  };
-
-  // Helper to format date
-  const formatDate = (dateString: string): string => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
-
-  // Helper to format date with time for table
-  const formatDateWithTime = (dateString: string): string => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
-
-  // Helper to get status badge color
-  const getStatusBadgeColor = (status: TransactionStatus | string): string => {
-    const colors: Record<string, string> = {
-      completed: 'bg-green-500/20 text-green-400 border-green-500/30',
-      pending: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
-      failed: 'bg-red-500/20 text-red-400 border-red-500/30',
-      refunded: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-    };
-    return colors[status] || 'bg-gray-500/20 text-gray-400 border-gray-500/30';
-  };
-
-  // Helper to format status label
-  const getStatusLabel = (status: TransactionStatus | string): string => {
-    const labels: Record<string, string> = {
-      completed: 'Success',
-      pending: 'Pending',
-      failed: 'Failed',
-      refunded: 'Refunded',
-    };
-    return labels[status] || status;
-  };
-
-  // Helper to format dollar amount
-  const formatAmount = (amountCents: number | null): string => {
-    if (amountCents === null || amountCents === undefined) return '-';
-    return `$${(amountCents / 100).toFixed(2)}`;
-  };
-
-
   const handlePurchaseCredits = async (pkg: CreditPackage) => {
     setSelectedPackage(pkg);
     setIsBuyModalOpen(true);
@@ -467,116 +369,67 @@ export default function BillingPage() {
 
       {/* Balance and Plan Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        {/* Current Balance */}
-        <div className="border border-[#334155] rounded-2xl p-6 bg-[#0F172A]">
-          <h3 className="text-[#94A3B8] mb-4">Current Balance</h3>
-          <div className="flex items-center gap-3 mb-2">
-            <Zap className="w-8 h-8 text-[#00F0D9]" />
-            <span className="text-[#F1F5F9] text-4xl">{credits === null ? '...' : credits}</span>
-            <span className="text-[#94A3B8] text-xl">Credits</span>
-          </div>
-          <div className="text-[#94A3B8] text-sm mb-6">
-            Worth: ${creditValue.toFixed(2)}
-          </div>
-          <Button
-            className="w-full bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] hover:opacity-90 text-white"
-            onClick={() => {
-              setSelectedPackage(creditPackages[1]);
-              setIsBuyModalOpen(true);
-            }}
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Buy Credits
-          </Button>
-        </div>
-
-        {/* Active Plan */}
-        <div className="border border-[#334155] rounded-2xl p-6 bg-[#0F172A]">
-          <h3 className="text-[#94A3B8] mb-4">Active Plan</h3>
-          <div className="flex items-center gap-3 mb-2">
-            <span className="text-4xl">{currentPlan === 'studio' ? '💎' : currentPlan === 'creator' ? '🏆' : '⭐'}</span>
-            <span className="text-[#F1F5F9] text-2xl capitalize">{currentPlan}</span>
-          </div>
-          <div className="text-[#94A3B8] text-sm mb-1">
-            {currentPlan === 'free' ? 'Free' : currentPlan === 'creator' ? '$29/month' : '$99/month'}
-          </div>
-          <div className="text-[#94A3B8] text-sm mb-6">
-            Next billing: {nextBillingDate}
-          </div>
-          {/* Only show Upgrade button if not already on Studio (highest plan) */}
-          {currentPlan !== 'studio' && (
-            <Button
-              variant="outline"
-              className="w-full border-[#334155] text-[#F1F5F9] hover:border-[#00F0D9] hover:text-[#00F0D9]"
-              onClick={() => {
-                // Determine upgrade target based on current plan
-                const isOnFree = currentPlan === 'free';
-                const targetPlan = isOnFree ? {
-                  id: 'creator',
-                  name: 'Creator',
-                  price: 29,
-                  credits: 400,
-                  icon: '🏆',
-                  features: [
-                    '400 credits per month',
-                    'No watermarks',
-                    'Standard processing',
-                    'Email support',
-                    '100% rollover (up to 800)',
-                  ],
-                  effectiveRate: 0.073,
-                } : {
-                  id: 'studio',
-                  name: 'Studio',
-                  price: 99,
-                  credits: 1600,
-                  icon: '💎',
-                  features: [
-                    '1,200 more credits per month',
-                    'Up to 8K resolution',
-                    '24/7 premium support',
-                    'Priority processing queue',
-                    'Advanced API access',
-                    'Custom models',
-                    'Videos stored 90 days (vs 30)',
-                  ],
-                  effectiveRate: 0.062,
-                };
-                setSelectedSubscriptionPlan(targetPlan);
-                setSubscriptionModalType(isOnFree ? 'subscribe' : 'upgrade');
-                setIsSubscriptionModalOpen(true);
-              }}
-            >
-              {currentPlan === 'free' ? 'Subscribe to Creator' : 'Upgrade to Studio'}
-            </Button>
-          )}
-          {/* Show "Highest Plan" badge for Studio users */}
-          {currentPlan === 'studio' && (
-            <div className="w-full text-center py-2 px-4 rounded-lg bg-gradient-to-r from-[#00F0D9]/10 to-[#3B1FE2]/10 border border-[#00F0D9]/30">
-              <span className="text-[#00F0D9] text-sm">You're on the highest plan</span>
-            </div>
-          )}
-          {/* Only show cancel for paid plans */}
-          {currentPlan !== 'free' && (
-            <button
-              className="text-[#94A3B8] text-sm hover:text-[#F1F5F9] mt-3 w-full text-center"
-              onClick={() => {
-                setSelectedSubscriptionPlan({
-                  id: currentPlan,
-                  name: currentPlan.charAt(0).toUpperCase() + currentPlan.slice(1),
-                  price: currentPlan === 'creator' ? 29 : currentPlan === 'studio' ? 99 : 0,
-                  credits: currentPlan === 'creator' ? 400 : currentPlan === 'studio' ? 1600 : 25,
-                  icon: currentPlan === 'studio' ? '💎' : currentPlan === 'creator' ? '🏆' : '⭐',
-                  features: [],
-                });
-                setSubscriptionModalType('cancel');
-                setIsSubscriptionModalOpen(true);
-              }}
-            >
-              Cancel Subscription
-            </button>
-          )}
-        </div>
+        <BalanceCard
+          credits={credits}
+          creditValue={creditValue}
+          onBuyCredits={() => {
+            setSelectedPackage(creditPackages[1]);
+            setIsBuyModalOpen(true);
+          }}
+        />
+        <ActivePlanCard
+          currentPlan={currentPlan}
+          nextBillingDate={nextBillingDate}
+          onUpgrade={() => {
+            const isOnFree = currentPlan === 'free';
+            const targetPlan = isOnFree ? {
+              id: 'creator',
+              name: 'Creator',
+              price: 29,
+              credits: 400,
+              icon: '🏆',
+              features: [
+                '400 credits per month',
+                'No watermarks',
+                'Standard processing',
+                'Email support',
+                '100% rollover (up to 800)',
+              ],
+              effectiveRate: 0.073,
+            } : {
+              id: 'studio',
+              name: 'Studio',
+              price: 99,
+              credits: 1600,
+              icon: '💎',
+              features: [
+                '1,200 more credits per month',
+                'Up to 8K resolution',
+                '24/7 premium support',
+                'Priority processing queue',
+                'Advanced API access',
+                'Custom models',
+                'Videos stored 90 days (vs 30)',
+              ],
+              effectiveRate: 0.062,
+            };
+            setSelectedSubscriptionPlan(targetPlan);
+            setSubscriptionModalType(isOnFree ? 'subscribe' : 'upgrade');
+            setIsSubscriptionModalOpen(true);
+          }}
+          onCancel={() => {
+            setSelectedSubscriptionPlan({
+              id: currentPlan,
+              name: currentPlan.charAt(0).toUpperCase() + currentPlan.slice(1),
+              price: currentPlan === 'creator' ? 29 : currentPlan === 'studio' ? 99 : 0,
+              credits: currentPlan === 'creator' ? 400 : currentPlan === 'studio' ? 1600 : 25,
+              icon: currentPlan === 'studio' ? '💎' : currentPlan === 'creator' ? '🏆' : '⭐',
+              features: [],
+            });
+            setSubscriptionModalType('cancel');
+            setIsSubscriptionModalOpen(true);
+          }}
+        />
       </div>
 
       {/* Buy Credits Section */}
@@ -852,263 +705,24 @@ export default function BillingPage() {
       </div>
 
       {/* Payment Methods */}
-      <div className="border border-[#334155] rounded-2xl p-8 bg-[#0F172A] mb-8">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-2">
-            <CreditCard className="w-5 h-5 text-[#00F0D9]" />
-            <h2 className="text-[#F1F5F9]">Payment Methods</h2>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={fetchPaymentMethods}
-              disabled={paymentMethodsLoading}
-              className="text-[#94A3B8] hover:text-[#F1F5F9]"
-            >
-              <RefreshCw className={`w-4 h-4 mr-2 ${paymentMethodsLoading ? 'animate-spin' : ''}`} />
-              Refresh
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleManagePaymentMethods}
-              className="border-[#00F0D9]/50 text-[#00F0D9] hover:bg-[#00F0D9]/10"
-            >
-              <ExternalLink className="w-4 h-4 mr-2" />
-              Manage in Stripe
-            </Button>
-          </div>
-        </div>
-
-        {/* Info Notice */}
-        <div className="border border-[#334155] bg-[#1E293B] rounded-xl p-4 mb-6">
-          <p className="text-[#94A3B8] text-sm text-center">
-            Payment methods are saved automatically. Click "Manage in Stripe" to add, remove, or update cards.
-          </p>
-        </div>
-
-        {/* Loading State */}
-        {paymentMethodsLoading && paymentMethods.length === 0 && (
-          <div className="text-center text-[#94A3B8] py-8">
-            <RefreshCw className="w-8 h-8 mx-auto mb-3 animate-spin opacity-50" />
-            <p>Loading payment methods...</p>
-          </div>
-        )}
-
-        {/* Empty State */}
-        {!paymentMethodsLoading && paymentMethods.length === 0 && (
-          <div className="text-center text-[#94A3B8] py-8">
-            <CreditCard className="w-12 h-12 mx-auto mb-3 opacity-50" />
-            <p>No saved payment methods</p>
-            <p className="text-sm mt-1">Your payment methods will appear here after your first purchase</p>
-          </div>
-        )}
-
-        {/* Payment Methods List */}
-        {paymentMethods.length > 0 && (
-          <div className="space-y-3">
-            {paymentMethods.map((method) => (
-              <div
-                key={method.id}
-                className={`flex items-center justify-between p-4 rounded-xl border ${
-                  method.is_default
-                    ? 'border-[#00F0D9]/50 bg-[#00F0D9]/5'
-                    : 'border-[#334155] bg-[#1E293B]'
-                }`}
-              >
-                <div className="flex items-center gap-4">
-                  {/* Card Brand Icon */}
-                  <div className="w-12 h-8 rounded bg-white flex items-center justify-center">
-                    {method.card?.brand === 'visa' && (
-                      <span className="text-blue-600 font-bold text-sm">VISA</span>
-                    )}
-                    {method.card?.brand === 'mastercard' && (
-                      <span className="text-red-500 font-bold text-sm">MC</span>
-                    )}
-                    {method.card?.brand === 'amex' && (
-                      <span className="text-blue-500 font-bold text-sm">AMEX</span>
-                    )}
-                    {method.card?.brand === 'discover' && (
-                      <span className="text-orange-500 font-bold text-sm">DISC</span>
-                    )}
-                    {!['visa', 'mastercard', 'amex', 'discover'].includes(method.card?.brand || '') && (
-                      <CreditCard className="w-6 h-6 text-gray-600" />
-                    )}
-                  </div>
-                  <div>
-                    <p className="text-[#F1F5F9]">
-                      {method.card?.brand?.charAt(0).toUpperCase()}{method.card?.brand?.slice(1)} •••• {method.card?.last4}
-                    </p>
-                    <p className="text-[#94A3B8] text-sm">
-                      Expires {method.card?.exp_month}/{method.card?.exp_year}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  {method.is_default && (
-                    <Badge className="bg-[#00F0D9]/20 text-[#00F0D9] border-[#00F0D9]/30">
-                      Default
-                    </Badge>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      <PaymentMethodsSection
+        paymentMethods={paymentMethods}
+        isLoading={paymentMethodsLoading}
+        onRefresh={fetchPaymentMethods}
+        onManage={handleManagePaymentMethods}
+      />
 
       {/* Transaction History */}
-      <div className="border border-[#334155] rounded-2xl p-8 bg-[#0F172A]">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-2">
-            <FileText className="w-5 h-5 text-[#00F0D9]" />
-            <h2 className="text-[#F1F5F9]">Transaction History</h2>
-            {transactionTotal > 0 && (
-              <Badge variant="outline" className="border-[#334155] text-[#94A3B8]">
-                {transactionTotal} total
-              </Badge>
-            )}
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={fetchTransactions}
-            disabled={transactionsLoading}
-            className="text-[#94A3B8] hover:text-[#F1F5F9]"
-          >
-            <RefreshCw className={`w-4 h-4 mr-2 ${transactionsLoading ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
-        </div>
-
-        {/* Error State */}
-        {transactionsError && (
-          <div className="border border-red-500/20 bg-red-500/5 rounded-xl p-4 mb-6">
-            <p className="text-red-400 text-sm text-center">{transactionsError}</p>
-          </div>
-        )}
-
-        {/* Loading State */}
-        {transactionsLoading && transactions.length === 0 && (
-          <div className="text-center text-[#94A3B8] py-8">
-            <RefreshCw className="w-8 h-8 mx-auto mb-3 animate-spin opacity-50" />
-            <p>Loading transactions...</p>
-          </div>
-        )}
-
-        {/* Empty State */}
-        {!transactionsLoading && transactions.length === 0 && !transactionsError && (
-          <div className="text-center text-[#94A3B8] py-8">
-            <FileText className="w-12 h-12 mx-auto mb-3 opacity-50" />
-            <p>No transactions yet</p>
-            <p className="text-sm mt-1">Your purchase and usage history will appear here</p>
-          </div>
-        )}
-
-        {/* Transaction List - Table Format */}
-        {transactions.length > 0 && (
-          <div className="overflow-x-auto">
-            {/* Table Header */}
-            <div className="grid grid-cols-12 gap-4 px-4 py-3 text-sm font-medium text-[#94A3B8] border-b border-[#334155]">
-              <div className="col-span-2">Date</div>
-              <div className="col-span-3">Description</div>
-              <div className="col-span-2 text-right">Amount</div>
-              <div className="col-span-2 text-right">Credits</div>
-              <div className="col-span-2 text-center">Status</div>
-              <div className="col-span-1 text-center">Actions</div>
-            </div>
-
-            {/* Table Rows */}
-            <div className="divide-y divide-[#334155]">
-              {transactions.map((txn) => (
-                <div
-                  key={txn.transaction_id}
-                  className="grid grid-cols-12 gap-4 px-4 py-4 items-center hover:bg-[#1E293B]/50 transition-colors"
-                >
-                  {/* Date */}
-                  <div className="col-span-2 text-[#94A3B8] text-sm">
-                    {formatDateWithTime(txn.created_at)}
-                  </div>
-
-                  {/* Description */}
-                  <div className="col-span-3">
-                    <div className="text-[#F1F5F9] text-sm font-medium truncate">
-                      {txn.description || getTransactionTypeLabel(txn.type)}
-                    </div>
-                    <Badge className={`text-xs mt-1 ${getTransactionBadgeColor(txn.type)}`}>
-                      {getTransactionTypeLabel(txn.type)}
-                    </Badge>
-                  </div>
-
-                  {/* Amount (Dollar) */}
-                  <div className="col-span-2 text-right text-[#F1F5F9] text-sm">
-                    {formatAmount(txn.amount_cents)}
-                  </div>
-
-                  {/* Credits */}
-                  <div className={`col-span-2 text-right text-sm font-semibold ${txn.amount >= 0 ? 'text-green-400' : 'text-orange-400'}`}>
-                    {txn.amount >= 0 ? '+' : ''}{txn.amount}
-                  </div>
-
-                  {/* Status */}
-                  <div className="col-span-2 text-center">
-                    <Badge className={`text-xs border ${getStatusBadgeColor(txn.status || 'completed')}`}>
-                      {getStatusLabel(txn.status || 'completed')}
-                    </Badge>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="col-span-1 text-center">
-                    {txn.receipt_url ? (
-                      <a
-                        href={txn.receipt_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-[#00F0D9] hover:bg-[#00F0D9]/10 transition-colors"
-                        title="View Invoice"
-                      >
-                        <FileText className="w-4 h-4" />
-                      </a>
-                    ) : (
-                      <span className="text-[#64748B]">-</span>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Pagination */}
-            {(transactionPage > 1 || hasMoreTransactions) && (
-              <div className="flex items-center justify-between pt-4 border-t border-[#334155]">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setTransactionPage(p => Math.max(1, p - 1))}
-                  disabled={transactionPage === 1 || transactionsLoading}
-                  className="border-[#334155] text-[#F1F5F9] hover:border-[#00F0D9]"
-                >
-                  <ChevronLeft className="w-4 h-4 mr-1" />
-                  Previous
-                </Button>
-                <span className="text-[#94A3B8] text-sm">
-                  Page {transactionPage}
-                </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setTransactionPage(p => p + 1)}
-                  disabled={!hasMoreTransactions || transactionsLoading}
-                  className="border-[#334155] text-[#F1F5F9] hover:border-[#00F0D9]"
-                >
-                  Next
-                  <ChevronRight className="w-4 h-4 ml-1" />
-                </Button>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+      <TransactionHistorySection
+        transactions={transactions}
+        isLoading={transactionsLoading}
+        error={transactionsError}
+        page={transactionPage}
+        total={transactionTotal}
+        hasMore={hasMoreTransactions}
+        onPageChange={setTransactionPage}
+        onRefresh={fetchTransactions}
+      />
 
       {/* Purchase Credits Modal */}
       <Dialog open={showPurchaseModal} onOpenChange={setShowPurchaseModal}>

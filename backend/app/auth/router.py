@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException, Depends, Request
 from firebase_admin import auth as firebase_auth
 
 from .firebase import verify_id_token, get_firestore_client
-from .models import TokenRequest, UserProfile, RegisterResponse, LoginResponse
+from .models import TokenRequest, UserProfile, RegisterResponse, LoginResponse, UpdateProfileRequest, UpdateProfileResponse
 from ..middleware.auth import get_current_user_id
 
 
@@ -42,8 +42,12 @@ def firestore_doc_to_user_profile(doc_data: dict, user_id: str) -> UserProfile:
         email_verified=doc_data.get("email_verified", False),
         display_name=doc_data.get("display_name"),
         avatar_url=doc_data.get("avatar_url"),
+        company=doc_data.get("company"),
+        location=doc_data.get("location"),
+        bio=doc_data.get("bio"),
         credits_balance=doc_data.get("credits_balance", 25),
         subscription_tier=doc_data.get("subscription_tier", "free"),
+        billing_period=doc_data.get("billing_period"),  # "month" or "year", None for free
         referral_code=doc_data.get("referral_code", ""),
         referred_by=doc_data.get("referred_by"),
         is_affiliate=doc_data.get("is_affiliate", False),
@@ -219,3 +223,57 @@ async def get_me(request: Request, uid: str = Depends(get_current_user_id)):
 
     user_data = user_doc.to_dict()
     return firestore_doc_to_user_profile(user_data, uid)
+
+
+@router.patch("/me", response_model=UpdateProfileResponse)
+async def update_profile(
+    request: UpdateProfileRequest,
+    uid: str = Depends(get_current_user_id)
+):
+    """
+    Update current user profile.
+
+    Only provided fields will be updated. Omit fields to keep them unchanged.
+    """
+    db = get_firestore_client()
+    user_ref = db.collection("users").document(uid)
+    user_doc = user_ref.get()
+
+    if not user_doc.exists:
+        raise HTTPException(
+            status_code=404,
+            detail="User not found"
+        )
+
+    # Build update dict with only provided fields
+    update_data = {}
+    if request.display_name is not None:
+        update_data["display_name"] = request.display_name
+    if request.company is not None:
+        update_data["company"] = request.company
+    if request.location is not None:
+        update_data["location"] = request.location
+    if request.bio is not None:
+        # Limit bio to 500 characters
+        update_data["bio"] = request.bio[:500] if request.bio else None
+
+    if not update_data:
+        raise HTTPException(
+            status_code=400,
+            detail="No fields to update"
+        )
+
+    # Add updated_at timestamp
+    update_data["updated_at"] = datetime.now(timezone.utc)
+
+    # Update in Firestore
+    user_ref.update(update_data)
+
+    # Get updated user data
+    updated_doc = user_ref.get()
+    user_data = updated_doc.to_dict()
+
+    return UpdateProfileResponse(
+        message="Profile updated successfully",
+        user=firestore_doc_to_user_profile(user_data, uid)
+    )

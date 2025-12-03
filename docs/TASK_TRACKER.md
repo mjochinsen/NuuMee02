@@ -135,16 +135,16 @@
 
 ### Frontend Tasks
 
-| ID   | Task                                   | Status | Agent/Tool             | Output       | Notes                                       |
-| ---- | -------------------------------------- | ------ | ---------------------- | ------------ | ------------------------------------------- |
-| 2.7  | Review FromFigmaMake/ for pricing page | ✅     | Manual                 | Design notes | Done in Phase 1.6                           |
-| 2.8  | Create app/pricing/page.tsx            | ✅     | `frontend-dev`         | page.tsx     | Credit packages                             |
-| 2.9  | Create app/payment/success/page.tsx    | ✅     | `frontend-dev`         | page.tsx     | Success confirmation                        |
-| 2.10 | Create app/payment/cancel/page.tsx     | ✅     | `frontend-dev`         | page.tsx     | Cancel message                              |
-| 2.11 | Add credit balance display to Navbar   | ✅     | `frontend-dev`         | Header.tsx   | Shows credits when logged in                |
-| 2.12 | Deploy frontend                        | ✅     | `firebase deploy`      | Live site    | Done                                        |
-| 2.13 | Test full payment flow (test mode)     | ✅     | Playwright             | Test passed  | E2E test: checkout → webhook → credits added |
-| 2.14 | Commit and push Phase 2                | ✅     | Git                    | See below    | Phase 2 complete                            |
+| ID   | Task                                   | Status | Agent/Tool        | Output       | Notes                                        |
+| ---- | -------------------------------------- | ------ | ----------------- | ------------ | -------------------------------------------- |
+| 2.7  | Review FromFigmaMake/ for pricing page | ✅     | Manual            | Design notes | Done in Phase 1.6                            |
+| 2.8  | Create app/pricing/page.tsx            | ✅     | `frontend-dev`    | page.tsx     | Credit packages                              |
+| 2.9  | Create app/payment/success/page.tsx    | ✅     | `frontend-dev`    | page.tsx     | Success confirmation                         |
+| 2.10 | Create app/payment/cancel/page.tsx     | ✅     | `frontend-dev`    | page.tsx     | Cancel message                               |
+| 2.11 | Add credit balance display to Navbar   | ✅     | `frontend-dev`    | Header.tsx   | Shows credits when logged in                 |
+| 2.12 | Deploy frontend                        | ✅     | `firebase deploy` | Live site    | Done                                         |
+| 2.13 | Test full payment flow (test mode)     | ✅     | Playwright        | Test passed  | E2E test: checkout → webhook → credits added |
+| 2.14 | Commit and push Phase 2                | ✅     | Git               | See below    | Phase 2 complete                             |
 
 **Phase 2 Completion Criteria:**
 
@@ -163,17 +163,17 @@
 **Estimated Time:** 2-3 hours
 **Dependencies:** Phase 2 complete
 
-| ID  | Task                                          | Status | Agent/Tool             | Output           | Notes                       |
-| --- | --------------------------------------------- | ------ | ---------------------- | ---------------- | --------------------------- |
-| 3.1 | Create backend/app/upload/ folder             | ✅     | `api-builder`          | router.py        | Done via sub-agent          |
-| 3.2 | Implement POST /upload/signed-url             | ✅     | `api-builder`          | router.py        | GCS signed URLs             |
-| 3.3 | Deploy updated backend                        | ✅     | `gcloud run deploy`    | nuumee-api-00051 | Deployed                    |
-| 3.4 | Review FromFigmaMake/ for upload UI           | ✅     | Manual                 | Design notes     | Design reviewed             |
+| ID  | Task                                          | Status | Agent/Tool             | Output           | Notes                           |
+| --- | --------------------------------------------- | ------ | ---------------------- | ---------------- | ------------------------------- |
+| 3.1 | Create backend/app/upload/ folder             | ✅     | `api-builder`          | router.py        | Done via sub-agent              |
+| 3.2 | Implement POST /upload/signed-url             | ✅     | `api-builder`          | router.py        | GCS signed URLs                 |
+| 3.3 | Deploy updated backend                        | ✅     | `gcloud run deploy`    | nuumee-api-00051 | Deployed                        |
+| 3.4 | Review FromFigmaMake/ for upload UI           | ✅     | Manual                 | Design notes     | Design reviewed                 |
 | 3.5 | Create upload components (drag-drop, preview) | ✅     | `frontend-dev`         | Components       | DropZone, FilePreview, Progress |
-| 3.6 | Create app/create/page.tsx                    | ✅     | `frontend-dev`         | page.tsx         | Upload interface            |
-| 3.7 | Deploy frontend                               | ✅     | `firebase deploy`      | Live site        | wanapi-prod.web.app         |
-| 3.8 | Test uploads to GCS                           | ✅     | `deployment-validator` | Test results     | Files in nuumee-images/videos |
-| 3.9 | Commit and push Phase 3                       | ✅     | Git                    | d218221          | "Phase 3 Complete"          |
+| 3.6 | Create app/create/page.tsx                    | ✅     | `frontend-dev`         | page.tsx         | Upload interface                |
+| 3.7 | Deploy frontend                               | ✅     | `firebase deploy`      | Live site        | wanapi-prod.web.app             |
+| 3.8 | Test uploads to GCS                           | ✅     | `deployment-validator` | Test results     | Files in nuumee-images/videos   |
+| 3.9 | Commit and push Phase 3                       | ✅     | Git                    | d218221          | "Phase 3 Complete"              |
 
 **Phase 3 Completion Criteria:**
 
@@ -222,17 +222,17 @@
 **Estimated Time:** 4-6 hours
 **Dependencies:** Phase 4 complete
 
-| ID  | Task                           | Status | Agent/Tool          | Output                           | Notes                      |
-| --- | ------------------------------ | ------ | ------------------- | -------------------------------- | -------------------------- |
-| 5.1 | Implement worker/main.py       | ✅     | Manual              | main.py                          | Flask + Cloud Tasks handler |
-| 5.2 | Implement worker/wavespeed.py  | ✅     | Manual              | wavespeed.py                     | WaveSpeed API client       |
-| 5.3 | Create worker/requirements.txt | ✅     | Manual              | requirements.txt                 | flask, gunicorn, gcp libs  |
-| 5.4 | Create worker/Dockerfile       | ✅     | Manual              | Dockerfile                       | gunicorn + 600s timeout    |
-| 5.5 | Deploy worker to Cloud Run     | ✅     | `gcloud run deploy` | nuumee-worker-00003              | Allow unauthenticated      |
-| 5.6 | Set up Cloud Tasks queue       | ✅     | Existing            | nuumee-video-processing          | 5/sec, 3 retries           |
-| 5.7 | Add job enqueueing to backend  | ✅     | Manual              | tasks/queue.py, jobs/router.py   | Jobs auto-queued on create |
-| 5.8 | Test end-to-end job processing | ✅     | Manual + Agents     | 40 tests, 90% coverage           | All 4 job types working    |
-| 5.9 | Commit and push Phase 5        | ✅     | Git                 | ae0215b, e4f4590                 | "Phase 5: Worker complete" |
+| ID  | Task                           | Status | Agent/Tool          | Output                         | Notes                       |
+| --- | ------------------------------ | ------ | ------------------- | ------------------------------ | --------------------------- |
+| 5.1 | Implement worker/main.py       | ✅     | Manual              | main.py                        | Flask + Cloud Tasks handler |
+| 5.2 | Implement worker/wavespeed.py  | ✅     | Manual              | wavespeed.py                   | WaveSpeed API client        |
+| 5.3 | Create worker/requirements.txt | ✅     | Manual              | requirements.txt               | flask, gunicorn, gcp libs   |
+| 5.4 | Create worker/Dockerfile       | ✅     | Manual              | Dockerfile                     | gunicorn + 600s timeout     |
+| 5.5 | Deploy worker to Cloud Run     | ✅     | `gcloud run deploy` | nuumee-worker-00003            | Allow unauthenticated       |
+| 5.6 | Set up Cloud Tasks queue       | ✅     | Existing            | nuumee-video-processing        | 5/sec, 3 retries            |
+| 5.7 | Add job enqueueing to backend  | ✅     | Manual              | tasks/queue.py, jobs/router.py | Jobs auto-queued on create  |
+| 5.8 | Test end-to-end job processing | ✅     | Manual + Agents     | 40 tests, 90% coverage         | All 4 job types working     |
+| 5.9 | Commit and push Phase 5        | ✅     | Git                 | ae0215b, e4f4590               | "Phase 5: Worker complete"  |
 
 **Phase 5 Completion Criteria:**
 
@@ -250,15 +250,15 @@
 **Estimated Time:** 2-3 hours
 **Dependencies:** Phase 5 complete
 
-| ID  | Task                            | Status | Agent/Tool             | Output                       | Notes                         |
-| --- | ------------------------------- | ------ | ---------------------- | ---------------------------- | ----------------------------- |
-| 6.1 | Implement GET /jobs/{id}/output | ✅     | `api-builder`          | router.py, models.py         | Signed download URL (1hr)     |
-| 6.2 | Deploy updated backend          | ✅     | `gcloud run deploy`    | nuumee-api-00059-td5         | All endpoints live            |
-| 6.3 | Add download button to job list | ✅     | `frontend-dev`         | jobs/page.tsx                | Loading state, disabled check |
-| 6.4 | Create job detail modal         | ✅     | `frontend-dev`         | jobs/page.tsx (modal)        | Static export constraint      |
-| 6.5 | Deploy frontend                 | ✅     | `firebase deploy`      | wanapi-prod.web.app          |                               |
-| 6.6 | Test download flow              | ✅     | Manual                 | 401 auth required (correct)  | Endpoint verified             |
-| 6.7 | Commit and push Phase 6         | ✅     | Git                    | c2610bd                      | "Phase 6: Downloads complete" |
+| ID  | Task                            | Status | Agent/Tool          | Output                      | Notes                         |
+| --- | ------------------------------- | ------ | ------------------- | --------------------------- | ----------------------------- |
+| 6.1 | Implement GET /jobs/{id}/output | ✅     | `api-builder`       | router.py, models.py        | Signed download URL (1hr)     |
+| 6.2 | Deploy updated backend          | ✅     | `gcloud run deploy` | nuumee-api-00059-td5        | All endpoints live            |
+| 6.3 | Add download button to job list | ✅     | `frontend-dev`      | jobs/page.tsx               | Loading state, disabled check |
+| 6.4 | Create job detail modal         | ✅     | `frontend-dev`      | jobs/page.tsx (modal)       | Static export constraint      |
+| 6.5 | Deploy frontend                 | ✅     | `firebase deploy`   | wanapi-prod.web.app         |                               |
+| 6.6 | Test download flow              | ✅     | Manual              | 401 auth required (correct) | Endpoint verified             |
+| 6.7 | Commit and push Phase 6         | ✅     | Git                 | c2610bd                     | "Phase 6: Downloads complete" |
 
 **Phase 6 Completion Criteria:**
 
@@ -275,18 +275,18 @@
 **Estimated Time:** 3-4 hours
 **Dependencies:** Phase 6 complete
 
-| ID   | Task                                     | Status | Agent/Tool             | Output                | Notes                                          |
-| ---- | ---------------------------------------- | ------ | ---------------------- | --------------------- | ---------------------------------------------- |
-| 7.1  | Create backend/app/subscriptions/ folder | ✅     | Manual                 | router.py, models.py  | Creator ($29) & Studio ($99) tiers             |
-| 7.2  | Implement POST /subscriptions/create     | ✅     | Manual                 | router.py             | Stripe checkout session creation               |
-| 7.3  | Implement POST /subscriptions/cancel     | ✅     | Manual                 | router.py             | Cancel at period end via Stripe                |
-| 7.4  | Implement GET /subscriptions/current     | ✅     | Manual                 | router.py             | Returns active subscription or null            |
-| 7.5  | Add invoice.paid webhook handler         | ✅     | Manual                 | webhooks/router.py    | Credits on create + renewals, rollover cap     |
-| 7.6  | Deploy updated backend                   | ✅     | `gcloud run deploy`    | nuumee-api-00060-lfs  | New revision deployed                          |
-| 7.7  | Add subscription UI to billing page      | ✅     | Manual                 | billing/page.tsx      | Updated tiers: 400/1600 credits                |
-| 7.8  | Deploy frontend                          | ✅     | `firebase deploy`      | wanapi-prod.web.app   | SubscriptionModal uses real API                |
-| 7.9  | Test subscription flow                   | ✅     | Manual                 | API endpoints live    | Needs Stripe price IDs for full E2E            |
-| 7.10 | Commit and push Phase 7                  | ✅     | Git                    | 2d50d1c               | "Phase 7: Subscriptions complete"              |
+| ID   | Task                                     | Status | Agent/Tool          | Output               | Notes                                      |
+| ---- | ---------------------------------------- | ------ | ------------------- | -------------------- | ------------------------------------------ |
+| 7.1  | Create backend/app/subscriptions/ folder | ✅     | Manual              | router.py, models.py | Creator ($29) & Studio ($99) tiers         |
+| 7.2  | Implement POST /subscriptions/create     | ✅     | Manual              | router.py            | Stripe checkout session creation           |
+| 7.3  | Implement POST /subscriptions/cancel     | ✅     | Manual              | router.py            | Cancel at period end via Stripe            |
+| 7.4  | Implement GET /subscriptions/current     | ✅     | Manual              | router.py            | Returns active subscription or null        |
+| 7.5  | Add invoice.paid webhook handler         | ✅     | Manual              | webhooks/router.py   | Credits on create + renewals, rollover cap |
+| 7.6  | Deploy updated backend                   | ✅     | `gcloud run deploy` | nuumee-api-00060-lfs | New revision deployed                      |
+| 7.7  | Add subscription UI to billing page      | ✅     | Manual              | billing/page.tsx     | Updated tiers: 400/1600 credits            |
+| 7.8  | Deploy frontend                          | ✅     | `firebase deploy`   | wanapi-prod.web.app  | SubscriptionModal uses real API            |
+| 7.9  | Test subscription flow                   | ✅     | Manual              | API endpoints live   | Needs Stripe price IDs for full E2E        |
+| 7.10 | Commit and push Phase 7                  | ✅     | Git                 | 2d50d1c              | "Phase 7: Subscriptions complete"          |
 
 **Phase 7 Completion Criteria:**
 
@@ -303,21 +303,21 @@
 **Estimated Time:** 3-4 hours
 **Dependencies:** Phase 7 complete
 
-| ID    | Task                                  | Status | Agent/Tool             | Output                 | Notes                                    |
-| ----- | ------------------------------------- | ------ | ---------------------- | ---------------------- | ---------------------------------------- |
-| 8.1   | Create backend/app/referral/ folder   | ✅     | `api-builder`          | router.py, models.py   | Done via sub-agent                       |
-| 8.2   | Implement GET /referral/code          | ✅     | `api-builder`          | router.py              | Get/generate referral code               |
-| 8.3   | Implement POST /referral/apply        | ✅     | `api-builder`          | router.py              | Apply code, get 25 credits               |
-| 8.4   | Create backend/app/affiliate/ folder  | ✅     | `api-builder`          | router.py, models.py   | Done via sub-agent                       |
-| 8.5   | Implement affiliate endpoints         | ✅     | `api-builder`          | router.py              | apply, stats, payout                     |
-| 8.6   | Deploy updated backend                | ✅     | `gcloud run deploy`    | nuumee-api-00062-v4t   | All endpoints live                       |
-| 8.7   | Update referral page with API         | ✅     | Manual                 | referral/page.tsx      | Uses getReferralCode API                 |
-| 8.8   | Update affiliate page with API        | ✅     | Manual                 | affiliate/page.tsx     | Form calls applyForAffiliate             |
-| 8.9   | Deploy frontend                       | ✅     | `firebase deploy`      | wanapi-prod.web.app    | All pages deployed                       |
-| 8.10  | Remove mock UI from referral page     | ✅     | Manual                 | referral/page.tsx      | Leaderboard hidden, activity shows empty |
-| 8.11  | Run comprehensive audit               | ✅     | `/audit quick`         | No issues found        | Security: clean, TODOs: 0, Build: pass   |
-| 8.12  | Deploy and test                       | ✅     | `firebase deploy`      | wanapi-prod.web.app    | Deployed, auth-protected page works      |
-| 8.13  | Commit and push Phase 8               | ✅     | Git                    | ace5d00                | "Phase 8: Remove mock UI"                |
+| ID   | Task                                 | Status | Agent/Tool          | Output               | Notes                                    |
+| ---- | ------------------------------------ | ------ | ------------------- | -------------------- | ---------------------------------------- |
+| 8.1  | Create backend/app/referral/ folder  | ✅     | `api-builder`       | router.py, models.py | Done via sub-agent                       |
+| 8.2  | Implement GET /referral/code         | ✅     | `api-builder`       | router.py            | Get/generate referral code               |
+| 8.3  | Implement POST /referral/apply       | ✅     | `api-builder`       | router.py            | Apply code, get 25 credits               |
+| 8.4  | Create backend/app/affiliate/ folder | ✅     | `api-builder`       | router.py, models.py | Done via sub-agent                       |
+| 8.5  | Implement affiliate endpoints        | ✅     | `api-builder`       | router.py            | apply, stats, payout                     |
+| 8.6  | Deploy updated backend               | ✅     | `gcloud run deploy` | nuumee-api-00062-v4t | All endpoints live                       |
+| 8.7  | Update referral page with API        | ✅     | Manual              | referral/page.tsx    | Uses getReferralCode API                 |
+| 8.8  | Update affiliate page with API       | ✅     | Manual              | affiliate/page.tsx   | Form calls applyForAffiliate             |
+| 8.9  | Deploy frontend                      | ✅     | `firebase deploy`   | wanapi-prod.web.app  | All pages deployed                       |
+| 8.10 | Remove mock UI from referral page    | ✅     | Manual              | referral/page.tsx    | Leaderboard hidden, activity shows empty |
+| 8.11 | Run comprehensive audit              | ✅     | `/audit quick`      | No issues found      | Security: clean, TODOs: 0, Build: pass   |
+| 8.12 | Deploy and test                      | ✅     | `firebase deploy`   | wanapi-prod.web.app  | Deployed, auth-protected page works      |
+| 8.13 | Commit and push Phase 8              | ✅     | Git                 | ace5d00              | "Phase 8: Remove mock UI"                |
 
 **Phase 8 Completion Criteria:**
 
@@ -328,11 +328,77 @@
 
 ---
 
+## PHASE 8.5 — FEATURE COMPLETION (PRIORITY)
+
+**Goal:** Make all features fully functional - NO "Coming Soon" placeholders
+**Priority Order:**
+
+1. **Billing** - bulletproof, error-free, clear
+2. **Job/Video creation** - end-to-end must work
+3. **Complete all features** - everything needed for working product
+
+**Dependencies:** Phase 8 complete
+
+### Critical Fixes (BLOCKING)
+
+| ID    | Task                              | Status | Agent/Tool          | Output           | Notes                             |
+| ----- | --------------------------------- | ------ | ------------------- | ---------------- | --------------------------------- |
+| 8.5.1 | Fix GCS signing for job downloads | ✅     | Manual              | jobs/router.py   | Use credentials= not access_token |
+| 8.5.2 | Deploy backend with fix           | ✅     | `gcloud run deploy` | nuumee-api-00070 | Deployed 2025-11-30               |
+| 8.5.3 | Test job download on production   | 🔄     | Manual              | Test results     | Verify signed URLs work           |
+| 8.5.4 | Fix retry button on /jobs         | ✅     | Manual              | jobs/page.tsx    | Added handleRetry + onClick       |
+
+### Billing Features (Priority 1)
+
+| ID    | Task                            | Status | Agent/Tool    | Output             | Notes                              |
+| ----- | ------------------------------- | ------ | ------------- | ------------------ | ---------------------------------- |
+| 8.5.5 | Implement auto-refill feature   | ⬜     | Manual        | billing/page.tsx   | Backend + frontend                 |
+| 8.5.6 | Auto-refill: Backend endpoint   | ⬜     | `api-builder` | credits/router.py  | POST /credits/auto-refill settings |
+| 8.5.7 | Auto-refill: Webhook trigger    | ⬜     | Manual        | webhooks/router.py | Check balance after job completion |
+| 8.5.8 | Transaction history (real data) | ✅     | Manual        | billing/page.tsx   | Uses GET /transactions             |
+
+### Billing Data Integrity (Priority 1.5)
+
+| ID     | Task                                     | Status | Agent/Tool | Output                         | Notes                                  |
+| ------ | ---------------------------------------- | ------ | ---------- | ------------------------------ | -------------------------------------- |
+| 8.5.15 | Create billing_period sync script        | ✅     | Manual     | scripts/sync_billing_period.py | Sync from Stripe for existing users    |
+| 8.5.16 | Fix UI for missing billing_period        | ✅     | Manual     | billing/page.tsx               | Auto-sync on page load + manual button |
+| 8.5.17 | Add card last4 to transaction metadata   | ✅     | Manual     | webhooks/router.py             | Store pm_xxxx last4 in transactions    |
+| 8.5.18 | Create comprehensive billing test suite  | ⬜     | Manual     | e2e/billing-flows.spec.ts      | All subscription state transitions     |
+| 8.5.19 | Create Subscription State Matrix doc     | ✅     | Manual     | docs/SUBSCRIPTION_STATE_MATRIX | Full flow documentation                |
+
+### Account Features (Priority 3)
+
+| ID     | Task                                   | Status | Agent/Tool    | Output           | Notes                        |
+| ------ | -------------------------------------- | ------ | ------------- | ---------------- | ---------------------------- |
+| 8.5.9  | Profile save (name, company, location) | ✅     | Manual        | account/page.tsx | PATCH /auth/me               |
+| 8.5.10 | Notification preferences (backend)     | ⬜     | `api-builder` | auth/router.py   | PATCH /auth/me/notifications |
+| 8.5.11 | Notification preferences (frontend)    | ⬜     | Manual        | account/page.tsx | Wire up switches to API      |
+| 8.5.12 | Privacy settings (data retention)      | ⬜     | `api-builder` | users/router.py  | Store in user doc            |
+| 8.5.13 | Data export feature                    | ⬜     | `api-builder` | users/router.py  | POST /users/me/export        |
+
+### Referral Completion
+
+| ID     | Task                                  | Status | Agent/Tool | Output             | Notes                         |
+| ------ | ------------------------------------- | ------ | ---------- | ------------------ | ----------------------------- |
+| 8.5.14 | Referrer gets 100 credits on purchase | ⬜     | Manual     | webhooks/router.py | In checkout.session.completed |
+
+**Phase 8.5 Completion Criteria:**
+
+- [ ] Job downloads work (GCS signing fixed)
+- [ ] Retry button works on /jobs
+- [ ] Auto-refill implemented and working
+- [ ] Notification preferences save to Firestore
+- [ ] All "Coming Soon" badges removed
+- [ ] Referrer reward implemented
+
+---
+
 ## PHASE 9 — POLISH & LAUNCH
 
 **Goal:** Production-ready quality
 **Estimated Time:** 4-6 hours
-**Dependencies:** Phase 8 complete
+**Dependencies:** Phase 8.5 complete
 
 | ID   | Task                              | Status | Agent/Tool                      | Output              | Notes                   |
 | ---- | --------------------------------- | ------ | ------------------------------- | ------------------- | ----------------------- |
@@ -364,22 +430,24 @@
 
 **Goal:** Remove all mock/hardcoded UI and replace with real API data or empty states
 **Policy:**
+
 - Production users see honest, real data (empty states when nothing exists)
 - Dev/demo pages can show full UI for stakeholder review (via `/dev/*` routes)
 - Pages only exposed to users when real data is available
 
-| Page                   | Status | Notes                                                        |
-| ---------------------- | ------ | ------------------------------------------------------------ |
-| referral/page.tsx      | ✅     | Activity: empty state / "coming soon". Leaderboard: hidden   |
-| affiliate/page.tsx     | ⬜     | Review for mock data in dashboard stats                      |
-| billing/page.tsx       | ⬜     | Review for mock transaction history                          |
-| jobs/page.tsx          | ✅     | Fetches real data from API                                   |
-| pricing/page.tsx       | ⬜     | Review credit packages (may need API fetch)                  |
-| examples/page.tsx      | ⬜     | Review for hardcoded video examples                          |
-| testimonials/page.tsx  | ⬜     | Review for hardcoded testimonials                            |
+| Page                  | Status | Notes                                                      |
+| --------------------- | ------ | ---------------------------------------------------------- |
+| referral/page.tsx     | ✅     | Activity: empty state / "coming soon". Leaderboard: hidden |
+| affiliate/page.tsx    | ⬜     | Review for mock data in dashboard stats                    |
+| billing/page.tsx      | ⬜     | Review for mock transaction history                        |
+| jobs/page.tsx         | ✅     | Fetches real data from API                                 |
+| pricing/page.tsx      | ⬜     | Review credit packages (may need API fetch)                |
+| examples/page.tsx     | ⬜     | Review for hardcoded video examples                        |
+| testimonials/page.tsx | ⬜     | Review for hardcoded testimonials                          |
 
 **Rules:**
-1. No hardcoded data arrays in page components
+
+1. No hardcoded UI in page components. Fetching moco Mock Data from a database is ok, but hardcoded mock UI is not ok
 2. Always fetch from API or show empty state
 3. Use `/dev/*` routes for design review with mock data
 4. Flag mock data with `/* DEV_ONLY */` comment if temporarily needed
@@ -388,30 +456,32 @@
 
 ## SUMMARY
 
-| Phase             | Tasks   | Completed | Status |
-| ----------------- | ------- | --------- | ------ |
-| 0 - Foundation    | 10      | 10        | ✅     |
-| 1 - Auth          | 19      | 19        | ✅     |
-| 2 - Payments      | 14      | 14        | ✅     |
-| 3 - Uploads       | 9       | 9         | ✅     |
-| 4 - Jobs          | 11      | 11        | ✅     |
-| 5 - Worker        | 9       | 9         | ✅     |
-| 6 - Downloads     | 7       | 7         | ✅     |
-| 7 - Subscriptions | 10      | 10        | ✅     |
-| 8 - Referral      | 13      | 12        | 🔄     |
-| 9 - Polish        | 11      | 0         | ⬜     |
-| **TOTAL**         | **113** | **101**   | 🔄     |
+| Phase                  | Tasks   | Completed | Status |
+| ---------------------- | ------- | --------- | ------ |
+| 0 - Foundation         | 10      | 10        | ✅     |
+| 1 - Auth               | 19      | 19        | ✅     |
+| 2 - Payments           | 14      | 14        | ✅     |
+| 3 - Uploads            | 9       | 9         | ✅     |
+| 4 - Jobs               | 11      | 11        | ✅     |
+| 5 - Worker             | 9       | 9         | ✅     |
+| 6 - Downloads          | 7       | 7         | ✅     |
+| 7 - Subscriptions      | 10      | 10        | ✅     |
+| 8 - Referral           | 13      | 12        | 🔄     |
+| 8.5 - Feature Complete | 19      | 9         | 🔄     |
+| 9 - Polish             | 11      | 0         | ⬜     |
+| **TOTAL**              | **132** | **110**   | 🔄     |
 
 ---
 
 ## CURRENT STATE
 
-**Current Phase:** 8 (Referral & Affiliate) - 92% Complete
-**Current Task:** 8.13 (Commit and push Phase 8)
+**Current Phase:** 8.5 (Feature Completion) - 47% Complete
+**Current Task:** 8.5.18 (Create comprehensive billing test suite)
+**Next Priority:** Comprehensive test suite (8.5.18), then auto-refill (8.5.5-8.5.7)
 **Blockers:** None
-**Last Updated:** 2025-11-30
-**Live Site:** https://wanapi-prod.web.app (nuumee.ai)
-**API URL:** https://nuumee-api-450296399943.us-central1.run.app
+**Last Updated:** 2025-12-02
+**Live Site:** https://nuumee.ai (wanapi-prod.web.app)
+**API URL:** https://nuumee-api-450296399943.us-west1.run.app
 **Worker URL:** https://nuumee-worker-450296399943.us-central1.run.app
 **Stripe Webhook:** we_1SYib475wY1iQccD8iUKNqOC (verified working)
 **Upload Endpoint:** POST /upload/signed-url (GCS signed URLs)

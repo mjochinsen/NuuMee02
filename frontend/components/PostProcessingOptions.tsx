@@ -1,6 +1,6 @@
 'use client';
 
-import { Info, Link as LinkIcon, Video, Maximize, Volume2, Crop, Type, Droplet, FileText, Check, ChevronDown, Upload } from 'lucide-react';
+import { Info, Link as LinkIcon, Video, Maximize, Volume2, Type, Droplet, FileText, Check, ChevronDown, Upload } from 'lucide-react';
 import { useState } from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -44,12 +44,12 @@ export function PostProcessingOptions() {
   const [videoExtenderEnabled, setVideoExtenderEnabled] = useState(false);
   const [upscalerEnabled, setUpscalerEnabled] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(false);
-  const [formatEnabled, setFormatEnabled] = useState(false);
+  // const [formatEnabled, setFormatEnabled] = useState(false); // Hidden for now
   const [subtitlesEnabled, setSubtitlesEnabled] = useState(false);
   const [watermarkEnabled, setWatermarkEnabled] = useState(false);
 
   const [audioOption, setAudioOption] = useState('mix');
-  const [formatOption, setFormatOption] = useState('crop');
+  // const [formatOption, setFormatOption] = useState('crop'); // Hidden for now
   const [subtitleStyle, setSubtitleStyle] = useState('bold-modern');
   const [watermarkType, setWatermarkType] = useState('logo');
   const [styleDropdownOpen, setStyleDropdownOpen] = useState(false);
@@ -61,7 +61,7 @@ export function PostProcessingOptions() {
   const [extenderStatus, setExtenderStatus] = useState<ResultStatus>('awaiting');
   const [upscalerStatus, setUpscalerStatus] = useState<ResultStatus>('awaiting');
   const [soundStatus, setSoundStatus] = useState<ResultStatus>('awaiting');
-  const [formatStatus, setFormatStatus] = useState<ResultStatus>('awaiting');
+  // const [formatStatus, setFormatStatus] = useState<ResultStatus>('awaiting'); // Hidden for now
   const [subtitlesStatus, setSubtitlesStatus] = useState<ResultStatus>('awaiting');
   const [watermarkStatus, setWatermarkStatus] = useState<ResultStatus>('awaiting');
 
@@ -575,149 +575,7 @@ export function PostProcessingOptions() {
           </div>
         </div>
 
-        {/* D. Change Format */}
-        <div className="border border-[#334155] rounded-2xl p-6 bg-[#0F172A]">
-          <div className="flex items-start gap-3">
-            <Checkbox
-              id="format"
-              checked={formatEnabled}
-              onCheckedChange={(checked) => setFormatEnabled(checked as boolean)}
-              className="mt-1 border-[#334155] data-[state=checked]:bg-[#00F0D9] data-[state=checked]:border-[#00F0D9]"
-            />
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-3">
-                <label htmlFor="format" className="text-[#F1F5F9] cursor-pointer font-medium">
-                  D. Change Format to 16:9
-                </label>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button className="text-[#94A3B8] hover:text-[#00F0D9] transition-colors">
-                      <Info className="w-4 h-4" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent className="bg-[#1E293B] border border-[#334155] text-[#F1F5F9] max-w-sm p-4">
-                    <div className="space-y-2">
-                      <p className="mb-2">Convert vertical (9:16) videos to horizontal (16:9) format.</p>
-                      <div className="space-y-1">
-                        <p className="text-[#00F0D9]">Methods:</p>
-                        <ul className="list-none text-sm text-[#94A3B8]">
-                          <li>Crop - Removes top/bottom (tight framing)</li>
-                          <li>Letterbox - Adds black bars (preserves all content)</li>
-                          <li>Blur Sides - Fills sides with blurred video (natural look)</li>
-                        </ul>
-                      </div>
-                      <div className="mt-2 space-y-1">
-                        <p className="text-sm text-[#00F0D9]">Best for:</p>
-                        <ul className="list-disc list-inside text-sm text-[#94A3B8]">
-                          <li>Repurposing TikTok/Instagram Reels for YouTube</li>
-                          <li>Cross-platform content distribution</li>
-                          <li>Desktop viewing optimization</li>
-                        </ul>
-                      </div>
-                      <p className="text-sm text-amber-400 mt-2">Works best with centered subjects</p>
-                    </div>
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-              {formatEnabled && (
-                <div className="space-y-3">
-                  <div className="flex gap-2">
-                    <Button
-                      variant={formatOption === 'crop' ? 'default' : 'outline'}
-                      onClick={() => setFormatOption('crop')}
-                      className={formatOption === 'crop' ? 'bg-[#00F0D9] text-[#0F172A]' : 'border-[#334155] text-[#94A3B8] hover:border-[#00F0D9]'}
-                    >
-                      Crop
-                    </Button>
-                    <Button
-                      variant={formatOption === 'letterbox' ? 'default' : 'outline'}
-                      onClick={() => setFormatOption('letterbox')}
-                      className={formatOption === 'letterbox' ? 'bg-[#00F0D9] text-[#0F172A]' : 'border-[#334155] text-[#94A3B8] hover:border-[#00F0D9]'}
-                    >
-                      Letterbox
-                    </Button>
-                    <Button
-                      variant={formatOption === 'hybrid' ? 'default' : 'outline'}
-                      onClick={() => setFormatOption('hybrid')}
-                      className={formatOption === 'hybrid' ? 'bg-[#00F0D9] text-[#0F172A]' : 'border-[#334155] text-[#94A3B8] hover:border-[#00F0D9]'}
-                    >
-                      Hybrid
-                    </Button>
-                  </div>
-
-                  {/* Visual Preview Section */}
-                  <div className="border border-[#334155] rounded-xl p-6 bg-[#1E293B]">
-                    <div className="text-[#94A3B8] text-sm mb-4">Visual Preview:</div>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      {/* Original 9:16 */}
-                      <div className="flex flex-col items-center gap-2">
-                        <div className="relative w-full aspect-[16/9] bg-gradient-to-br from-[#1E293B] to-[#0F172A] rounded-lg border-2 border-[#334155] overflow-hidden flex items-center justify-center">
-                          <div className="w-6 h-14 bg-gradient-to-br from-[#00F0D9]/20 to-[#3B1FE2]/20 rounded border border-[#334155]"></div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-[#94A3B8] text-xs">9:16</div>
-                          <div className="text-[#F1F5F9] text-sm">Original</div>
-                        </div>
-                      </div>
-
-                      {/* Crop 16:9 */}
-                      <div className="flex flex-col items-center gap-2">
-                        <div className="relative w-full aspect-[16/9] bg-gradient-to-br from-[#334155] to-[#1E293B] rounded-lg border-2 border-[#00F0D9]/50 overflow-hidden">
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="w-8 h-12 bg-gradient-to-br from-[#00F0D9]/30 to-[#3B1FE2]/30 rounded"></div>
-                          </div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-[#94A3B8] text-xs">16:9</div>
-                          <div className="text-[#F1F5F9] text-sm">Crop</div>
-                        </div>
-                      </div>
-
-                      {/* Letterbox 16:9 */}
-                      <div className="flex flex-col items-center gap-2">
-                        <div className="relative w-full aspect-[16/9] bg-[#0A0F1E] rounded-lg border-2 border-[#334155] overflow-hidden">
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="w-4 h-12 bg-gradient-to-br from-[#00F0D9]/20 to-[#3B1FE2]/20 rounded"></div>
-                          </div>
-                          <div className="absolute inset-y-0 left-0 w-[30%] bg-black"></div>
-                          <div className="absolute inset-y-0 right-0 w-[30%] bg-black"></div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-[#94A3B8] text-xs">16:9</div>
-                          <div className="text-[#F1F5F9] text-sm">Letterbox</div>
-                        </div>
-                      </div>
-
-                      {/* Hybrid 16:9 */}
-                      <div className="flex flex-col items-center gap-2">
-                        <div className="relative w-full aspect-[16/9] bg-gradient-to-br from-[#334155] to-[#1E293B] rounded-lg border-2 border-[#334155] overflow-hidden">
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="w-4 h-12 bg-gradient-to-br from-[#00F0D9]/20 to-[#3B1FE2]/20 rounded"></div>
-                          </div>
-                          <div className="absolute inset-y-0 left-0 w-[30%] bg-gradient-to-r from-[#00F0D9]/5 to-transparent backdrop-blur-sm"></div>
-                          <div className="absolute inset-y-0 right-0 w-[30%] bg-gradient-to-l from-[#3B1FE2]/5 to-transparent backdrop-blur-sm"></div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-[#94A3B8] text-xs">16:9</div>
-                          <div className="text-[#F1F5F9] text-sm">Hybrid</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <Button
-                    className="w-full bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] hover:opacity-90 text-white"
-                    onClick={() => setFormatStatus('processing')}
-                  >
-                    <Crop className="w-4 h-4 mr-2" />
-                    Generate (0 credits)
-                  </Button>
-                  <ResultSection status={formatStatus} />
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+        {/* D. Change Format to 16:9 - Hidden for now, may implement in future */}
 
         {/* E. Auto Subtitles */}
         <div className="border border-[#334155] rounded-2xl p-6 bg-[#0F172A]">

@@ -27,8 +27,12 @@ class UserProfile(BaseModel):
     email_verified: bool = False
     display_name: Optional[str] = None
     avatar_url: Optional[str] = None
+    company: Optional[str] = None
+    location: Optional[str] = None
+    bio: Optional[str] = None
     credits_balance: int = 25
     subscription_tier: str = "free"
+    billing_period: Optional[str] = None  # "month" or "year", None for free tier
     referral_code: str
     referred_by: Optional[str] = None
     is_affiliate: bool = False
@@ -45,5 +49,19 @@ class RegisterResponse(BaseModel):
 
 class LoginResponse(BaseModel):
     """Response after successful login."""
+    message: str
+    user: UserProfile
+
+
+class UpdateProfileRequest(BaseModel):
+    """Request body for updating user profile."""
+    display_name: Optional[str] = None
+    company: Optional[str] = None
+    location: Optional[str] = None
+    bio: Optional[str] = None
+
+
+class UpdateProfileResponse(BaseModel):
+    """Response after updating profile."""
     message: str
     user: UserProfile

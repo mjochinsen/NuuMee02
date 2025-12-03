@@ -169,11 +169,56 @@ const paymentMethods = [
 6. **Set Default** - Allow users to change default payment method
 
 ### Component Improvements
-1. Add payment method icons (card brand logos)
+1. Add payment method icons (card brand logos) - **SEE BELOW**
 2. Implement payment method verification
 3. Add expiry date display for cards
 4. Show last transaction date
 5. Payment method nickname/labels
+
+---
+
+## Payment Icons
+
+### Location
+```
+frontend/public/icons/payments/
+```
+
+### Source Repository
+https://github.com/datatrans/payment-logos
+
+**License:** CC-BY-SA-4.0 (attribution required)
+
+### Download Instructions
+```bash
+git clone https://github.com/datatrans/payment-logos.git
+cp payment-logos/assets/cards/visa.svg frontend/public/icons/payments/
+cp payment-logos/assets/cards/mastercard.svg frontend/public/icons/payments/
+cp payment-logos/assets/cards/amex.svg frontend/public/icons/payments/
+cp payment-logos/assets/cards/discover.svg frontend/public/icons/payments/
+cp payment-logos/assets/wallets/applepay.svg frontend/public/icons/payments/
+cp payment-logos/assets/wallets/googlepay.svg frontend/public/icons/payments/
+cp payment-logos/assets/apm/paypal.svg frontend/public/icons/payments/
+rm -rf payment-logos
+```
+
+### Required Icons
+| Icon | File | Source Path |
+|------|------|-------------|
+| Visa | `visa.svg` | `assets/cards/visa.svg` |
+| Mastercard | `mastercard.svg` | `assets/cards/mastercard.svg` |
+| Amex | `amex.svg` | `assets/cards/amex.svg` |
+| Discover | `discover.svg` | `assets/cards/discover.svg` |
+| Apple Pay | `applepay.svg` | `assets/wallets/applepay.svg` |
+| Google Pay | `googlepay.svg` | `assets/wallets/googlepay.svg` |
+| PayPal | `paypal.svg` | `assets/apm/paypal.svg` |
+
+### Usage
+```tsx
+import Image from 'next/image';
+
+<Image src="/icons/payments/visa.svg" alt="Visa" width={40} height={24} />
+```
 
 ---
 

@@ -1,13 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import {
   User,
   Bell,
   Lock,
   Shield,
   Trash2,
-  Upload,
   Eye,
   EyeOff,
   Check,
@@ -17,7 +17,9 @@ import {
   Monitor,
   QrCode,
   Printer,
+  Loader2,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -42,12 +44,13 @@ import {
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/components/AuthProvider';
+import { updateProfile, ApiError } from '@/lib/api';
 
 type TabType = 'profile' | 'notifications' | 'security' | 'privacy' | 'delete';
 
 
 export default function AccountSettingsPage() {
-  const { user, profile, loading } = useAuth();
+  const { user, profile, loading, refreshProfile } = useAuth();
   const [activeTab, setActiveTab] = useState<TabType>('profile');
 
   // Initialize state from auth profile (real data)
@@ -57,13 +60,21 @@ export default function AccountSettingsPage() {
   const [company, setCompany] = useState('');
   const [location, setLocation] = useState('');
   const [bio, setBio] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   // Populate form with real user data when available
+  // Prioritize backend profile.display_name over Firebase user.displayName
+  // since user can customize their name via the profile settings
   useEffect(() => {
     if (user) {
-      setFullName(user.displayName || profile?.display_name || '');
+      // Use profile.display_name first (user's saved preference), fallback to Firebase name
+      setFullName(profile?.display_name || user.displayName || '');
       setEmail(user.email || '');
       setUsername(user.email?.split('@')[0] || '');
+      // Also populate company, location, bio from profile
+      setCompany(profile?.company || '');
+      setLocation(profile?.location || '');
+      setBio(profile?.bio || '');
     }
   }, [user, profile]);
   const [currentPassword, setCurrentPassword] = useState('');
@@ -134,8 +145,32 @@ export default function AccountSettingsPage() {
     return { label: 'Strong', color: 'bg-green-500' };
   };
 
-  const handleSaveProfile = () => {
-    alert('Profile updated successfully');
+  const handleSaveProfile = async () => {
+    if (!user) return;
+
+    setIsSaving(true);
+    try {
+      await updateProfile({
+        display_name: fullName || undefined,
+        company: company || undefined,
+        location: location || undefined,
+        bio: bio || undefined,
+      });
+      toast.success('Profile updated successfully');
+      // Refresh profile data
+      if (refreshProfile) {
+        await refreshProfile();
+      }
+    } catch (error) {
+      console.error('Failed to update profile:', error);
+      if (error instanceof ApiError) {
+        toast.error(error.message);
+      } else {
+        toast.error('Failed to update profile');
+      }
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleUpdatePassword = () => {
@@ -219,23 +254,26 @@ export default function AccountSettingsPage() {
                 {/* Avatar */}
                 <div className="flex items-start gap-6">
                   <div className="relative">
-                    <div className="w-24 h-24 rounded-xl bg-gradient-to-br from-[#00F0D9] to-[#3B1FE2] flex items-center justify-center">
-                      <User className="w-12 h-12 text-white" />
-                    </div>
+                    {user?.photoURL ? (
+                      <Image
+                        src={user.photoURL}
+                        alt="Profile"
+                        width={96}
+                        height={96}
+                        className="w-24 h-24 rounded-xl object-cover"
+                      />
+                    ) : (
+                      <div className="w-24 h-24 rounded-xl bg-gradient-to-br from-[#00F0D9] to-[#3B1FE2] flex items-center justify-center">
+                        <User className="w-12 h-12 text-white" />
+                      </div>
+                    )}
                   </div>
                   <div className="flex-1">
                     <Label className="text-[#94A3B8] mb-2 block">Avatar</Label>
-                    <div className="flex gap-2">
-                      <Button variant="outline" size="sm" className="border-[#334155] text-[#F1F5F9] hover:border-[#00F0D9] hover:text-[#00F0D9]">
-                        <Upload className="w-4 h-4 mr-2" />
-                        Upload
-                      </Button>
-                      <Button variant="outline" size="sm" className="border-[#334155] text-[#F1F5F9] hover:border-red-500 hover:text-red-500">
-                        Remove
-                      </Button>
-                    </div>
-                    <p className="text-[#94A3B8] text-sm mt-2">
-                      JPG or PNG. Max size 2MB.
+                    <p className="text-[#94A3B8] text-sm">
+                      {user?.photoURL
+                        ? 'Your avatar is synced from your sign-in provider (Google, Apple, etc.)'
+                        : 'Sign in with Google or Apple to use your profile picture'}
                     </p>
                   </div>
                 </div>
@@ -333,14 +371,23 @@ export default function AccountSettingsPage() {
                   <Button
                     variant="outline"
                     className="border-[#334155] text-[#F1F5F9] hover:border-[#00F0D9] hover:text-[#00F0D9]"
+                    disabled={isSaving}
                   >
                     Cancel
                   </Button>
                   <Button
                     onClick={handleSaveProfile}
+                    disabled={isSaving}
                     className="bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] hover:opacity-90 text-white"
                   >
-                    Save Changes
+                    {isSaving ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      'Save Changes'
+                    )}
                   </Button>
                 </div>
               </div>
@@ -353,9 +400,17 @@ export default function AccountSettingsPage() {
               <div className="flex items-center gap-2 mb-6">
                 <Bell className="w-5 h-5 text-[#00F0D9]" />
                 <h2 className="text-[#F1F5F9]">Notification Preferences</h2>
+                <Badge variant="outline" className="border-amber-500/50 text-amber-400 text-xs ml-2">Coming Soon</Badge>
               </div>
 
-              <div className="space-y-8">
+              {/* Coming Soon Notice */}
+              <div className="border border-amber-500/30 bg-amber-500/5 rounded-xl p-4 mb-6">
+                <p className="text-amber-400 text-sm text-center">
+                  Notification preferences are being built. Your preferences will be saved here once available.
+                </p>
+              </div>
+
+              <div className="space-y-8 opacity-50 pointer-events-none">
                 {/* Email Notifications */}
                 <div>
                   <h3 className="text-[#F1F5F9] mb-4">Email Notifications</h3>
@@ -518,9 +573,17 @@ export default function AccountSettingsPage() {
               <div className="flex items-center gap-2 mb-6">
                 <Lock className="w-5 h-5 text-[#00F0D9]" />
                 <h2 className="text-[#F1F5F9]">Security</h2>
+                <Badge variant="outline" className="border-amber-500/50 text-amber-400 text-xs ml-2">Coming Soon</Badge>
               </div>
 
-              <div className="space-y-8">
+              {/* Coming Soon Notice */}
+              <div className="border border-amber-500/30 bg-amber-500/5 rounded-xl p-4 mb-6">
+                <p className="text-amber-400 text-sm text-center">
+                  Password management and 2FA are coming soon. For OAuth logins (Google, Apple), security is managed by your provider.
+                </p>
+              </div>
+
+              <div className="space-y-8 opacity-50 pointer-events-none">
                 {/* Change Password */}
                 <div>
                   <h3 className="text-[#F1F5F9] mb-4">Change Password</h3>
@@ -719,9 +782,17 @@ export default function AccountSettingsPage() {
               <div className="flex items-center gap-2 mb-6">
                 <Shield className="w-5 h-5 text-[#00F0D9]" />
                 <h2 className="text-[#F1F5F9]">Privacy & Data</h2>
+                <Badge variant="outline" className="border-amber-500/50 text-amber-400 text-xs ml-2">Coming Soon</Badge>
               </div>
 
-              <div className="space-y-8">
+              {/* Coming Soon Notice */}
+              <div className="border border-amber-500/30 bg-amber-500/5 rounded-xl p-4 mb-6">
+                <p className="text-amber-400 text-sm text-center">
+                  Privacy and data management settings are being built. Data retention and export features will be available soon.
+                </p>
+              </div>
+
+              <div className="space-y-8 opacity-50 pointer-events-none">
                 {/* Data Retention */}
                 <div>
                   <h3 className="text-[#F1F5F9] mb-4">Data Retention</h3>

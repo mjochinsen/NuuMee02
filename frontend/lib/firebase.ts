@@ -58,10 +58,33 @@ export async function resetPassword(email: string) {
   return sendPasswordResetEmail(auth, email);
 }
 
+/**
+ * Get Firebase ID token for API authentication.
+ * Waits for auth state to be ready if not initialized yet.
+ */
 export async function getIdToken(): Promise<string | null> {
-  const user = auth.currentUser;
-  if (!user) return null;
-  return user.getIdToken();
+  // If currentUser is available, use it directly
+  if (auth.currentUser) {
+    return auth.currentUser.getIdToken();
+  }
+
+  // Wait for auth state to initialize (max 5 seconds)
+  return new Promise((resolve) => {
+    const timeout = setTimeout(() => {
+      console.warn('[Firebase] Auth state timeout - no user found');
+      resolve(null);
+    }, 5000);
+
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      clearTimeout(timeout);
+      unsubscribe();
+      if (user) {
+        user.getIdToken().then(resolve).catch(() => resolve(null));
+      } else {
+        resolve(null);
+      }
+    });
+  });
 }
 
 export function onAuthChange(callback: (user: User | null) => void) {

@@ -39,7 +39,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useAuth } from '@/components/AuthProvider';
-import { getJobs, getJobOutput, JobResponse, JobStatus as ApiJobStatus } from '@/lib/api';
+import { getJobs, getJobOutput, createJob, JobResponse, JobStatus as ApiJobStatus, JobType, Resolution } from '@/lib/api';
 
 type JobStatus = 'completed' | 'processing' | 'failed' | 'queued' | 'pending';
 
@@ -89,6 +89,7 @@ export default function JobsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [retryingId, setRetryingId] = useState<string | null>(null);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const jobsPerPage = 10;
 
@@ -139,6 +140,32 @@ export default function JobsPage() {
       setError(err instanceof Error ? err.message : 'Download failed');
     } finally {
       setDownloadingId(null);
+    }
+  };
+
+  // Handle retry failed job
+  const handleRetry = async (job: Job) => {
+    if (!job.referenceImagePath || !job.motionVideoPath) {
+      setError('Cannot retry: missing input files');
+      return;
+    }
+
+    setRetryingId(job.id);
+    try {
+      await createJob({
+        job_type: job.jobType as JobType,
+        reference_image_path: job.referenceImagePath,
+        motion_video_path: job.motionVideoPath,
+        resolution: job.resolution as Resolution,
+        seed: job.seed,
+      });
+      // Refresh jobs list to show the new job
+      await fetchJobs();
+    } catch (err) {
+      console.error('Retry failed:', err);
+      setError(err instanceof Error ? err.message : 'Retry failed');
+    } finally {
+      setRetryingId(null);
     }
   };
 
@@ -313,9 +340,18 @@ export default function JobsPage() {
                     <FileText className="w-4 h-4 mr-1" />
                     Error Log
                   </Button>
-                  <Button size="sm" className="bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] hover:opacity-90 text-white">
-                    <RotateCcw className="w-4 h-4 mr-1" />
-                    Retry
+                  <Button
+                    size="sm"
+                    className="bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] hover:opacity-90 text-white"
+                    onClick={() => handleRetry(job)}
+                    disabled={retryingId === job.id}
+                  >
+                    {retryingId === job.id ? (
+                      <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                    ) : (
+                      <RotateCcw className="w-4 h-4 mr-1" />
+                    )}
+                    {retryingId === job.id ? 'Retrying...' : 'Retry'}
                   </Button>
                   <Button variant="outline" size="sm" className="border-[#334155] text-[#F1F5F9] hover:border-[#00F0D9] hover:text-[#00F0D9]">
                     <Mail className="w-4 h-4 mr-1" />

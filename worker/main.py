@@ -11,7 +11,10 @@ from typing import Optional
 
 from flask import Flask, request, jsonify
 from google.cloud import firestore, storage, secretmanager
+from google.auth import default as auth_default
+from google.auth import impersonated_credentials
 import httpx
+import requests as http_requests
 
 from wavespeed import WaveSpeedClient, WaveSpeedError, WaveSpeedAPIError
 
@@ -35,6 +38,8 @@ OUTPUT_BUCKET = os.environ.get("OUTPUT_BUCKET", "nuumee-outputs")
 _db: Optional[firestore.Client] = None
 _storage_client: Optional[storage.Client] = None
 _wavespeed_client: Optional[WaveSpeedClient] = None
+_signing_credentials = None
+_service_account_email: Optional[str] = None
 
 
 def get_firestore() -> firestore.Client:
@@ -80,8 +85,65 @@ def get_wavespeed() -> WaveSpeedClient:
     return _wavespeed_client
 
 
+def _get_service_account_email() -> str:
+    """Get service account email from metadata server or environment."""
+    global _service_account_email
+    if _service_account_email is not None:
+        return _service_account_email
+
+    # Try environment variable first
+    sa_email = os.environ.get("SERVICE_ACCOUNT_EMAIL")
+    if sa_email:
+        _service_account_email = sa_email
+        return sa_email
+
+    # Try metadata server (Cloud Run)
+    try:
+        response = http_requests.get(
+            "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/email",
+            headers={"Metadata-Flavor": "Google"},
+            timeout=2
+        )
+        if response.status_code == 200:
+            _service_account_email = response.text
+            return _service_account_email
+    except Exception:
+        pass
+
+    # Fallback to default
+    _service_account_email = "nuumee-worker@wanapi-prod.iam.gserviceaccount.com"
+    return _service_account_email
+
+
+def _get_signing_credentials():
+    """Get impersonated credentials for signing GCS URLs."""
+    global _signing_credentials
+
+    if _signing_credentials is not None:
+        return _signing_credentials
+
+    # Get default credentials
+    source_credentials, project = auth_default()
+
+    # Get service account email
+    sa_email = _get_service_account_email()
+
+    # Create impersonated credentials with signing capability
+    _signing_credentials = impersonated_credentials.Credentials(
+        source_credentials=source_credentials,
+        target_principal=sa_email,
+        target_scopes=['https://www.googleapis.com/auth/cloud-platform'],
+        lifetime=3600,
+    )
+
+    return _signing_credentials
+
+
 def generate_signed_url(bucket_name: str, blob_path: str, expiration: int = 3600) -> str:
     """Generate a signed URL for GCS object.
+
+    Uses IAM impersonation to get signing credentials on Cloud Run,
+    since the default Compute Engine credentials cannot sign URLs.
 
     Args:
         bucket_name: GCS bucket name
@@ -91,14 +153,22 @@ def generate_signed_url(bucket_name: str, blob_path: str, expiration: int = 3600
     Returns:
         Signed URL
     """
+    from datetime import timedelta
+
+    # Get signing credentials
+    signing_creds = _get_signing_credentials()
+
+    # Get storage client and bucket/blob
     client = get_storage()
     bucket = client.bucket(bucket_name)
     blob = bucket.blob(blob_path)
 
+    # Generate signed URL with impersonated credentials
     url = blob.generate_signed_url(
         version="v4",
-        expiration=expiration,
+        expiration=timedelta(seconds=expiration),
         method="GET",
+        credentials=signing_creds,
     )
     return url
 

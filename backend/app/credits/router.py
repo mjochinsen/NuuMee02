@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from google.cloud import secretmanager, firestore
 import stripe
 
-from .models import CreditPackage, CheckoutRequest, CheckoutResponse, CreditBalance
+from .models import CreditPackage, CheckoutRequest, CheckoutResponse, CreditBalance, AutoRefillSettings, AutoRefillResponse, ReceiptResponse, PaymentMethodsResponse, PaymentMethod, PaymentMethodCard
 from ..auth.firebase import get_firestore_client
 from ..middleware.auth import get_current_user_id
 
@@ -226,3 +226,223 @@ async def create_checkout_session(
             status_code=500,
             detail=f"Failed to create checkout session: {str(e)}"
         )
+
+
+@router.get("/auto-refill", response_model=AutoRefillSettings)
+async def get_auto_refill_settings(user_id: str = Depends(get_current_user_id)):
+    """
+    Get the user's auto-refill settings.
+
+    Returns current auto-refill configuration.
+    """
+    db = get_firestore_client()
+    user_ref = db.collection("users").document(user_id)
+    user_doc = user_ref.get()
+
+    if not user_doc.exists:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user_data = user_doc.to_dict()
+    auto_refill = user_data.get("auto_refill", {})
+
+    return AutoRefillSettings(
+        enabled=auto_refill.get("enabled", False),
+        threshold=auto_refill.get("threshold", 10),
+        package_id=auto_refill.get("package_id", "starter")
+    )
+
+
+@router.put("/auto-refill", response_model=AutoRefillResponse)
+async def update_auto_refill_settings(
+    settings: AutoRefillSettings,
+    user_id: str = Depends(get_current_user_id)
+):
+    """
+    Update the user's auto-refill settings.
+
+    When enabled, credits will be automatically purchased when balance
+    drops below the threshold after a job completes.
+
+    **Requirements for auto-refill:**
+    - User must have a saved payment method (Stripe Customer with default payment)
+    - Package must be valid (starter, popular, pro, mega)
+    - Threshold must be between 5 and 100 credits
+    """
+    db = get_firestore_client()
+    user_ref = db.collection("users").document(user_id)
+    user_doc = user_ref.get()
+
+    if not user_doc.exists:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user_data = user_doc.to_dict()
+
+    # If enabling auto-refill, verify user has a Stripe customer ID
+    if settings.enabled:
+        stripe_customer_id = user_data.get("stripe_customer_id")
+        if not stripe_customer_id:
+            raise HTTPException(
+                status_code=400,
+                detail="Please make a purchase first to set up auto-refill. A payment method is required."
+            )
+
+    # Validate package exists
+    if settings.package_id not in CREDIT_PACKAGES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid package_id: {settings.package_id}"
+        )
+
+    # Update settings in Firestore
+    user_ref.update({
+        "auto_refill": {
+            "enabled": settings.enabled,
+            "threshold": settings.threshold,
+            "package_id": settings.package_id,
+        },
+        "updated_at": firestore.SERVER_TIMESTAMP
+    })
+
+    return AutoRefillResponse(
+        message="Auto-refill settings updated successfully",
+        settings=settings
+    )
+
+
+@router.get("/receipt/{session_id}", response_model=ReceiptResponse)
+async def get_receipt(
+    session_id: str,
+    user_id: str = Depends(get_current_user_id)
+):
+    """
+    Get receipt details for a completed checkout session.
+
+    Returns payment details including transaction ID, amount, and payment method.
+    Only the user who made the purchase can retrieve their receipt.
+    """
+    _ensure_stripe_key()
+
+    try:
+        # Retrieve the checkout session from Stripe
+        session = stripe.checkout.Session.retrieve(
+            session_id,
+            expand=["payment_intent.payment_method", "line_items"]
+        )
+
+        # Verify this session belongs to the requesting user
+        if session.metadata.get("user_id") != user_id:
+            raise HTTPException(status_code=403, detail="Not authorized to view this receipt")
+
+        # Check session is completed
+        if session.status != "complete":
+            raise HTTPException(status_code=400, detail="Payment not completed")
+
+        payment_intent = session.payment_intent
+        payment_method = payment_intent.payment_method if payment_intent else None
+
+        # Get card details if available
+        last4 = None
+        brand = None
+        if payment_method and hasattr(payment_method, "card") and payment_method.card:
+            last4 = payment_method.card.last4
+            brand = payment_method.card.brand
+
+        # Get line item details
+        package_name = "Credit Package"
+        if session.line_items and session.line_items.data:
+            first_item = session.line_items.data[0]
+            package_name = first_item.description or package_name
+
+        # Get receipt URL from charge if available
+        receipt_url = None
+        if payment_intent and payment_intent.latest_charge:
+            try:
+                charge = stripe.Charge.retrieve(payment_intent.latest_charge)
+                receipt_url = charge.receipt_url
+            except Exception:
+                pass
+
+        return ReceiptResponse(
+            session_id=session_id,
+            transaction_id=payment_intent.id if payment_intent else session.id,
+            package_name=package_name,
+            credits=int(session.metadata.get("credits", 0)),
+            amount_cents=session.amount_total or 0,
+            currency=session.currency or "usd",
+            payment_method_last4=last4,
+            payment_method_brand=brand,
+            customer_email=session.customer_details.email if session.customer_details else "",
+            created_at=datetime.fromtimestamp(session.created, tz=timezone.utc),
+            receipt_url=receipt_url
+        )
+
+    except stripe.error.InvalidRequestError:
+        raise HTTPException(status_code=404, detail="Session not found")
+    except stripe.error.StripeError as e:
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve receipt: {str(e)}")
+
+
+@router.get("/payment-methods", response_model=PaymentMethodsResponse)
+async def get_payment_methods(user_id: str = Depends(get_current_user_id)):
+    """
+    Get the user's saved payment methods from Stripe.
+
+    Returns a list of payment methods attached to the user's Stripe customer.
+    """
+    _ensure_stripe_key()
+    db = get_firestore_client()
+
+    # Get user's Stripe customer ID
+    user_ref = db.collection("users").document(user_id)
+    user_doc = user_ref.get()
+
+    if not user_doc.exists:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user_data = user_doc.to_dict()
+    stripe_customer_id = user_data.get("stripe_customer_id")
+
+    if not stripe_customer_id:
+        # No Stripe customer yet, return empty list
+        return PaymentMethodsResponse(payment_methods=[], default_payment_method_id=None)
+
+    try:
+        # Get customer to find default payment method
+        customer = stripe.Customer.retrieve(stripe_customer_id)
+        default_pm_id = None
+        if customer.invoice_settings and customer.invoice_settings.default_payment_method:
+            default_pm_id = customer.invoice_settings.default_payment_method
+
+        # List all payment methods for this customer
+        payment_methods_list = stripe.PaymentMethod.list(
+            customer=stripe_customer_id,
+            type="card",
+            limit=10
+        )
+
+        methods = []
+        for pm in payment_methods_list.data:
+            card_details = None
+            if pm.card:
+                card_details = PaymentMethodCard(
+                    brand=pm.card.brand or "unknown",
+                    last4=pm.card.last4 or "****",
+                    exp_month=pm.card.exp_month or 0,
+                    exp_year=pm.card.exp_year or 0
+                )
+
+            methods.append(PaymentMethod(
+                id=pm.id,
+                type=pm.type,
+                card=card_details,
+                is_default=(pm.id == default_pm_id),
+                created_at=datetime.fromtimestamp(pm.created, tz=timezone.utc)
+            ))
+
+        return PaymentMethodsResponse(
+            payment_methods=methods,
+            default_payment_method_id=default_pm_id
+        )
+
+    except stripe.error.StripeError as e:
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve payment methods: {str(e)}")
