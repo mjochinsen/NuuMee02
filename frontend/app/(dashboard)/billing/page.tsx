@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
@@ -37,9 +37,10 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/components/AuthProvider';
-import { createCheckoutSession, ApiError, getTransactions, CreditTransaction, TransactionType, TransactionStatus, getAutoRefillSettings, updateAutoRefillSettings, AutoRefillSettings, getPaymentMethods, PaymentMethod, createCustomerPortalSession, syncBillingPeriod } from '@/lib/api';
+import { createCheckoutSession, ApiError, CreditTransaction, TransactionType, TransactionStatus, PaymentMethod, createCustomerPortalSession, syncBillingPeriod } from '@/lib/api';
 import { BuyCreditsModal } from '@/components/BuyCreditsModal';
 import { SubscriptionModal } from '@/components/SubscriptionModal';
+import { useTransactions, usePaymentMethods, useAutoRefill } from './hooks';
 
 interface CreditPackage {
   id: string;
@@ -86,11 +87,6 @@ export default function BillingPage() {
   const [showAddCardModal, setShowAddCardModal] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState<CreditPackage | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null);
-  const [autoRefillEnabled, setAutoRefillEnabled] = useState(false);
-  const [autoRefillThreshold, setAutoRefillThreshold] = useState(10);
-  const [autoRefillPackage, setAutoRefillPackage] = useState('starter');
-  const [autoRefillLoading, setAutoRefillLoading] = useState(false);
-  const [autoRefillSaving, setAutoRefillSaving] = useState(false);
   const [isBuyModalOpen, setIsBuyModalOpen] = useState(false);
   const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
   const [subscriptionModalType, setSubscriptionModalType] = useState<'subscribe' | 'upgrade' | 'downgrade' | 'cancel' | 'annual' | 'monthly' | 'founding'>('subscribe');
@@ -98,18 +94,37 @@ export default function BillingPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Transaction state
-  const [transactions, setTransactions] = useState<CreditTransaction[]>([]);
-  const [transactionsLoading, setTransactionsLoading] = useState(true);
-  const [transactionsError, setTransactionsError] = useState<string | null>(null);
-  const [transactionPage, setTransactionPage] = useState(1);
-  const [transactionTotal, setTransactionTotal] = useState(0);
-  const [hasMoreTransactions, setHasMoreTransactions] = useState(false);
-  const transactionPageSize = 10;
+  // Transaction state (from hook)
+  const {
+    transactions,
+    isLoading: transactionsLoading,
+    error: transactionsError,
+    page: transactionPage,
+    setPage: setTransactionPage,
+    total: transactionTotal,
+    hasMore: hasMoreTransactions,
+    refresh: fetchTransactions,
+  } = useTransactions(user?.uid);
 
-  // Payment methods state
-  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
-  const [paymentMethodsLoading, setPaymentMethodsLoading] = useState(true);
+  // Payment methods state (from hook)
+  const {
+    paymentMethods,
+    isLoading: paymentMethodsLoading,
+    refresh: fetchPaymentMethods,
+  } = usePaymentMethods(user?.uid);
+
+  // Auto-refill state (from hook)
+  const {
+    enabled: autoRefillEnabled,
+    setEnabled: setAutoRefillEnabled,
+    threshold: autoRefillThreshold,
+    setThreshold: setAutoRefillThreshold,
+    packageId: autoRefillPackage,
+    setPackageId: setAutoRefillPackage,
+    isLoading: autoRefillLoading,
+    isSaving: autoRefillSaving,
+    save: handleSaveAutoRefill,
+  } = useAutoRefill(user?.uid);
 
   const creditPackages: CreditPackage[] = [
     { id: 'starter', name: 'Starter', credits: 120, price: 10, pricePerCredit: 0.083 },
@@ -151,74 +166,6 @@ export default function BillingPage() {
       current: currentPlan === 'studio',
     },
   ];
-
-  // Fetch transactions
-  const fetchTransactions = useCallback(async () => {
-    if (!user) return;
-
-    setTransactionsLoading(true);
-    setTransactionsError(null);
-
-    try {
-      const response = await getTransactions(transactionPage, transactionPageSize);
-      setTransactions(response.transactions);
-      setTransactionTotal(response.total);
-      setHasMoreTransactions(response.has_more);
-    } catch (error) {
-      console.error('Failed to fetch transactions:', error);
-      if (error instanceof ApiError) {
-        setTransactionsError(error.message);
-      } else {
-        setTransactionsError('Failed to load transaction history');
-      }
-    } finally {
-      setTransactionsLoading(false);
-    }
-  }, [user, transactionPage]);
-
-  useEffect(() => {
-    fetchTransactions();
-  }, [fetchTransactions]);
-
-  // Fetch auto-refill settings
-  const fetchAutoRefillSettings = useCallback(async () => {
-    if (!user) return;
-
-    setAutoRefillLoading(true);
-    try {
-      const settings = await getAutoRefillSettings();
-      setAutoRefillEnabled(settings.enabled);
-      setAutoRefillThreshold(settings.threshold);
-      setAutoRefillPackage(settings.package_id);
-    } catch (error) {
-      console.error('Failed to fetch auto-refill settings:', error);
-    } finally {
-      setAutoRefillLoading(false);
-    }
-  }, [user]);
-
-  useEffect(() => {
-    fetchAutoRefillSettings();
-  }, [fetchAutoRefillSettings]);
-
-  // Fetch payment methods
-  const fetchPaymentMethods = useCallback(async () => {
-    if (!user) return;
-
-    setPaymentMethodsLoading(true);
-    try {
-      const response = await getPaymentMethods();
-      setPaymentMethods(response.payment_methods);
-    } catch (error) {
-      console.error('Failed to fetch payment methods:', error);
-    } finally {
-      setPaymentMethodsLoading(false);
-    }
-  }, [user]);
-
-  useEffect(() => {
-    fetchPaymentMethods();
-  }, [fetchPaymentMethods]);
 
   // Open Stripe Customer Portal
   const handleManagePaymentMethods = async () => {
@@ -269,25 +216,6 @@ export default function BillingPage() {
       handleSyncBillingPeriod();
     }
   }, [hasMissingBillingPeriod]);
-
-  // Save auto-refill settings
-  const handleSaveAutoRefill = async () => {
-    setAutoRefillSaving(true);
-    try {
-      await updateAutoRefillSettings({
-        enabled: autoRefillEnabled,
-        threshold: autoRefillThreshold,
-        package_id: autoRefillPackage,
-      });
-    } catch (error) {
-      console.error('Failed to save auto-refill settings:', error);
-      if (error instanceof ApiError) {
-        setErrorMessage(error.message);
-      }
-    } finally {
-      setAutoRefillSaving(false);
-    }
-  };
 
   // Helper to format transaction type for display
   const getTransactionTypeLabel = (type: TransactionType | string): string => {
@@ -699,18 +627,19 @@ export default function BillingPage() {
 
       {/* Subscription Plans */}
       <div className="border border-[#334155] rounded-2xl p-8 bg-[#0F172A] mb-8">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-2">
-            <Crown className="w-5 h-5 text-[#00F0D9]" />
-            <h2 className="text-[#F1F5F9]">Subscription Plans</h2>
-          </div>
-          {/* Billing Cycle Toggle */}
+        <div className="flex items-center justify-center gap-2 mb-4">
+          <Crown className="w-5 h-5 text-[#00F0D9]" />
+          <h2 className="text-[#F1F5F9]">Subscription Plans</h2>
+        </div>
+
+        {/* Billing Cycle Toggle - Centered */}
+        <div className="flex justify-center mb-8">
           <Tabs value={billingCycle} onValueChange={(v) => setBillingCycle(v as 'monthly' | 'annually')} className="inline-block">
-            <TabsList className="bg-[#1E293B] border border-[#334155]">
-              <TabsTrigger value="monthly" className="data-[state=active]:bg-[#334155] text-sm">Monthly</TabsTrigger>
-              <TabsTrigger value="annually" className="data-[state=active]:bg-[#334155] text-sm">
+            <TabsList className="bg-[#1E293B] border border-[#334155] h-12 p-1">
+              <TabsTrigger value="monthly" className="data-[state=active]:bg-[#334155] px-6 py-2 text-base">Monthly</TabsTrigger>
+              <TabsTrigger value="annually" className="data-[state=active]:bg-[#334155] px-6 py-2 text-base">
                 Annually
-                <Badge className="ml-2 bg-green-500/20 text-green-400 border-green-500/30 text-xs">Save 20%</Badge>
+                <Badge className="ml-2 bg-green-500/20 text-green-400 border-green-500/30 text-sm">Save 20%</Badge>
               </TabsTrigger>
             </TabsList>
           </Tabs>
