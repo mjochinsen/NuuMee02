@@ -1,5 +1,6 @@
 """Referral system routes."""
 import logging
+import os
 import random
 import string
 from datetime import datetime, timezone
@@ -14,7 +15,8 @@ from .models import (
 )
 from ..auth.firebase import get_firestore_client, verify_id_token
 from ..middleware.auth import get_current_user_id
-from ..email import queue_referral_welcome_email, queue_referrer_notification_email
+from ..notifications import send as notify
+from ..notifications.utils import build_welcome_referral_payload, build_referral_signup_payload
 
 
 logger = logging.getLogger(__name__)
@@ -330,39 +332,26 @@ async def apply_referral_code(
             f"Granted 25 credits. Referral ID: {referral_id}"
         )
 
-        # Queue email notifications (non-blocking, don't fail if emails fail)
+        # Send notifications (non-blocking, don't fail if notifications fail)
         try:
             # Email to new user: "Welcome! You received bonus credits"
-            new_user_email = user_data.get("email")
-            new_user_name = user_data.get("display_name") or "there"
-            if new_user_email:
-                queue_referral_welcome_email(
-                    db=db,
-                    to_email=new_user_email,
-                    to_name=new_user_name,
-                    bonus_credits=25,
-                    total_credits=new_balance,
-                )
+            payload = build_welcome_referral_payload(user_data, bonus_credits=25, total_credits=new_balance)
+            result = notify(db, "account.welcome_referral", user_id, payload)
+            if not result.sent:
+                logger.warning(f"Referral welcome email not sent for {user_id}: {result.reason}")
 
             # Email to referrer: "Someone signed up with your code!"
             referrer_doc = db.collection("users").document(referrer_id).get()
             if referrer_doc.exists:
                 referrer_data = referrer_doc.to_dict()
-                referrer_email = referrer_data.get("email")
-                referrer_name = referrer_data.get("display_name") or "there"
-
-                if referrer_email:
-                    queue_referrer_notification_email(
-                        db=db,
-                        to_email=referrer_email,
-                        to_name=referrer_name,
-                        referral_code=referral_code,
-                        referred_user_name=user_data.get("display_name") or user_data.get("email"),
-                        pending_credits=25,
-                    )
+                referred_email = user_data.get("email", "")
+                payload = build_referral_signup_payload(referrer_data, referred_email, referral_code)
+                result = notify(db, "referral.signup", referrer_id, payload)
+                if not result.sent:
+                    logger.warning(f"Referrer notification not sent for {referrer_id}: {result.reason}")
         except Exception as email_error:
-            # Don't fail the referral if emails fail
-            logger.warning(f"Failed to queue referral emails: {email_error}")
+            # Don't fail the referral if notifications fail
+            logger.warning(f"Failed to send referral notifications: {email_error}")
 
         return ReferralApplyResponse(
             credits_granted=25,

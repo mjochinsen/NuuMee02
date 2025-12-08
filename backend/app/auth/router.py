@@ -12,7 +12,8 @@ import stripe
 from .firebase import verify_id_token, get_firestore_client, initialize_firebase
 from .models import TokenRequest, UserProfile, RegisterResponse, LoginResponse, UpdateProfileRequest, UpdateProfileResponse
 from ..middleware.auth import get_current_user_id
-from ..email import queue_welcome_email
+from ..notifications import send as notify
+from ..notifications.utils import build_welcome_payload
 
 logger = logging.getLogger(__name__)
 
@@ -185,15 +186,12 @@ async def register(request: TokenRequest):
 
     # Send welcome email (non-blocking)
     try:
-        user_name = display_name or "there"
-        queue_welcome_email(
-            db=db,
-            to_email=email,
-            to_name=user_name,
-            credits_balance=25,
-        )
+        payload = build_welcome_payload(user_data, credits_balance=25)
+        result = notify(db, "account.welcome", uid, payload)
+        if not result.sent:
+            logger.warning(f"Welcome email not sent for {uid}: {result.reason}")
     except Exception as e:
-        logger.warning(f"Failed to queue welcome email for {uid}: {e}")
+        logger.warning(f"Failed to send welcome notification for {uid}: {e}")
 
     # Return user profile
     user_profile = firestore_doc_to_user_profile(user_data, uid)
