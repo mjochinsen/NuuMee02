@@ -7,24 +7,25 @@
 
 ## PHASE 0 — FOUNDATION ✅
 
-| ID   | Task | Status |
-|------|------|--------|
-| 0.1  | Create folder structure | ✅ |
-| 0.2  | Initialize Next.js | ✅ |
-| 0.3  | Create backend/main.py | ✅ |
-| 0.4  | Create requirements.txt | ✅ |
-| 0.5  | Create Dockerfile | ✅ |
-| 0.6  | Create worker stubs | ✅ |
-| 0.7  | Create frontend/.env.local | ✅ |
-| 0.8  | Create backend/.env | ✅ |
-| 0.9  | Create firebase.json | ✅ |
-| 0.10 | Commit Phase 0 | ✅ (605b7e5) |
+| ID   | Task                       | Status       |
+| ---- | -------------------------- | ------------ |
+| 0.1  | Create folder structure    | ✅           |
+| 0.2  | Initialize Next.js         | ✅           |
+| 0.3  | Create backend/main.py     | ✅           |
+| 0.4  | Create requirements.txt    | ✅           |
+| 0.5  | Create Dockerfile          | ✅           |
+| 0.6  | Create worker stubs        | ✅           |
+| 0.7  | Create frontend/.env.local | ✅           |
+| 0.8  | Create backend/.env        | ✅           |
+| 0.9  | Create firebase.json       | ✅           |
+| 0.10 | Commit Phase 0             | ✅ (605b7e5) |
 
 ---
 
 ## PHASE 1 — AUTHENTICATION ✅
 
 ### Backend (1.1-1.8)
+
 - Firebase Admin SDK init
 - POST /auth/register (creates user with 25 credits)
 - POST /auth/login (validates token, returns profile)
@@ -33,6 +34,7 @@
 - Deployed to Cloud Run
 
 ### Frontend (1.9-1.19)
+
 - lib/firebase.ts (Google/GitHub/Email auth)
 - lib/api.ts (auth header, no 403 logout)
 - AuthProvider.tsx
@@ -47,11 +49,13 @@
 ## PHASE 2 — PAYMENTS ✅
 
 ### Backend (2.1-2.6)
+
 - POST /credits/checkout (creates Stripe session)
 - POST /webhooks/stripe (handles checkout.session.completed)
 - Stripe webhook configured
 
 ### Frontend (2.7-2.14)
+
 - Pricing page with credit packages
 - Payment success/cancel pages
 - Credit balance in navbar
@@ -83,7 +87,7 @@
 
 ---
 
-## PHASE 5 — WORKER ✅
+## PHASE 5 — WORKER ⬜
 
 - worker/main.py (Flask + Cloud Tasks handler)
 - worker/wavespeed.py (WaveSpeed API client)

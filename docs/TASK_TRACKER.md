@@ -13,11 +13,11 @@
 
 ## STATUS LEGEND
 
-| Symbol | Meaning |
-|--------|---------|
-| ⬜ | Not started |
-| 🔄 | In progress |
-| ✅ | Complete |
+| Symbol | Meaning     |
+| ------ | ----------- |
+| ⬜     | Not started |
+| 🔄     | In progress |
+| ✅     | Complete    |
 
 ---
 
@@ -33,7 +33,7 @@
 | 8.2  | Implement GET /referral/code         | ✅     | `api-builder`       | router.py            | Get/generate referral code               |
 | 8.3  | Implement POST /referral/apply       | ✅     | `api-builder`       | router.py            | Apply code, get 25 credits               |
 | 8.4  | Create backend/app/affiliate/ folder | ✅     | `api-builder`       | router.py, models.py | Done via sub-agent                       |
-| 8.5  | Implement affiliate endpoints        | ✅     | `api-builder`       | router.py            | apply, stats, payout                     |
+| 8.5  | Implement affiliate endpoints        | ⬜     | `api-builder`       | router.py            | apply, stats, payout                     |
 | 8.6  | Deploy updated backend               | ✅     | `gcloud run deploy` | nuumee-api-00062-v4t | All endpoints live                       |
 | 8.7  | Update referral page with API        | ✅     | Manual              | referral/page.tsx    | Uses getReferralCode API                 |
 | 8.8  | Update affiliate page with API       | ✅     | Manual              | affiliate/page.tsx   | Form calls applyForAffiliate             |
@@ -47,7 +47,7 @@
 
 - [x] Can generate referral link (GET /referral/code)
 - [x] New user gets 25 credits via referral (POST /referral/apply)
-- [x] Referrer gets 100 credits after purchase (webhook implemented Dec 2025)
+- [ ] Referrer gets 100 credits after purchase (webhook implemented Dec 2025)
 - [x] Committed to master
 
 ---
@@ -74,22 +74,22 @@
 
 ### Billing Features (Priority 1)
 
-| ID    | Task                            | Status | Agent/Tool    | Output             | Notes                              |
-| ----- | ------------------------------- | ------ | ------------- | ------------------ | ---------------------------------- |
-| 8.5.5 | Implement auto-refill feature   | ✅     | Manual        | billing/page.tsx   | Backend + frontend done            |
-| 8.5.6 | Auto-refill: Backend endpoint   | ✅     | `api-builder` | credits/router.py  | POST /credits/auto-refill          |
-| 8.5.7 | Auto-refill: Webhook trigger    | ✅     | Manual        | webhooks/router.py | Balance check implemented          |
-| 8.5.8 | Transaction history (real data) | ✅     | Manual        | billing/page.tsx   | Uses GET /transactions             |
+| ID    | Task                            | Status | Agent/Tool    | Output             | Notes                     |
+| ----- | ------------------------------- | ------ | ------------- | ------------------ | ------------------------- |
+| 8.5.5 | Implement auto-refill feature   | ✅     | Manual        | billing/page.tsx   | Backend + frontend done   |
+| 8.5.6 | Auto-refill: Backend endpoint   | ✅     | `api-builder` | credits/router.py  | POST /credits/auto-refill |
+| 8.5.7 | Auto-refill: Webhook trigger    | ✅     | Manual        | webhooks/router.py | Balance check implemented |
+| 8.5.8 | Transaction history (real data) | ✅     | Manual        | billing/page.tsx   | Uses GET /transactions    |
 
 ### Billing Data Integrity (Priority 1.5)
 
-| ID     | Task                                     | Status | Agent/Tool | Output                         | Notes                                  |
-| ------ | ---------------------------------------- | ------ | ---------- | ------------------------------ | -------------------------------------- |
-| 8.5.15 | Create billing_period sync script        | ✅     | Manual     | scripts/sync_billing_period.py | Sync from Stripe for existing users    |
-| 8.5.16 | Fix UI for missing billing_period        | ✅     | Manual     | billing/page.tsx               | Auto-sync on page load + manual button |
-| 8.5.17 | Add card last4 to transaction metadata   | ✅     | Manual     | webhooks/router.py             | Store pm_xxxx last4 in transactions    |
-| 8.5.18 | Create comprehensive billing test suite  | ⬜     | Manual     | e2e/billing-flows.spec.ts      | All subscription state transitions     |
-| 8.5.19 | Create Subscription State Matrix doc     | ✅     | Manual     | docs/SUBSCRIPTION_STATE_MATRIX | Full flow documentation                |
+| ID     | Task                                    | Status | Agent/Tool | Output                         | Notes                                  |
+| ------ | --------------------------------------- | ------ | ---------- | ------------------------------ | -------------------------------------- |
+| 8.5.15 | Create billing_period sync script       | ✅     | Manual     | scripts/sync_billing_period.py | Sync from Stripe for existing users    |
+| 8.5.16 | Fix UI for missing billing_period       | ✅     | Manual     | billing/page.tsx               | Auto-sync on page load + manual button |
+| 8.5.17 | Add card last4 to transaction metadata  | ✅     | Manual     | webhooks/router.py             | Store pm_xxxx last4 in transactions    |
+| 8.5.18 | Create comprehensive billing test suite | ⬜     | Manual     | e2e/billing-flows.spec.ts      | All subscription state transitions     |
+| 8.5.19 | Create Subscription State Matrix doc    | ✅     | Manual     | docs/SUBSCRIPTION_STATE_MATRIX | Full flow documentation                |
 
 ### Account Features (Priority 3)
 
@@ -103,18 +103,18 @@
 
 ### Referral Completion
 
-| ID     | Task                                  | Status | Agent/Tool | Output             | Notes                         |
-| ------ | ------------------------------------- | ------ | ---------- | ------------------ | ----------------------------- |
-| 8.5.14 | Referrer gets 100 credits on purchase | ✅     | Manual     | webhooks/router.py | In checkout.session.completed |
+| ID     | Task                                  | Status | Agent/Tool | Output             | Notes                                                            |
+| ------ | ------------------------------------- | ------ | ---------- | ------------------ | ---------------------------------------------------------------- |
+| 8.5.14 | Referrer gets 100 credits on purchase | ⬜     | Manual     | webhooks/router.py | ≥$10 min, checkout+subscription handlers, deployed rev 00005-4zc |
 
 **Phase 8.5 Completion Criteria:**
 
-- [x] Job downloads work (GCS signing fixed)
-- [x] Retry button works on /jobs
-- [x] Auto-refill implemented and working
+- [ ] Job downloads work (GCS signing fixed)
+- [ ] Retry button works on /jobs
+- [ ] Auto-refill implemented and working
 - [x] Notification preferences save to Firestore
-- [x] All "Coming Soon" badges removed
-- [x] Referrer reward implemented
+- [ ] All "Coming Soon" badges removed
+- [ ] Referrer reward implemented
 - [ ] Billing test suite (8.5.18) - optional
 
 ---
@@ -204,9 +204,10 @@
 **Current Task:** Ready for Phase 9 (Polish & Launch)
 **Next Priority:** SEO, accessibility, performance optimization
 **Blockers:** None
-**Last Updated:** 2025-12-08
+**Last Updated:** 2025-12-08 (referrer bonus implemented)
 
 ### Recent Completions (Dec 2-8, 2025)
+
 - ✅ Complete billing system with account management
 - ✅ Email notification system (Firebase Trigger Email + Gmail)
 - ✅ Event-driven notification service with Firestore templates
