@@ -46,7 +46,7 @@ def build_welcome_payload(user_data: dict, credits_balance: int = 25) -> dict:
     return {
         "first_name": get_user_first_name(user_data),
         "credits_balance": credits_balance,
-        "dashboard_url": f"{FRONTEND_URL}/create",
+        "dashboard_url": f"{FRONTEND_URL}/videos/create",
         "referral_url": f"{FRONTEND_URL}/referral",
     }
 
@@ -71,7 +71,7 @@ def build_welcome_referral_payload(
         "first_name": get_user_first_name(user_data),
         "bonus_credits": bonus_credits,
         "total_credits": total_credits,
-        "dashboard_url": f"{FRONTEND_URL}/create",
+        "dashboard_url": f"{FRONTEND_URL}/videos/create",
     }
 
 
@@ -120,7 +120,7 @@ def build_job_failed_payload(
         "first_name": get_user_first_name(user_data),
         "video_title": job_data.get("title", "Your video"),
         "error_reason": error_reason,
-        "retry_url": f"{FRONTEND_URL}/create",
+        "retry_url": f"{FRONTEND_URL}/videos/create",
         "support_url": f"{FRONTEND_URL}/support",
     }
 

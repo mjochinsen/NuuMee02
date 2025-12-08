@@ -14,18 +14,35 @@ logger = logging.getLogger(__name__)
 
 def mask_email(email: str) -> str:
     """
-    Mask email address for logging.
+    Mask email address for privacy while keeping it identifiable.
 
-    Example: john.doe@example.com -> j***@example.com
+    Shows first 4 chars + *** + last 2 chars for addresses with 6+ chars.
+    Examples:
+        john.doe@example.com -> john***oe@example.com
+        referral9@gmail.com  -> refe***l9@gmail.com
+        abc@test.com         -> ab***c@test.com
+        ab@test.com          -> a***b@test.com
+        a@test.com           -> ***@test.com
     """
     if not email or "@" not in email:
         return "***"
 
     local, domain = email.split("@", 1)
+
+    # Very short emails - mask completely
     if len(local) <= 1:
         return f"***@{domain}"
 
-    return f"{local[0]}***@{domain}"
+    # 2-3 chars: show first and last
+    if len(local) <= 3:
+        return f"{local[0]}***{local[-1]}@{domain}"
+
+    # 4-5 chars: show first 2 and last 1
+    if len(local) <= 5:
+        return f"{local[:2]}***{local[-1]}@{domain}"
+
+    # 6+ chars: show first 4 and last 2
+    return f"{local[:4]}***{local[-2:]}@{domain}"
 
 
 @dataclass

@@ -1,4 +1,5 @@
 """Stripe webhook handler - Simplified for Stripe Portal integration."""
+import logging
 import os
 import uuid
 from datetime import datetime, timezone
@@ -8,9 +9,131 @@ import stripe
 
 from ..auth.firebase import get_firestore_client
 from ..subscriptions.models import SubscriptionTier, SubscriptionStatus, get_subscription_tiers
+from ..notifications import send as notify
+from ..notifications.utils import build_referral_conversion_payload
+
+logger = logging.getLogger(__name__)
 
 
 router = APIRouter(prefix="/webhooks", tags=["Webhooks"])
+
+# Minimum purchase amount for referrer bonus (in cents)
+REFERRER_BONUS_MIN_CENTS = 1000  # $10
+REFERRER_BONUS_CREDITS = 100
+
+
+async def grant_referrer_bonus(db, user_id: str, amount_cents: int) -> bool:
+    """
+    Grant referrer bonus if this is user's first qualifying purchase.
+
+    Requirements per PRICING_STRATEGY.md:
+    - Purchase must be ≥ $10 (1000 cents)
+    - Only first purchase counts
+    - Referrer gets 100 credits
+
+    Args:
+        db: Firestore client
+        user_id: The user who made the purchase
+        amount_cents: Purchase amount in cents
+
+    Returns:
+        True if bonus was granted, False otherwise
+    """
+    # Check minimum amount
+    if not amount_cents or amount_cents < REFERRER_BONUS_MIN_CENTS:
+        logger.info(f"Purchase ${amount_cents/100:.2f} below $10 minimum for referrer bonus")
+        return False
+
+    # Get user to check if they were referred
+    user_ref = db.collection("users").document(user_id)
+    user_doc = user_ref.get()
+
+    if not user_doc.exists:
+        return False
+
+    user_data = user_doc.to_dict()
+    referred_by = user_data.get("referred_by")
+
+    if not referred_by:
+        # User was not referred
+        return False
+
+    # Find the referral record
+    referrals = list(db.collection("referrals")
+        .where("referred_user_id", "==", user_id)
+        .where("referral_code", "==", referred_by)
+        .limit(1).get())
+
+    if not referrals:
+        logger.warning(f"Referral record not found for user {user_id} with code {referred_by}")
+        return False
+
+    referral_doc = referrals[0]
+    referral_data = referral_doc.to_dict()
+
+    # Check if bonus already granted
+    if referral_data.get("referrer_bonus_granted", False):
+        logger.info(f"Referrer bonus already granted for referral {referral_doc.id}")
+        return False
+
+    referrer_id = referral_data.get("referrer_id")
+    if not referrer_id:
+        return False
+
+    # Grant 100 credits to referrer
+    referrer_ref = db.collection("users").document(referrer_id)
+    referrer_doc = referrer_ref.get()
+
+    if not referrer_doc.exists:
+        logger.warning(f"Referrer user {referrer_id} not found")
+        return False
+
+    referrer_data = referrer_doc.to_dict()
+    referrer_balance = referrer_data.get("credits_balance", 0)
+    new_referrer_balance = referrer_balance + REFERRER_BONUS_CREDITS
+
+    # Update referrer's credits
+    referrer_ref.update({
+        "credits_balance": new_referrer_balance,
+        "updated_at": firestore.SERVER_TIMESTAMP,
+    })
+
+    # Update referral record
+    referral_doc.reference.update({
+        "status": "converted",
+        "referrer_bonus_granted": True,
+        "converted_at": firestore.SERVER_TIMESTAMP,
+        "updated_at": firestore.SERVER_TIMESTAMP,
+    })
+
+    # Create credit transaction for referrer
+    db.collection("credit_transactions").add({
+        "user_id": referrer_id,
+        "type": "referral",
+        "amount": REFERRER_BONUS_CREDITS,
+        "amount_cents": None,  # No dollar amount for referral bonus
+        "status": "completed",
+        "balance_before": referrer_balance,
+        "balance_after": new_referrer_balance,
+        "description": f"Referral bonus - referred user made first purchase",
+        "related_referral_code": referred_by,
+        "created_at": firestore.SERVER_TIMESTAMP,
+    })
+
+    logger.info(f"Granted {REFERRER_BONUS_CREDITS} credits to referrer {referrer_id} for user {user_id}'s first purchase")
+
+    # Send notification to referrer (non-blocking)
+    try:
+        # Refresh referrer data to get updated balance
+        referrer_data["credits_balance"] = new_referrer_balance
+        payload = build_referral_conversion_payload(referrer_data, REFERRER_BONUS_CREDITS)
+        result = notify(db, "referral.conversion", referrer_id, payload)
+        if not result.sent:
+            logger.warning(f"Referrer conversion email not sent for {referrer_id}: {result.reason}")
+    except Exception as e:
+        logger.warning(f"Failed to send referrer conversion notification: {e}")
+
+    return True
 
 
 def get_stripe_webhook_secret() -> str:
@@ -143,6 +266,13 @@ async def handle_checkout_completed(session: dict):
     except Exception as e:
         print(f"Failed to add credits: {e}")
 
+    # Check for referrer bonus (first purchase ≥ $10)
+    amount_cents = session.get("amount_total", 0)
+    try:
+        await grant_referrer_bonus(db, user_id, amount_cents)
+    except Exception as e:
+        logger.warning(f"Failed to process referrer bonus for {user_id}: {e}")
+
 
 async def handle_subscription_created(session: dict):
     """Handle new subscription creation."""
@@ -238,6 +368,13 @@ async def handle_subscription_created(session: dict):
         create_subscription(transaction, user_ref, sub_ref, txn_ref)
     except Exception as e:
         print(f"Failed to create subscription: {e}")
+
+    # Check for referrer bonus (first subscription ≥ $10)
+    amount_cents = session.get("amount_total", 0)
+    try:
+        await grant_referrer_bonus(db, user_id, amount_cents)
+    except Exception as e:
+        logger.warning(f"Failed to process referrer bonus for subscription {user_id}: {e}")
 
 
 async def handle_invoice_paid(invoice: dict):
