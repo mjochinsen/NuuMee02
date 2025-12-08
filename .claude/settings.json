@@ -176,7 +176,18 @@
       "WebSearch",
       "Task",
       "TodoWrite",
-      "SlashCommand"
+      "SlashCommand",
+      "mcp__playwright__playwright_navigate",
+      "mcp__playwright__playwright_console_logs",
+      "mcp__playwright__playwright_get_visible_text",
+      "mcp__playwright__playwright_get_visible_html",
+      "mcp__playwright__playwright_fill",
+      "mcp__playwright__playwright_screenshot",
+      "mcp*",
+      "firebase",
+      "firebase*",
+      "gcloud",
+      "gcloud*"
     ],
     "deny": [
       "Write(~/.ssh/**)",

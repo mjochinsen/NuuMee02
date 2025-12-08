@@ -214,11 +214,13 @@ class SubscriptionResponse(BaseModel):
 class UpgradeSubscriptionRequest(BaseModel):
     """Request to upgrade/change subscription tier."""
     new_tier: SubscriptionTier = Field(..., description="New subscription tier")
+    annual: bool = Field(False, description="Whether to use annual billing")
 
     class Config:
         json_schema_extra = {
             "example": {
-                "new_tier": "studio"
+                "new_tier": "studio",
+                "annual": False
             }
         }
 

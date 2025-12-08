@@ -235,6 +235,61 @@ From Anthropic: "Resume from checkpoints rather than restarting."
 
 ---
 
+## MCP Server System
+
+6 Model Context Protocol servers provide direct API access without CLI commands.
+
+### Tool Naming Convention
+```
+mcp__{server}__{tool}
+
+Examples:
+- mcp__github__list_pull_requests
+- mcp__stripe__list_subscriptions
+- mcp__playwright__playwright_navigate
+- mcp__gcp__get-logs
+```
+
+### Server Inventory
+
+| Server | Auth | Key Tools | Config |
+|--------|------|-----------|--------|
+| `github` | PAT | `list_pull_requests`, `create_issue`, `search_code`, `get_file_contents`, `create_pull_request` | .mcp.json |
+| `stripe` | API Key (test) | `list_products`, `list_customers`, `list_subscriptions`, `create_payment_link`, `search_stripe_documentation` | .mcp.json |
+| `playwright` | None | `playwright_navigate`, `playwright_screenshot`, `playwright_click`, `playwright_fill`, `playwright_get_visible_text`, `playwright_get_visible_html` | .mcp.json |
+| `apidog` | Access Token | `read_project_oas_nqgkfr`, `refresh_project_oas_nqgkfr` | .mcp.json |
+| `gcp` | ADC | `get-logs`, `get-billing-info`, `list-projects`, `list-gke-clusters`, `run-gcp-code` | .mcp.json |
+| `figma` | API Key | Design extraction via figma-extractor agent | .mcp.json |
+
+### When to Use MCP vs CLI
+
+| Task | MCP Tool | Replaces CLI |
+|------|----------|--------------|
+| List open PRs | `mcp__github__list_pull_requests` | `gh pr list` |
+| Create GitHub issue | `mcp__github__create_issue` | `gh issue create` |
+| Search repo code | `mcp__github__search_code` | `gh search code` |
+| Query Stripe subscriptions | `mcp__stripe__list_subscriptions` | Stripe CLI/dashboard |
+| Create payment link | `mcp__stripe__create_payment_link` | Stripe dashboard |
+| Get Stripe docs | `mcp__stripe__search_stripe_documentation` | Web search |
+| Cloud Run logs | `mcp__gcp__get-logs` | `gcloud logs read` |
+| GCP billing | `mcp__gcp__get-billing-info` | `gcloud billing` |
+| E2E test flow | `mcp__playwright__*` | Manual browser testing |
+| Screenshot page | `mcp__playwright__playwright_screenshot` | Manual screenshots |
+| Read API spec | `mcp__apidog__read_project_oas_nqgkfr` | Apidog website |
+
+### MCP Usage Rules for KODY
+
+1. **Always prefer MCP over CLI** - Better context, structured responses
+2. **Use Stripe MCP for subscription queries** - Don't scrape dashboard
+3. **Use GitHub MCP for PR operations** - Richer data than `gh` output
+4. **Use Playwright MCP for verification** - After deployments, test live site
+5. **Use GCP MCP for debugging** - Cloud Run logs, error tracking
+
+### Config Location
+`.mcp.json` - Contains credentials. Do NOT commit to public repos.
+
+---
+
 ## Full Documentation
 
 | Doc | Contents |

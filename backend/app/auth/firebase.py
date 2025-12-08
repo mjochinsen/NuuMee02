@@ -7,22 +7,35 @@ from google.cloud import secretmanager
 
 
 def get_firebase_credentials():
-    """Get Firebase credentials from Secret Manager or environment."""
-    # Check if running on Cloud Run with Secret Manager
+    """Get Firebase credentials from environment or Secret Manager."""
+    # Option 1: FIREBASE_SERVICE_ACCOUNT env var (set by Cloud Run secret injection)
+    firebase_sa = os.getenv("FIREBASE_SERVICE_ACCOUNT")
+    if firebase_sa:
+        try:
+            cred_dict = json.loads(firebase_sa)
+            return credentials.Certificate(cred_dict)
+        except json.JSONDecodeError as e:
+            print(f"Failed to parse FIREBASE_SERVICE_ACCOUNT: {e}")
+
+    # Option 2: Secret Manager (fallback)
     if os.getenv("USE_SECRET_MANAGER", "false").lower() == "true":
         project_id = os.getenv("GCP_PROJECT_ID", "wanapi-prod")
         client = secretmanager.SecretManagerServiceClient()
-        secret_name = f"projects/{project_id}/secrets/firebase-admin-key/versions/latest"
-        response = client.access_secret_version(request={"name": secret_name})
-        cred_dict = json.loads(response.payload.data.decode("UTF-8"))
-        return credentials.Certificate(cred_dict)
+        # Use correct secret name: firebase-admin-sdk
+        secret_name = f"projects/{project_id}/secrets/firebase-admin-sdk/versions/latest"
+        try:
+            response = client.access_secret_version(request={"name": secret_name})
+            cred_dict = json.loads(response.payload.data.decode("UTF-8"))
+            return credentials.Certificate(cred_dict)
+        except Exception as e:
+            print(f"Failed to get credentials from Secret Manager: {e}")
 
-    # Local development: use GOOGLE_APPLICATION_CREDENTIALS or default
+    # Option 3: Local development - use GOOGLE_APPLICATION_CREDENTIALS
     cred_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
     if cred_path and os.path.exists(cred_path):
         return credentials.Certificate(cred_path)
 
-    # Use Application Default Credentials (works on GCP)
+    # Option 4: Use Application Default Credentials (works on GCP)
     return credentials.ApplicationDefault()
 
 

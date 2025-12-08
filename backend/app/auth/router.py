@@ -9,9 +9,10 @@ from pydantic import BaseModel
 from firebase_admin import auth as firebase_auth
 import stripe
 
-from .firebase import verify_id_token, get_firestore_client
+from .firebase import verify_id_token, get_firestore_client, initialize_firebase
 from .models import TokenRequest, UserProfile, RegisterResponse, LoginResponse, UpdateProfileRequest, UpdateProfileResponse
 from ..middleware.auth import get_current_user_id
+from ..email import queue_welcome_email
 
 logger = logging.getLogger(__name__)
 
@@ -174,6 +175,25 @@ async def register(request: TokenRequest):
 
     # Save to Firestore
     user_ref.set(user_data)
+
+    # Also create referral_codes collection document so the code can be used
+    db.collection("referral_codes").document(referral_code).set({
+        "code": referral_code,
+        "user_id": uid,
+        "created_at": now,
+    })
+
+    # Send welcome email (non-blocking)
+    try:
+        user_name = display_name or "there"
+        queue_welcome_email(
+            db=db,
+            to_email=email,
+            to_name=user_name,
+            credits_balance=25,
+        )
+    except Exception as e:
+        logger.warning(f"Failed to queue welcome email for {uid}: {e}")
 
     # Return user profile
     user_profile = firestore_doc_to_user_profile(user_data, uid)
@@ -488,14 +508,18 @@ async def delete_account(
     deleted_counts["user_profile"] = 1
 
     # 3. Delete from Firebase Auth
+    # Explicitly ensure Firebase Admin SDK is initialized with proper credentials
+    initialize_firebase()
+    logger.info(f"Attempting to delete Firebase Auth user {uid}")
     try:
         firebase_auth.delete_user(uid)
         deleted_counts["firebase_auth_deleted"] = True
-        logger.info(f"Deleted Firebase Auth user {uid}")
+        logger.info(f"Successfully deleted Firebase Auth user {uid}")
     except firebase_auth.UserNotFoundError:
         logger.warning(f"Firebase Auth user {uid} not found (already deleted?)")
+        deleted_counts["firebase_auth_deleted"] = True  # Consider it deleted
     except Exception as e:
-        logger.error(f"Failed to delete Firebase Auth user {uid}: {e}")
+        logger.error(f"Failed to delete Firebase Auth user {uid}: {type(e).__name__}: {e}")
         # This is critical - if Firebase Auth deletion fails, re-raise
         raise HTTPException(
             status_code=500,

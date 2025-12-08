@@ -45,7 +45,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/components/AuthProvider';
 import { useRouter } from 'next/navigation';
-import { updateProfile, exportUserData, deleteAccount, cancelSubscription, ApiError } from '@/lib/api';
+import { updateProfile, exportUserData, deleteAccount, ApiError } from '@/lib/api';
 
 type TabType = 'profile' | 'notifications' | 'security' | 'privacy' | 'delete';
 
@@ -56,7 +56,6 @@ export default function AccountSettingsPage() {
   const [activeTab, setActiveTab] = useState<TabType>('profile');
   const [isExporting, setIsExporting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [isDowngrading, setIsDowngrading] = useState(false);
 
   // Initialize state from auth profile (real data)
   const [fullName, setFullName] = useState('');
@@ -219,31 +218,6 @@ export default function AccountSettingsPage() {
     }
   };
 
-  const handleDowngradeToFree = async () => {
-    if (profile?.subscription_tier === 'free') {
-      toast.info('You are already on the free plan');
-      return;
-    }
-
-    setIsDowngrading(true);
-    try {
-      const response = await cancelSubscription();
-      toast.success(response.message || 'Your subscription will be canceled at the end of the billing period');
-      if (refreshProfile) {
-        await refreshProfile();
-      }
-    } catch (error) {
-      console.error('Failed to downgrade:', error);
-      if (error instanceof ApiError) {
-        toast.error(error.message);
-      } else {
-        toast.error('Failed to downgrade to free plan');
-      }
-    } finally {
-      setIsDowngrading(false);
-    }
-  };
-
   const handleDeleteAccount = async () => {
     setIsDeleting(true);
     try {
@@ -251,22 +225,25 @@ export default function AccountSettingsPage() {
         reason: deleteReason || undefined,
         feedback: deleteFeedback || undefined,
       });
-      toast.success('Account deleted successfully');
-      setShowDeleteConfirmModal(false);
-      // Sign out and redirect to home
+      // Account deleted on backend, Firebase Auth user also deleted
+      // Sign out locally to clear client state
       if (signOut) {
-        await signOut();
+        try {
+          await signOut();
+        } catch {
+          // Firebase may throw if user already deleted, ignore
+        }
       }
-      router.push('/');
+      // Hard redirect to goodbye page (don't use router.push as auth state is gone)
+      window.location.href = '/goodbye';
     } catch (error) {
       console.error('Failed to delete account:', error);
+      setIsDeleting(false);
       if (error instanceof ApiError) {
         toast.error(error.message);
       } else {
         toast.error('Failed to delete account');
       }
-    } finally {
-      setIsDeleting(false);
     }
   };
 
@@ -1107,21 +1084,6 @@ export default function AccountSettingsPage() {
                         </>
                       )}
                     </Button>
-                    <Button
-                      onClick={handleDowngradeToFree}
-                      disabled={isDowngrading || profile?.subscription_tier === 'free'}
-                      variant="outline"
-                      className="border-[#334155] text-[#F1F5F9] hover:border-[#00F0D9] hover:text-[#00F0D9]"
-                    >
-                      {isDowngrading ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Processing...
-                        </>
-                      ) : (
-                        'Downgrade to Free'
-                      )}
-                    </Button>
                   </div>
                 </div>
 
@@ -1366,7 +1328,7 @@ export default function AccountSettingsPage() {
             </Button>
             <Button
               onClick={handleDeleteAccount}
-              disabled={deleteConfirmText !== 'DELETE' || isDeleting}
+              disabled={deleteConfirmText.toUpperCase() !== 'DELETE' || isDeleting}
               className="bg-red-500 hover:bg-red-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isDeleting ? (

@@ -385,10 +385,10 @@ export interface UpgradeSubscriptionResponse {
   credits_added: number;
 }
 
-export async function upgradeSubscription(newTier: SubscriptionTier): Promise<UpgradeSubscriptionResponse> {
+export async function upgradeSubscription(newTier: SubscriptionTier, annual: boolean = false): Promise<UpgradeSubscriptionResponse> {
   return apiRequest<UpgradeSubscriptionResponse>('/subscriptions/upgrade', {
     method: 'POST',
-    body: JSON.stringify({ new_tier: newTier }),
+    body: JSON.stringify({ new_tier: newTier, annual }),
   });
 }
 
@@ -419,6 +419,39 @@ export async function applyReferralCode(code: string): Promise<ReferralApplyResp
   return apiRequest<ReferralApplyResponse>('/referral/apply', {
     method: 'POST',
     body: JSON.stringify({ code }),
+  });
+}
+
+/**
+ * Apply referral code in the background with keepalive.
+ * IMPORTANT: Pass the token directly - the fetch must start immediately (synchronously).
+ * The keepalive option ensures the request completes even if the page navigates away.
+ */
+export function applyReferralCodeWithToken(code: string, token: string): void {
+  if (!token) {
+    console.warn('[Referral] No auth token provided for background referral apply');
+    return;
+  }
+
+  console.log('[Referral] Sending background request with keepalive...');
+
+  // Start fetch immediately (synchronous) - keepalive ensures it completes during navigation
+  fetch(`${API_URL}/referral/apply`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+    body: JSON.stringify({ code }),
+    keepalive: true,
+  }).then(response => {
+    if (response.ok) {
+      console.log('[Referral] Background referral code applied successfully');
+    } else {
+      console.warn('[Referral] Background referral apply failed:', response.status);
+    }
+  }).catch(err => {
+    console.warn('[Referral] Background referral apply error:', err);
   });
 }
 
@@ -663,7 +696,7 @@ export interface CustomerPortalResponse {
 
 // Create Stripe Customer Portal session
 export async function createCustomerPortalSession(): Promise<CustomerPortalResponse> {
-  return apiRequest<CustomerPortalResponse>('/subscriptions/customer-portal', {
+  return apiRequest<CustomerPortalResponse>('/billing/portal-session', {
     method: 'POST',
   });
 }

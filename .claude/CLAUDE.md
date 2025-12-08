@@ -17,6 +17,7 @@ Don't guess — check the repo. Don't assume — read the file. Don't over-engin
 - `.claude/` (agents, hooks, primes, memory)
 - `.vscode/`
 - `CLAUDE.md`
+- `.mcp.json` (MCP server credentials)
 - Credentials files
 
 ---
@@ -73,6 +74,35 @@ backend/     FastAPI (Python 3.11), Cloud Run
 worker/      Video processing, WaveSpeed.ai
 docs/        Specs, schemas, plans
 ```
+
+---
+
+## MCP Servers (External Tool Integrations)
+
+6 MCP servers provide direct tool access. **Prefer MCP tools over CLI commands.**
+
+| Server | Purpose | Key Tools |
+|--------|---------|-----------|
+| `github` | PR/issue management, code search | `list_pull_requests`, `create_issue`, `search_code` |
+| `stripe` | Subscriptions, payments, customers | `list_subscriptions`, `list_customers`, `create_payment_link` |
+| `playwright` | E2E testing, browser automation | `playwright_navigate`, `playwright_screenshot`, `playwright_click` |
+| `apidog` | API documentation, OpenAPI specs | `read_project_oas`, `refresh_project_oas` |
+| `gcp` | Cloud Run logs, billing, resources | `get-logs`, `get-billing-info`, `list-sql-instances` |
+| `figma` | Design extraction | (via figma-extractor agent) |
+
+**Tool Naming:** `mcp__{server}__{tool}` (e.g., `mcp__stripe__list_subscriptions`)
+
+**MCP vs CLI Preference:**
+
+| Task | Use MCP | NOT CLI |
+|------|---------|---------|
+| List PRs, create issues | `mcp__github__*` | `gh pr list` |
+| Query subscriptions | `mcp__stripe__*` | Stripe dashboard |
+| Check Cloud Run logs | `mcp__gcp__get-logs` | `gcloud logs read` |
+| Browser testing | `mcp__playwright__*` | Manual testing |
+| Read API specs | `mcp__apidog__*` | Apidog website |
+
+**Config:** `.mcp.json` (credentials - do not commit to public repos)
 
 ---
 
@@ -172,6 +202,7 @@ See: [DELEGATION_CONTRACT.md](../docs/agents/orchestration/DELEGATION_CONTRACT.m
 | docs/TASK_TRACKER.md     | Current phase/task state |
 | CREDENTIALS_INVENTORY.md | API keys, env vars       |
 | LESSONS_LEARNED.md       | Past mistakes to avoid   |
+| .mcp.json                | MCP server credentials   |
 
 ## Workflow Quick Reference
 
@@ -187,6 +218,10 @@ See: [DELEGATION_CONTRACT.md](../docs/agents/orchestration/DELEGATION_CONTRACT.m
 | Session handoff            | `/whats-next`                           |
 | Need agent help            | `/ask-fiby`                             |
 | Deploy to production       | `/deploy-firebase`                      |
+| Check PR status            | `mcp__github__list_pull_requests`       |
+| Query subscriptions        | `mcp__stripe__list_subscriptions`       |
+| Debug Cloud Run            | `mcp__gcp__get-logs`                    |
+| Verify deployment          | `mcp__playwright__playwright_navigate`  |
 
 ---
 

@@ -3,6 +3,14 @@
 **Created:** 2025-11-27
 **Purpose:** Avoid repeating mistakes from 35,000+ lines of over-engineered code
 
+## TL;DR - Top 5 Rules
+
+1. **Only logout on 401, never 403** - 403 = show error, not force logout
+2. **Check backend endpoints before frontend work** - No assumptions
+3. **Firebase Hosting Site = default (wanapi-prod)** - Not nuumee-66a48
+4. **GCS signing: use credentials=, not access_token=**
+5. **Static export = no dynamic routes** - Use query params or client-side
+
 ---
 
 ## Critical Mistakes to NEVER Repeat

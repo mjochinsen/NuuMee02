@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import {
@@ -12,8 +13,6 @@ import {
   Crown,
   Sparkles,
   Building2,
-  ExternalLink,
-  Settings,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,8 +32,8 @@ import { useAuth } from '@/components/AuthProvider';
 import { createCheckoutSession, ApiError, createCustomerPortalSession, syncBillingPeriod } from '@/lib/api';
 import { BuyCreditsModal } from '@/components/BuyCreditsModal';
 import { SubscriptionModal } from '@/components/SubscriptionModal';
-import { useTransactions, useAutoRefill } from './hooks';
-import { BalanceCard, ActivePlanCard, TransactionHistorySection } from './components';
+import { useTransactions, usePaymentMethods, useAutoRefill } from './hooks';
+import { BalanceCard, ActivePlanCard, PaymentMethodsSection, TransactionHistorySection } from './components';
 
 interface CreditPackage {
   id: string;
@@ -110,6 +109,13 @@ export default function BillingPage() {
     hasMore: hasMoreTransactions,
     refresh: fetchTransactions,
   } = useTransactions(user?.uid);
+
+  // Payment methods state (from hook)
+  const {
+    paymentMethods,
+    isLoading: paymentMethodsLoading,
+    refresh: fetchPaymentMethods,
+  } = usePaymentMethods(user?.uid);
 
   // Auto-refill state (from hook)
   const {
@@ -208,12 +214,6 @@ export default function BillingPage() {
     const currentTier = planTiers[currentPlan as keyof typeof planTiers] ?? 0;
     const targetTier = planTiers[plan.id as keyof typeof planTiers] ?? 0;
 
-    // FREE users don't have a subscription to upgrade - they need to subscribe (create new)
-    if (isFreeUser) {
-      return { label: 'Get Started', disabled: false, action: 'subscribe', variant: 'primary' };
-    }
-
-    // PAID users can upgrade or downgrade their existing subscription
     if (targetTier > currentTier) {
       return { label: 'Upgrade', disabled: false, action: 'upgrade', variant: 'primary' };
     }
@@ -221,7 +221,7 @@ export default function BillingPage() {
       return { label: 'Downgrade', disabled: false, action: 'downgrade', variant: 'primary' };
     }
 
-    // Fallback
+    // Fallback for free users selecting paid plans
     return { label: 'Get Started', disabled: false, action: 'subscribe', variant: 'primary' };
   };
 
@@ -264,9 +264,7 @@ export default function BillingPage() {
         setSubscriptionModalType('downgrade');
         break;
       case 'subscribe':
-        // For new subscriptions, always use 'subscribe' type
-        // The annual flag is passed via isAnnual prop to the modal
-        setSubscriptionModalType('subscribe');
+        setSubscriptionModalType(billingCycle === 'annually' ? 'annual' : 'subscribe');
         break;
     }
 
@@ -373,10 +371,9 @@ export default function BillingPage() {
     });
 
     // Users on Free tier need 'subscribe', not 'upgrade' (they don't have a subscription yet)
-    // Note: 'annual' type is for SWITCHING existing subscriptions, not for new ones
-    // Free users always use 'subscribe' - the annual flag is passed via isAnnual prop
     if (currentPlan === 'free') {
-      setSubscriptionModalType('subscribe');
+      // If user selected annual billing, use 'annual' type for new subscription
+      setSubscriptionModalType(billingCycle === 'annually' ? 'annual' : 'subscribe');
     } else {
       const currentPlanIndex = subscriptionPlans.findIndex(p => p.current);
       const newPlanIndex = subscriptionPlans.findIndex(p => p.id === plan.id);
@@ -405,6 +402,40 @@ export default function BillingPage() {
       </div>
 
       <div className="h-px bg-[#334155] mb-8"></div>
+
+      {/* Test Links for Payment Pages */}
+      <div className="border border-[#00F0D9]/30 bg-[#00F0D9]/5 rounded-lg p-4 mb-6">
+        <p className="text-[#F1F5F9] mb-3 text-sm">🧪 Test Payment Pages:</p>
+        <div className="flex flex-wrap gap-3">
+          <Link href="/payment/success?credits=400">
+            <Button
+              size="sm"
+              variant="outline"
+              className="border-[#00F0D9]/30 text-[#00F0D9] hover:bg-[#00F0D9]/10"
+            >
+              Payment Success
+            </Button>
+          </Link>
+          <Link href="/subscription/success?plan=creator">
+            <Button
+              size="sm"
+              variant="outline"
+              className="border-[#00F0D9]/30 text-[#00F0D9] hover:bg-[#00F0D9]/10"
+            >
+              Subscription Success
+            </Button>
+          </Link>
+          <Link href="/payment/cancelled">
+            <Button
+              size="sm"
+              variant="outline"
+              className="border-amber-500/30 text-amber-400 hover:bg-amber-500/10"
+            >
+              Payment Cancelled
+            </Button>
+          </Link>
+        </div>
+      </div>
 
       {/* Error Message */}
       {errorMessage && (
@@ -806,32 +837,13 @@ export default function BillingPage() {
         </div>
       </div>
 
-      {/* Manage Billing in Stripe - Only show for paid users */}
-      {currentPlan !== 'free' && (
-        <div className="border border-[#334155] rounded-2xl p-8 bg-[#0F172A] mb-8">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-[#3B1FE2]/20 flex items-center justify-center">
-                <Settings className="w-6 h-6 text-[#3B1FE2]" />
-              </div>
-              <div>
-                <h2 className="text-[#F1F5F9] text-lg font-medium">Manage Subscription</h2>
-                <p className="text-[#94A3B8] text-sm">
-                  Update payment methods, view invoices, or cancel your subscription
-                </p>
-              </div>
-            </div>
-            <Button
-              onClick={handleManagePaymentMethods}
-              size="lg"
-              className="bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] hover:opacity-90 text-white px-8 py-6 text-lg"
-            >
-              <ExternalLink className="w-5 h-5 mr-2" />
-              Open Stripe Portal
-            </Button>
-          </div>
-        </div>
-      )}
+      {/* Payment Methods */}
+      <PaymentMethodsSection
+        paymentMethods={paymentMethods}
+        isLoading={paymentMethodsLoading}
+        onRefresh={fetchPaymentMethods}
+        onManage={handleManagePaymentMethods}
+      />
 
       {/* Transaction History */}
       <TransactionHistorySection

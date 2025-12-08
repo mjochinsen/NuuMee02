@@ -85,7 +85,7 @@ export function Header() {
           ) : user ? (
             <>
               {/* Credits Display - Links to Billing */}
-              <Link href="/billing">
+              <Link href="/billing/">
                 <button className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-[#3B1FE2] to-[#00F0D9] hover:opacity-90 transition-opacity">
                   <Zap className="w-4 h-4 text-white" />
                   <span className="text-white text-sm font-medium">{credits === null ? '...' : credits} Credits</span>
@@ -115,37 +115,37 @@ export function Header() {
                       </Badge>
                     </div>
                   </div>
-                  <Link href="/referral">
+                  <Link href="/referral/">
                     <DropdownMenuItem className="text-[#F1F5F9] hover:bg-[#334155] hover:text-[#00F0D9] cursor-pointer">
                       <Gift className="w-4 h-4 mr-2" />
                       Refer Friends
                     </DropdownMenuItem>
                   </Link>
-                  <Link href="/billing">
+                  <Link href="/billing/">
                     <DropdownMenuItem className="text-[#F1F5F9] hover:bg-[#334155] hover:text-[#00F0D9] cursor-pointer">
                       <CreditCard className="w-4 h-4 mr-2" />
                       Billing
                     </DropdownMenuItem>
                   </Link>
-                  <Link href="/api-keys">
+                  <Link href="/api-keys/">
                     <DropdownMenuItem className="text-[#F1F5F9] hover:bg-[#334155] hover:text-[#00F0D9] cursor-pointer">
                       <Key className="w-4 h-4 mr-2" />
                       API Keys
                     </DropdownMenuItem>
                   </Link>
-                  <Link href="/jobs">
+                  <Link href="/jobs/">
                     <DropdownMenuItem className="text-[#F1F5F9] hover:bg-[#334155] hover:text-[#00F0D9] cursor-pointer">
                       <Briefcase className="w-4 h-4 mr-2" />
                       Jobs
                     </DropdownMenuItem>
                   </Link>
-                  <Link href="/support">
+                  <Link href="/support/">
                     <DropdownMenuItem className="text-[#F1F5F9] hover:bg-[#334155] hover:text-[#00F0D9] cursor-pointer">
                       <HelpCircle className="w-4 h-4 mr-2" />
                       Support
                     </DropdownMenuItem>
                   </Link>
-                  <Link href="/account">
+                  <Link href="/account/">
                     <DropdownMenuItem className="text-[#F1F5F9] hover:bg-[#334155] hover:text-[#00F0D9] cursor-pointer">
                       <Settings className="w-4 h-4 mr-2" />
                       Account Settings
@@ -163,7 +163,7 @@ export function Header() {
               </DropdownMenu>
             </>
           ) : (
-            <Link href="/login">
+            <Link href="/login/">
               <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-[#3B1FE2] to-[#00F0D9] text-white hover:opacity-90 transition-opacity text-sm font-medium">
                 Login / Sign Up
               </button>

@@ -93,8 +93,11 @@
 | Environment | Key Type | Value |
 |-------------|----------|-------|
 | Production (Live) | Publishable | `pk_live_51STYhZ75wY1iQccDqccDSF3ybnO4LNcbzvjy3YMUkztzHQckFSPsDyLYV5Pmqfpx8bIlg3O9dDFYhtAEHfrzQdPC00Pn5sAqIv` |
-| Test Mode | Publishable | `pk_test_51STYhZ75wY1iQccDDRavZv2vPLXst1loXKYwN5iGNFxB6iN8RDX54qwuChVWxUZry9Twz3nGnRI16lPJMYfx18k400fcPVNHIw` |
+| Test Mode | Publishable | `pk_test_51STYhmQBPfmhkssaQFPDg7GM76GCXsfZAXsy91ylqsy9Lovah2b2dWF0kAa4EhE9KjGyNhRXOSQPgjl6FZpllQHI00EL8k7MYt` |
+| Test Mode | Secret | `sk_test_***` (See GCP Secret Manager) |
 | Secret Key | Location | Stored in GCP Secret Manager: `stripe-secret-key` |
+
+**Note:** Test keys created Nov 14, 2024. Secret key last used Nov 22.
 
 ### Webhook Configuration (Production)
 | Item | Value |
@@ -147,7 +150,38 @@
 
 ---
 
-## 5. Domain & Hosting
+## 5. Firebase Extensions
+
+### Trigger Email Extension (firestore-send-email)
+| Item | Value |
+|------|-------|
+| Extension ID | `firestore-send-email` |
+| Version | `0.2.4` |
+| Service Account | `ext-firestore-send-email@wanapi-prod.iam.gserviceaccount.com` |
+| Cloud Functions Location | `us-central1` |
+| Firestore Collection | `mail` |
+| Default FROM | `NuuMee@NuuMee.ai` |
+
+### SMTP Configuration
+| Item | Value |
+|------|-------|
+| SMTP Provider | Gmail (Google Workspace) |
+| SMTP URI | `smtps://nuumee@nuumee.ai@smtp.gmail.com:465` |
+| SMTP User | `nuumee@nuumee.ai` |
+| SMTP Password | App Password (stored in extension config) |
+| Port | `465` (SSL) |
+
+### Email Types Sent
+| Email Type | Trigger | Recipient |
+|------------|---------|-----------|
+| `referral_bonus_received` | New user signs up via referral | New user |
+| `referral_signup_notification` | Someone uses referral code | Referrer |
+
+**Note:** Emails are queued to the `mail` Firestore collection. The extension automatically sends them via Gmail SMTP.
+
+---
+
+## 6. Domain & Hosting
 
 ### Custom Domain
 | Item | Value |
@@ -163,7 +197,7 @@
 
 ---
 
-## 6. OAuth Providers
+## 7. OAuth Providers
 
 ### Firebase Authentication
 Firebase Auth is used with the following providers enabled:
@@ -177,7 +211,7 @@ Access at: https://console.firebase.google.com/project/wanapi-prod/authenticatio
 
 ---
 
-## 7. Analytics & Tracking
+## 8. Analytics & Tracking
 
 | Service | ID |
 |---------|-------|
@@ -187,7 +221,7 @@ Access at: https://console.firebase.google.com/project/wanapi-prod/authenticatio
 
 ---
 
-## 8. Environment Variables Summary
+## 9. Environment Variables Summary
 
 ### Frontend (apps/web/.env.production)
 ```env
@@ -234,7 +268,7 @@ WORKER_AUTH_TOKEN=<from secret manager: worker-auth-token>
 
 ---
 
-## 9. API Endpoints
+## 10. API Endpoints
 
 ### Backend API Routes
 | Route | Purpose |
@@ -257,7 +291,7 @@ WORKER_AUTH_TOKEN=<from secret manager: worker-auth-token>
 
 ---
 
-## 10. Firestore Collections
+## 11. Firestore Collections
 
 ### Active Collections
 | Collection | Purpose |
@@ -280,6 +314,8 @@ WORKER_AUTH_TOKEN=<from secret manager: worker-auth-token>
 | `maintenance` | Scheduled maintenance |
 | `changelog` | Product changelog |
 | `coming_soon` | Upcoming features |
+| `mail` | Email queue (Trigger Email extension) |
+| `referral_codes` | Referral code lookup |
 
 ### Firestore Indexes
 Defined in: `infra/firestore/firestore.indexes.json`
@@ -291,7 +327,7 @@ Defined in: `infra/firestore/firestore.indexes.json`
 
 ---
 
-## 11. Business Constants
+## 12. Business Constants
 
 ### Credit System
 | Constant | Value |
@@ -326,7 +362,7 @@ Defined in: `infra/firestore/firestore.indexes.json`
 
 ---
 
-## 12. Deployment Scripts
+## 13. Deployment Scripts
 
 | Script | Purpose |
 |--------|---------|
@@ -338,7 +374,7 @@ Defined in: `infra/firestore/firestore.indexes.json`
 
 ---
 
-## 13. Important URLs
+## 14. Important URLs
 
 | Resource | URL |
 |----------|-----|
@@ -352,7 +388,7 @@ Defined in: `infra/firestore/firestore.indexes.json`
 
 ---
 
-## 14. GitHub Repository
+## 15. GitHub Repository
 
 | Item | Value |
 |------|-------|

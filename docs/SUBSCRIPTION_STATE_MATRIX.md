@@ -4,6 +4,17 @@
 
 **Last Updated:** 2025-12-02
 
+## TL;DR
+
+| Tier | Price | Credits/mo | Rollover |
+|------|-------|------------|----------|
+| Free | $0 | 25 (signup only) | 25 |
+| Creator | $29/mo | 400 | 800 |
+| Studio | $99/mo | 1600 | 3200 |
+
+**Key States:** `active`, `canceled`, `past_due`, `cancel_at_period_end`
+**Webhooks:** `checkout.session.completed`, `invoice.paid`, `customer.subscription.updated`
+
 ---
 
 ## 1. Subscription Tiers

@@ -126,7 +126,7 @@ async def create_subscription(
             raise HTTPException(status_code=500, detail="Failed to create payment customer")
 
     # Get frontend URL for redirects
-    frontend_url = os.getenv("FRONTEND_URL", "https://nuumee.ai")
+    frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
     billing_period = "year" if sub_request.annual else "month"
 
     # Prepare metadata
@@ -260,10 +260,9 @@ async def upgrade_subscription(
             detail=f"Already subscribed to {upgrade_request.new_tier.value} tier"
         )
 
-    # Get tier configurations (use annual pricing if requested)
-    tiers = get_subscription_tiers(annual=upgrade_request.annual)
+    # Get tier configurations
+    tiers = get_subscription_tiers()
     new_tier_config = tiers.get(upgrade_request.new_tier)
-    billing_period = "year" if upgrade_request.annual else "month"
 
     if not new_tier_config:
         raise HTTPException(status_code=400, detail=f"Invalid tier: {upgrade_request.new_tier}")
@@ -319,7 +318,6 @@ async def upgrade_subscription(
                 db, user_id,
                 tier=upgrade_request.new_tier.value,
                 credits_balance=new_balance if credits_added > 0 else None,
-                billing_period=billing_period,
             )
         else:
             logger.warning(f"User {user_id} not found when updating credits")
@@ -330,28 +328,12 @@ async def upgrade_subscription(
             tier=upgrade_request.new_tier.value,
             monthly_credits=new_credits,
             credits_rollover_cap=new_tier_config.get("credits_rollover_cap", new_credits * 2),
-            billing_period=billing_period,
         )
 
         # Determine action type
         tiers_config = get_subscription_tiers()
         old_credits = tiers_config.get(old_tier, {}).get("monthly_credits", 0)
         action = "upgraded" if new_credits > old_credits else "changed"
-
-        # Log transaction for credit changes
-        if credits_added > 0:
-            txn_ref = db.collection("credit_transactions").document()
-            txn_ref.set({
-                "user_id": user_id,
-                "type": "subscription_upgrade",
-                "amount": credits_added,
-                "amount_cents": 0,  # Actual charge handled by Stripe webhook
-                "status": "completed",
-                "balance_before": current_balance,
-                "balance_after": new_balance,
-                "description": f"Upgrade from {old_tier.value.capitalize()} to {upgrade_request.new_tier.value.capitalize()} (+{credits_added} credits)",
-                "created_at": firestore.SERVER_TIMESTAMP,
-            })
 
         return UpgradeSubscriptionResponse(
             subscription_id=sub_data.get("subscription_id"),

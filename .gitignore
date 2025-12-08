@@ -55,3 +55,4 @@ playwright-report/
 *-snapshots/
 *.pyc
 __pycache__/
+.mcp.json

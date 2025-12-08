@@ -74,8 +74,6 @@ export function SubscriptionModal({
   ];
 
   const nextBillingDate = 'Dec 11, 2025';
-  const daysRemaining = 18;
-  const proratedCredit = 17.40;
 
   const handlePrimaryAction = async () => {
     setIsProcessing(true);
@@ -105,7 +103,8 @@ export function SubscriptionModal({
 
       if (type === 'subscribe') {
         // Create new subscription checkout session via Stripe
-        const response = await createSubscription(tier);
+        // Pass isAnnual to create annual subscription if selected
+        const response = await createSubscription(tier, isAnnual);
         // Redirect to Stripe Checkout
         window.location.href = response.checkout_url;
       } else if (type === 'founding') {
@@ -114,8 +113,8 @@ export function SubscriptionModal({
         // Redirect to Stripe Checkout
         window.location.href = response.checkout_url;
       } else if (type === 'upgrade' || type === 'downgrade') {
-        // Upgrade/downgrade existing subscription
-        const response = await upgradeSubscription(tier);
+        // Upgrade/downgrade existing subscription (pass annual flag for pricing)
+        const response = await upgradeSubscription(tier, isAnnual);
         setSuccessData({
           type: type,
           message: response.message,
@@ -217,15 +216,11 @@ export function SubscriptionModal({
       <PaymentMethodSelectorCompact />
       <BillingSection
         items={[
-          { label: `${selectedPlan?.name} Plan`, amount: `$${selectedPlan?.price}.00` },
-          { label: `Prorated credit (${daysRemaining} days)`, amount: `-$${proratedCredit.toFixed(2)}`, isCredit: true },
+          { label: `${selectedPlan?.name} Plan`, amount: `$${selectedPlan?.price}.00/mo` },
         ]}
-        totalLabel="Charge today"
-        totalAmount={`$${((selectedPlan?.price || 0) - proratedCredit).toFixed(2)}`}
-        footerLabel={`Next billing: ${nextBillingDate}`}
-        footerAmount={`$${selectedPlan?.price}.00`}
+        footerLabel="Stripe will calculate proration automatically"
       />
-      <InfoBanner text="Your 200 unused credits will carry over" variant="cyan" />
+      <InfoBanner text="Your unused credits will carry over" variant="cyan" />
       <ActionButtons
         primaryLabel="Proceed to Payment"
         onPrimary={handlePrimaryAction}
@@ -463,13 +458,9 @@ export function SubscriptionModal({
         <PaymentMethodSelectorCompact />
         <BillingSection
           items={[
-            { label: 'Annual charge today', amount: `$${annualCost}.00` },
-            { label: `Prorated credit (${daysRemaining} days)`, amount: `-$${proratedCredit.toFixed(2)}`, isCredit: true },
+            { label: 'Annual billing', amount: `$${annualCost}.00/year` },
           ]}
-          totalLabel="Charge today"
-          totalAmount={`$${(annualCost - proratedCredit).toFixed(2)}`}
-          footerLabel="Next billing: Nov 11, 2026"
-          footerAmount={`$${annualCost}.00`}
+          footerLabel="Stripe will calculate proration automatically"
         />
 
         {/* Benefits */}

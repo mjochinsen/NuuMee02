@@ -1,10 +1,9 @@
 """Referral system routes."""
-import os
 import logging
 import random
 import string
 from datetime import datetime, timezone
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from google.cloud import firestore
 
 from .models import (
@@ -13,8 +12,9 @@ from .models import (
     ReferralApplyResponse,
     ReferralStats,
 )
-from ..auth.firebase import get_firestore_client
+from ..auth.firebase import get_firestore_client, verify_id_token
 from ..middleware.auth import get_current_user_id
+from ..email import queue_referral_welcome_email, queue_referrer_notification_email
 
 
 logger = logging.getLogger(__name__)
@@ -94,6 +94,18 @@ async def get_referral_code(
     user_data = user_doc.to_dict()
     referral_code = user_data.get("referral_code")
 
+    # If user has a code, ensure it exists in referral_codes collection
+    if referral_code:
+        code_doc = db.collection("referral_codes").document(referral_code).get()
+        if not code_doc.exists:
+            # Code exists in user doc but not in collection - create it
+            logger.info(f"Creating missing referral_codes entry for {referral_code}")
+            db.collection("referral_codes").document(referral_code).set({
+                "code": referral_code,
+                "user_id": user_id,
+                "created_at": firestore.SERVER_TIMESTAMP,
+            })
+
     # Generate referral code if user doesn't have one
     if not referral_code:
         # Keep trying until we get a unique code
@@ -171,6 +183,7 @@ async def get_referral_code(
 @router.post("/apply", response_model=ReferralApplyResponse)
 async def apply_referral_code(
     request: ReferralApplyRequest,
+    http_request: Request,
     user_id: str = Depends(get_current_user_id),
 ):
     """
@@ -178,10 +191,11 @@ async def apply_referral_code(
 
     This endpoint:
     1. Validates the referral code exists
-    2. Ensures user is not applying their own code
-    3. Grants 25 credits to the new user
-    4. Creates a referral record
-    5. Updates user's referral status
+    2. Creates user document if it doesn't exist (new signups)
+    3. Ensures user is not applying their own code
+    4. Grants 25 credits to the new user (on top of 25 signup bonus = 50 total)
+    5. Creates a referral record
+    6. Updates user's referral status
 
     Requires authentication.
     """
@@ -192,10 +206,55 @@ async def apply_referral_code(
     user_ref = db.collection("users").document(user_id)
     user_doc = user_ref.get()
 
+    # If user document doesn't exist, create it (handles new signups)
     if not user_doc.exists:
-        raise HTTPException(status_code=404, detail="User not found")
+        logger.info(f"Creating user document for new signup via referral: {user_id}")
 
-    user_data = user_doc.to_dict()
+        # Get user info from the Firebase token
+        auth_header = http_request.headers.get("Authorization", "")
+        token = auth_header.split()[-1] if auth_header else ""
+        try:
+            decoded_token = verify_id_token(token)
+            email = decoded_token.get("email", "")
+            email_verified = decoded_token.get("email_verified", False)
+            display_name = decoded_token.get("name")
+        except Exception as e:
+            logger.error(f"Failed to decode token for user creation: {e}")
+            raise HTTPException(status_code=401, detail="Invalid authentication token")
+
+        # Create user document with signup bonus (25 credits)
+        now = datetime.now(timezone.utc)
+        new_referral_code = generate_referral_code()
+        new_user_data = {
+            "user_id": user_id,
+            "email": email,
+            "email_verified": email_verified,
+            "display_name": display_name,
+            "avatar_url": None,
+            "credits_balance": 25,  # Signup bonus
+            "subscription_tier": "free",
+            "referral_code": new_referral_code,
+            "referred_by": None,  # Will be set below
+            "referral_bonus_claimed": False,  # Will be set to True below
+            "is_affiliate": False,
+            "affiliate_status": "none",
+            "created_at": now,
+            "updated_at": now,
+            "last_login_at": now,
+        }
+        user_ref.set(new_user_data)
+
+        # Also create the referral_codes collection document so the code can be used
+        db.collection("referral_codes").document(new_referral_code).set({
+            "code": new_referral_code,
+            "user_id": user_id,
+            "created_at": firestore.SERVER_TIMESTAMP,
+        })
+
+        user_data = new_user_data
+        logger.info(f"Created user document for {user_id} with 25 signup credits and referral code {new_referral_code}")
+    else:
+        user_data = user_doc.to_dict()
 
     # Check if user already used a referral code
     if user_data.get("referred_by"):
@@ -204,12 +263,8 @@ async def apply_referral_code(
             detail="You have already applied a referral code"
         )
 
-    # Check if user already claimed referral bonus
-    if user_data.get("referral_bonus_claimed", False):
-        raise HTTPException(
-            status_code=400,
-            detail="Referral bonus already claimed"
-        )
+    # Note: We removed the redundant "referral_bonus_claimed" check.
+    # The "referred_by" check above is sufficient to prevent double-claiming.
 
     # Validate referral code exists
     code_ref = db.collection("referral_codes").document(referral_code)
@@ -274,6 +329,40 @@ async def apply_referral_code(
             f"Applied referral code {referral_code} for user {user_id}. "
             f"Granted 25 credits. Referral ID: {referral_id}"
         )
+
+        # Queue email notifications (non-blocking, don't fail if emails fail)
+        try:
+            # Email to new user: "Welcome! You received bonus credits"
+            new_user_email = user_data.get("email")
+            new_user_name = user_data.get("display_name") or "there"
+            if new_user_email:
+                queue_referral_welcome_email(
+                    db=db,
+                    to_email=new_user_email,
+                    to_name=new_user_name,
+                    bonus_credits=25,
+                    total_credits=new_balance,
+                )
+
+            # Email to referrer: "Someone signed up with your code!"
+            referrer_doc = db.collection("users").document(referrer_id).get()
+            if referrer_doc.exists:
+                referrer_data = referrer_doc.to_dict()
+                referrer_email = referrer_data.get("email")
+                referrer_name = referrer_data.get("display_name") or "there"
+
+                if referrer_email:
+                    queue_referrer_notification_email(
+                        db=db,
+                        to_email=referrer_email,
+                        to_name=referrer_name,
+                        referral_code=referral_code,
+                        referred_user_name=user_data.get("display_name") or user_data.get("email"),
+                        pending_credits=25,
+                    )
+        except Exception as email_error:
+            # Don't fail the referral if emails fail
+            logger.warning(f"Failed to queue referral emails: {email_error}")
 
         return ReferralApplyResponse(
             credits_granted=25,

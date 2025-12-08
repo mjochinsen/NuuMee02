@@ -5,7 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Eye, EyeOff, ArrowRight, ArrowLeft, Check, AlertCircle, Loader2, Lock } from 'lucide-react';
 import { auth, googleProvider, githubProvider } from '@/lib/firebase';
-import { signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, updateProfile } from 'firebase/auth';
+import { signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, updateProfile, ActionCodeSettings } from 'firebase/auth';
+import { applyReferralCodeWithToken } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,6 +14,49 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
 
 type PageMode = 'login' | 'signup' | 'forgot-password';
+
+// Validate email format (requires TLD like .com, .org, etc.)
+function isValidEmail(email: string): boolean {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+  return emailRegex.test(email);
+}
+
+// Map Firebase error codes to user-friendly messages
+function getFirebaseErrorMessage(error: unknown): string {
+  if (!(error instanceof Error)) return 'An unexpected error occurred';
+
+  const message = error.message;
+
+  // Extract Firebase error code from message (format: "Firebase: Error (auth/xxx).")
+  const codeMatch = message.match(/\(auth\/([^)]+)\)/);
+  const code = codeMatch ? codeMatch[1] : null;
+
+  switch (code) {
+    case 'invalid-credential':
+    case 'wrong-password':
+    case 'user-not-found':
+      return 'Invalid email or password. Please check your credentials and try again.';
+    case 'invalid-email':
+      return 'Please enter a valid email address.';
+    case 'email-already-in-use':
+      return 'An account with this email already exists. Try signing in instead.';
+    case 'weak-password':
+      return 'Password is too weak. Please use at least 8 characters.';
+    case 'too-many-requests':
+      return 'Too many failed attempts. Please try again later.';
+    case 'user-disabled':
+      return 'This account has been disabled. Please contact support.';
+    case 'network-request-failed':
+      return 'Network error. Please check your internet connection.';
+    case 'popup-closed-by-user':
+      return 'Sign-in was cancelled. Please try again.';
+    case 'account-exists-with-different-credential':
+      return 'An account already exists with this email using a different sign-in method.';
+    default:
+      // If we can't parse the code, return a generic message
+      return 'Something went wrong. Please try again.';
+  }
+}
 
 function LoginPageContent() {
   const router = useRouter();
@@ -61,15 +105,35 @@ function LoginPageContent() {
 
   const passwordStrength = password ? calculatePasswordStrength(password) : null;
 
+  // Apply referral code from localStorage (set by /ref/[code] redirect)
+  // Token must be passed directly so fetch starts immediately (synchronously)
+  const applyStoredReferralCode = (token: string) => {
+    const storedCode = localStorage.getItem('referral_code');
+    if (!storedCode) return;
+
+    // Clear immediately to prevent re-application attempts
+    localStorage.removeItem('referral_code');
+
+    // Fire and forget with keepalive - fetch starts immediately with token
+    console.log('[Referral] Applying referral code (background):', storedCode);
+    applyReferralCodeWithToken(storedCode, token);
+  };
+
   const handleSocialLogin = async (provider: typeof googleProvider | typeof githubProvider, name: string) => {
     try {
       setError('');
       setIsLoading(true);
-      await signInWithPopup(auth, provider);
-      router.push('/billing');
+      const result = await signInWithPopup(auth, provider);
+      // Apply referral code if this is a new user (check metadata)
+      const isNewUser = result.user.metadata.creationTime === result.user.metadata.lastSignInTime;
+      if (isNewUser) {
+        // Get token BEFORE navigating so fetch can start immediately
+        const token = await result.user.getIdToken();
+        applyStoredReferralCode(token);
+      }
+      router.push('/billing/');
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : `Failed to sign in with ${name}`;
-      setError(errorMessage);
+      setError(getFirebaseErrorMessage(err));
     } finally {
       setIsLoading(false);
     }
@@ -90,13 +154,17 @@ function LoginPageContent() {
       return;
     }
 
+    if (!isValidEmail(email)) {
+      setError('Please enter a valid email address (e.g., name@example.com)');
+      return;
+    }
+
     try {
       setIsLoading(true);
       await signInWithEmailAndPassword(auth, email, password);
-      router.push('/billing');
+      router.push('/billing/');
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to sign in';
-      setError(errorMessage);
+      setError(getFirebaseErrorMessage(err));
     } finally {
       setIsLoading(false);
     }
@@ -111,8 +179,8 @@ function LoginPageContent() {
       return;
     }
 
-    if (!email) {
-      setError('Please enter a valid email address');
+    if (!email || !isValidEmail(email)) {
+      setError('Please enter a valid email address (e.g., name@example.com)');
       return;
     }
 
@@ -130,10 +198,13 @@ function LoginPageContent() {
       setIsLoading(true);
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       await updateProfile(userCredential.user, { displayName: fullName });
-      router.push('/billing');
+      // Get token BEFORE navigating so fetch can start immediately
+      const token = await userCredential.user.getIdToken();
+      // Apply referral code for new signups (fire-and-forget with keepalive)
+      applyStoredReferralCode(token);
+      router.push('/billing/');
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to create account';
-      setError(errorMessage);
+      setError(getFirebaseErrorMessage(err));
     } finally {
       setIsLoading(false);
     }
@@ -148,15 +219,29 @@ function LoginPageContent() {
       return;
     }
 
+    if (!isValidEmail(email)) {
+      setError('Please enter a valid email address (e.g., name@example.com)');
+      return;
+    }
+
     try {
       setIsLoading(true);
-      await sendPasswordResetEmail(auth, email);
+      // Configure action code settings for password reset - redirect back to login after reset
+      const actionCodeSettings: ActionCodeSettings = {
+        url: 'https://nuumee.ai/login',
+        handleCodeInApp: false,
+      };
+      await sendPasswordResetEmail(auth, email, actionCodeSettings);
       setError('');
-      alert('Password reset email sent! Check your inbox.');
+      // Note: For Google/GitHub/Apple sign-in users, there's no password to reset
+      // Firebase may succeed but the email won't be useful - show a helpful message
+      alert(
+        'Password reset email sent! Check your inbox (and spam folder).\n\n' +
+        'Note: If you signed up with Google, GitHub, or Apple, you don\'t have a password - just use those sign-in buttons instead.'
+      );
       setMode('login');
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to send reset email';
-      setError(errorMessage);
+      setError(getFirebaseErrorMessage(err));
     } finally {
       setIsLoading(false);
     }
