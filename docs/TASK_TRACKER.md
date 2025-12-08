@@ -106,6 +106,7 @@
 | ID     | Task                                  | Status | Agent/Tool | Output             | Notes                                            |
 | ------ | ------------------------------------- | ------ | ---------- | ------------------ | ------------------------------------------------ |
 | 8.5.14 | Referrer gets 100 credits on purchase | ✅     | Manual     | webhooks/router.py | ≥$10 min, verified working Dec 8 2025, rev 00106 |
+| 8.5.25 | Referral Activity UI on /referral     | ⬜     | Manual     | referral/page.tsx  | Show signups, purchases, credits earned          |
 
 ### Affiliate System
 
@@ -134,29 +135,54 @@
 
 ## PHASE 9 — POLISH & LAUNCH
 
-**Goal:** Production-ready quality
+**Goal:** Production-ready quality, SEO-ready for marketing
 **Estimated Time:** 4-6 hours
 **Dependencies:** Phase 8.5 complete
 
+### SEO & Crawlers (Priority 1 - Marketing Ready)
+
+| ID   | Task                              | Status | Agent/Tool      | Output             | Notes                                          |
+| ---- | --------------------------------- | ------ | --------------- | ------------------ | ---------------------------------------------- |
+| 9.1  | JSON-LD: Homepage                 | ⬜     | `seo-meta-tags` | Organization schema | WebPage + Organization                        |
+| 9.2  | JSON-LD: Pricing                  | ⬜     | `seo-meta-tags` | Product schema      | WebPage + Product                             |
+| 9.3  | JSON-LD: Examples                 | ⬜     | `seo-meta-tags` | ItemList schema     | WebPage + ItemList                            |
+| 9.4  | JSON-LD: Support                  | ⬜     | `seo-meta-tags` | FAQPage schema      | Structured FAQ                                |
+| 9.5  | Create sitemap.xml                | ⬜     | `seo-meta-tags` | public/sitemap.xml  | All public pages listed                       |
+| 9.6  | Create robots.txt                 | ⬜     | `seo-meta-tags` | public/robots.txt   | Proper crawl directives                       |
+| 9.7  | Meta tags audit                   | ⬜     | `seo-meta-tags` | All pages           | title, description, og:image                  |
+
+### Performance (Priority 2)
+
+| ID   | Task                              | Status | Agent/Tool              | Output              | Notes                                    |
+| ---- | --------------------------------- | ------ | ----------------------- | ------------------- | ---------------------------------------- |
+| 9.8  | Dynamic imports: Modals           | ⬜     | `performance-optimizer` | next/dynamic        | BuyCreditsModal, SubscriptionModal       |
+| 9.9  | Dynamic imports: Heavy components | ⬜     | `performance-optimizer` | next/dynamic        | Charts, job dialogs, editors (>50KB)     |
+| 9.10 | Bundle analysis                   | ⬜     | `performance-optimizer` | Report              | Target: -100-200KB initial load          |
+
+### Quality & Accessibility (Priority 3)
+
 | ID   | Task                              | Status | Agent/Tool                      | Output              | Notes                   |
 | ---- | --------------------------------- | ------ | ------------------------------- | ------------------- | ----------------------- |
-| 9.1  | Run seo-meta-tags agent           | ⬜     | `seo-meta-tags`                 | Meta tags, JSON-LD  | All public pages        |
-| 9.2  | Create sitemap.xml                | ⬜     | `seo-meta-tags`                 | sitemap.xml         |                         |
-| 9.3  | Create robots.txt                 | ⬜     | `seo-meta-tags`                 | robots.txt          |                         |
-| 9.4  | Run accessibility-auditor         | ⬜     | `accessibility-auditor`         | Audit report        | Fix issues              |
-| 9.5  | Run performance-optimizer         | ⬜     | `performance-optimizer`         | Optimization report | Dynamic imports         |
-| 9.6  | Run responsive-design-validator   | ⬜     | `responsive-design-validator`   | Validation report   | All breakpoints         |
-| 9.7  | Run design-system-consistency     | ⬜     | `design-system-consistency`     | Consistency report  | No hardcoded values     |
-| 9.8  | Run error-boundary-loading-states | ⬜     | `error-boundary-loading-states` | Components          | Error handling          |
-| 9.9  | Final deployment                  | ⬜     | `deployment-orchestrator`       | Live site           |                         |
-| 9.10 | Full user journey test            | ⬜     | `deployment-validator`          | Test results        | End-to-end              |
-| 9.11 | Commit and push Phase 9           | ⬜     | Git                             | Commit hash         | "Phase 9: Launch ready" |
+| 9.11 | Run accessibility-auditor         | ⬜     | `accessibility-auditor`         | Audit report        | Fix issues              |
+| 9.12 | Run responsive-design-validator   | ⬜     | `responsive-design-validator`   | Validation report   | All breakpoints         |
+| 9.13 | Run design-system-consistency     | ⬜     | `design-system-consistency`     | Consistency report  | No hardcoded values     |
+| 9.14 | Run error-boundary-loading-states | ⬜     | `error-boundary-loading-states` | Components          | Error handling          |
+
+### Launch
+
+| ID   | Task                              | Status | Agent/Tool                | Output              | Notes                   |
+| ---- | --------------------------------- | ------ | ------------------------- | ------------------- | ----------------------- |
+| 9.15 | Final deployment                  | ⬜     | `deployment-orchestrator` | Live site           |                         |
+| 9.16 | Full user journey test            | ⬜     | `deployment-validator`    | Test results        | End-to-end              |
+| 9.17 | Commit and push Phase 9           | ⬜     | Git                       | Commit hash         | "Phase 9: Launch ready" |
 
 **Phase 9 Completion Criteria:**
 
-- [ ] All SEO elements in place
+- [ ] JSON-LD on all public pages (SEO score 95+)
+- [ ] sitemap.xml and robots.txt in place
+- [ ] Dynamic imports for components >50KB
+- [ ] Lighthouse performance +15-25 points
 - [ ] Accessibility audit passes
-- [ ] Performance acceptable
 - [ ] All breakpoints work
 - [ ] No console errors
 - [ ] Full user journey works
@@ -205,19 +231,19 @@
 | 6 - Downloads          | 7       | 7         | ✅     |
 | 7 - Subscriptions      | 10      | 10        | ✅     |
 | 8 - Referral           | 13      | 13        | ✅     |
-| 8.5 - Feature Complete | 19      | 18        | 🔄     |
-| 9 - Polish             | 11      | 0         | ⬜     |
-| **TOTAL**              | **132** | **130**   | 🔄     |
+| 8.5 - Feature Complete | 20      | 18        | 🔄     |
+| 9 - Polish             | 17      | 0         | ⬜     |
+| **TOTAL**              | **139** | **130**   | 🔄     |
 
 ---
 
 ## CURRENT STATE
 
-**Current Phase:** 8.5 (Feature Completion) - 95% Complete
+**Current Phase:** 8.5 (Feature Completion) - 90% Complete
 **Current Task:** Ready for Phase 9 (Polish & Launch)
-**Next Priority:** SEO, accessibility, performance optimization
+**Next Priority:** SEO/JSON-LD (marketing ready), then performance optimization
 **Blockers:** None
-**Last Updated:** 2025-12-08 (referrer bonus implemented)
+**Last Updated:** 2025-12-08 (expanded Phase 9 with detailed SEO tasks)
 
 ### Recent Completions (Dec 2-8, 2025)
 
