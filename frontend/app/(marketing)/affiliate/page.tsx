@@ -99,8 +99,8 @@ export default function AffiliatePage() {
         <div className="flex items-start gap-4 mb-6">
           <DollarSign className="w-12 h-12 text-[#00F0D9] flex-shrink-0" />
           <div>
-            <h2 className="text-2xl font-bold text-[#F1F5F9] mb-3">Earn 20% Commission</h2>
-            <p className="text-[#94A3B8] mb-4">Promote NuuMee.AI and earn 20% of each referred customer&apos;s first purchase.</p>
+            <h2 className="text-2xl font-bold text-[#F1F5F9] mb-3">Earn 30% Commission</h2>
+            <p className="text-[#94A3B8] mb-4">Promote NuuMee.AI and earn 30% of each referred customer&apos;s first purchase.</p>
           </div>
         </div>
         <div className="mb-6">
@@ -118,7 +118,7 @@ export default function AffiliatePage() {
       <section className="mb-8 border border-[#334155] rounded-xl p-8 bg-[#0F172A]">
         <h2 className="text-[#F1F5F9] font-semibold text-xl mb-6">How It Works</h2>
         <div className="grid md:grid-cols-3 gap-6 mb-8">
-          {[{ num: '1', title: 'Apply & Get Code', desc: 'Submit application and get approved' }, { num: '2', title: 'Share Your Link', desc: 'Promote to your audience' }, { num: '3', title: 'Earn 20% Per Customer', desc: 'Get paid monthly via PayPal' }].map((step) => (
+          {[{ num: '1', title: 'Apply & Get Code', desc: 'Submit application and get approved' }, { num: '2', title: 'Share Your Link', desc: 'Promote to your audience' }, { num: '3', title: 'Earn 30% Per Customer', desc: 'Get paid monthly via PayPal' }].map((step) => (
             <div key={step.num} className="text-center">
               <div className="w-16 h-16 rounded-full bg-[#00F0D9]/20 flex items-center justify-center mx-auto mb-4"><span className="text-[#00F0D9] text-2xl font-bold">{step.num}</span></div>
               <h3 className="text-[#F1F5F9] font-semibold mb-2">{step.title}</h3>
@@ -131,13 +131,13 @@ export default function AffiliatePage() {
       {/* Commission Structure */}
       <section className="mb-8 border border-[#334155] rounded-xl p-8 bg-[#0F172A]">
         <h2 className="text-[#F1F5F9] font-semibold text-xl mb-6">Commission Structure</h2>
-        <p className="text-[#94A3B8] mb-6">You earn 20% of first purchase only</p>
+        <p className="text-[#94A3B8] mb-6">You earn 30% of first purchase only</p>
         <div className="space-y-4 mb-8">
           <p className="text-[#F1F5F9] font-semibold">Examples:</p>
           <div className="grid md:grid-cols-3 gap-4">
-            <Card className="border-[#334155] bg-[#1E293B] p-4"><p className="text-[#94A3B8] text-sm mb-2">Customer buys $10 credits</p><p className="text-[#00F0D9] text-xl font-bold">You earn $2</p></Card>
-            <Card className="border-[#334155] bg-[#1E293B] p-4"><p className="text-[#94A3B8] text-sm mb-2">Customer buys $30 plan</p><p className="text-[#00F0D9] text-xl font-bold">You earn $6</p></Card>
-            <Card className="border-[#334155] bg-[#1E293B] p-4"><p className="text-[#94A3B8] text-sm mb-2">Customer buys $99 plan</p><p className="text-[#00F0D9] text-xl font-bold">You earn $19.80</p></Card>
+            <Card className="border-[#334155] bg-[#1E293B] p-4"><p className="text-[#94A3B8] text-sm mb-2">Customer buys $10 credits</p><p className="text-[#00F0D9] text-xl font-bold">You earn $3</p></Card>
+            <Card className="border-[#334155] bg-[#1E293B] p-4"><p className="text-[#94A3B8] text-sm mb-2">Customer buys $30 plan</p><p className="text-[#00F0D9] text-xl font-bold">You earn $9</p></Card>
+            <Card className="border-[#334155] bg-[#1E293B] p-4"><p className="text-[#94A3B8] text-sm mb-2">Customer buys $99 plan</p><p className="text-[#00F0D9] text-xl font-bold">You earn $29.70</p></Card>
           </div>
         </div>
         <div className="space-y-3 text-[#94A3B8]">

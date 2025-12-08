@@ -16,10 +16,14 @@ from .models import (
     PayoutStatus,
 )
 from ..auth.firebase import get_firestore_client
-from ..middleware.auth import get_current_user_id
+from ..middleware.auth import get_current_user_id, get_optional_user_id
+from fastapi import Request
 
 
 logger = logging.getLogger(__name__)
+
+# Admin email for affiliate notifications
+ADMIN_EMAIL = "NuuMee@NuuMee.ai"
 
 router = APIRouter(prefix="/affiliate", tags=["Affiliate"])
 
@@ -37,26 +41,30 @@ def generate_payout_id() -> str:
 @router.post("/apply", response_model=AffiliateApplyResponse)
 async def apply_for_affiliate(
     request: AffiliateApplyRequest,
-    user_id: str = Depends(get_current_user_id),
+    http_request: Request,
 ):
     """
     Apply to become an affiliate.
 
     This endpoint:
-    1. Validates user doesn't already have an affiliate account
+    1. Validates email doesn't already have an affiliate account
     2. Creates a pending affiliate record
-    3. Returns affiliate_id and pending status
+    3. Sends confirmation email to applicant
+    4. Sends notification email to admin
 
     Admins will review the application and approve/reject it.
     Once approved, an affiliate code (AFF-XXXXX) will be assigned.
 
-    Requires authentication.
+    Authentication is optional - works for both logged-in and anonymous users.
     """
     db = get_firestore_client()
 
-    # Check if user already has an affiliate account
+    # Get optional user_id if logged in
+    user_id = await get_optional_user_id(http_request)
+
+    # Check if email already has an affiliate account
     existing_affiliate = db.collection("affiliates")\
-        .where("user_id", "==", user_id)\
+        .where("email", "==", request.email)\
         .limit(1)\
         .get()
 
@@ -67,22 +75,22 @@ async def apply_for_affiliate(
         if status == AffiliateStatus.PENDING.value:
             raise HTTPException(
                 status_code=400,
-                detail="You already have a pending affiliate application"
+                detail="An application with this email is already pending review"
             )
         elif status == AffiliateStatus.APPROVED.value:
             raise HTTPException(
                 status_code=400,
-                detail="You are already an approved affiliate"
+                detail="This email is already registered as an affiliate"
             )
         elif status == AffiliateStatus.REJECTED.value:
             raise HTTPException(
                 status_code=400,
-                detail="Your previous affiliate application was rejected. Please contact support for more information."
+                detail="A previous application with this email was rejected. Please contact support."
             )
         elif status == AffiliateStatus.SUSPENDED.value:
             raise HTTPException(
                 status_code=400,
-                detail="Your affiliate account is suspended. Please contact support."
+                detail="This affiliate account is suspended. Please contact support."
             )
 
     # Generate affiliate ID
@@ -91,7 +99,7 @@ async def apply_for_affiliate(
     # Create affiliate record
     affiliate_data = {
         "affiliate_id": affiliate_id,
-        "user_id": user_id,
+        "user_id": user_id,  # May be None if not logged in
         "status": AffiliateStatus.PENDING.value,
         "affiliate_code": None,  # Assigned when approved
         "name": request.name,
@@ -121,8 +129,77 @@ async def apply_for_affiliate(
         db.collection("affiliates").document(affiliate_id).set(affiliate_data)
 
         logger.info(
-            f"User {user_id} applied for affiliate program. Affiliate ID: {affiliate_id}"
+            f"Affiliate application received: {affiliate_id} from {request.email} "
+            f"(user_id: {user_id or 'anonymous'})"
         )
+
+        # Send confirmation email to applicant
+        try:
+            applicant_email_data = {
+                "to": request.email,
+                "message": {
+                    "subject": "NuuMee Affiliate Application Received",
+                    "html": f"""
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                        <h2 style="color: #00F0D9;">Thanks for applying, {request.name}!</h2>
+                        <p>We've received your application to join the NuuMee.AI Affiliate Program.</p>
+                        <div style="background: #1E293B; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                            <p style="margin: 0;"><strong>What happens next:</strong></p>
+                            <ol style="margin: 10px 0; padding-left: 20px;">
+                                <li>We'll review your application (2-3 business days)</li>
+                                <li>If approved, you'll receive your unique affiliate code</li>
+                                <li>Start promoting and earn 30% on first purchases!</li>
+                            </ol>
+                        </div>
+                        <p>Questions? Reply to this email or contact <a href="mailto:affiliates@nuumee.ai">affiliates@nuumee.ai</a></p>
+                        <p style="color: #94A3B8; font-size: 12px; margin-top: 30px;">
+                            Application ID: {affiliate_id}
+                        </p>
+                    </div>
+                    """,
+                },
+                "createdAt": firestore.SERVER_TIMESTAMP,
+            }
+            db.collection("mail").add(applicant_email_data)
+            logger.info(f"Sent confirmation email to {request.email}")
+        except Exception as email_err:
+            logger.warning(f"Failed to send applicant confirmation email: {email_err}")
+
+        # Send notification email to admin
+        try:
+            admin_email_data = {
+                "to": ADMIN_EMAIL,
+                "message": {
+                    "subject": f"New Affiliate Application: {request.name}",
+                    "html": f"""
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                        <h2 style="color: #00F0D9;">New Affiliate Application</h2>
+                        <div style="background: #1E293B; padding: 20px; border-radius: 8px; margin: 20px 0; color: #F1F5F9;">
+                            <p><strong>Name:</strong> {request.name}</p>
+                            <p><strong>Email:</strong> {request.email}</p>
+                            <p><strong>Platform:</strong> {request.platform_type.value}</p>
+                            <p><strong>URL:</strong> <a href="{request.platform_url}">{request.platform_url}</a></p>
+                            <p><strong>Audience Size:</strong> {request.audience_size:,}</p>
+                            <p><strong>PayPal:</strong> {request.paypal_email}</p>
+                        </div>
+                        <div style="background: #0F172A; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                            <p><strong>Promotion Plan:</strong></p>
+                            <p style="color: #94A3B8;">{request.promotion_plan}</p>
+                        </div>
+                        <p style="color: #94A3B8; font-size: 12px;">
+                            Application ID: {affiliate_id}<br>
+                            User ID: {user_id or 'Not logged in'}
+                        </p>
+                        <p>Review in <a href="https://console.firebase.google.com/project/wanapi-prod/firestore/data/~2Faffiliates~2F{affiliate_id}">Firebase Console</a></p>
+                    </div>
+                    """,
+                },
+                "createdAt": firestore.SERVER_TIMESTAMP,
+            }
+            db.collection("mail").add(admin_email_data)
+            logger.info(f"Sent admin notification to {ADMIN_EMAIL}")
+        except Exception as email_err:
+            logger.warning(f"Failed to send admin notification email: {email_err}")
 
         return AffiliateApplyResponse(
             affiliate_id=affiliate_id,

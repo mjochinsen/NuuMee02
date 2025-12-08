@@ -16,6 +16,10 @@ export function Footer() {
               Privacy Policy
             </Link>
             <span>|</span>
+            <Link href="/affiliate" className="hover:text-[#F1F5F9] transition-colors">
+              Affiliate Program
+            </Link>
+            <span>|</span>
             <Link href="/careers" className="hover:text-[#F1F5F9] transition-colors">
               Careers
             </Link>
