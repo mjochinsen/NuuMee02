@@ -33,7 +33,7 @@
 | 8.2  | Implement GET /referral/code         | ✅     | `api-builder`       | router.py            | Get/generate referral code               |
 | 8.3  | Implement POST /referral/apply       | ✅     | `api-builder`       | router.py            | Apply code, get 25 credits               |
 | 8.4  | Create backend/app/affiliate/ folder | ✅     | `api-builder`       | router.py, models.py | Done via sub-agent                       |
-| 8.5  | Implement affiliate endpoints        | ⬜     | `api-builder`       | router.py            | apply, stats, payout                     |
+| 8.5  | Implement affiliate endpoints        | ✅     | `api-builder`       | router.py            | apply, stats, payout (needs tracking)    |
 | 8.6  | Deploy updated backend               | ✅     | `gcloud run deploy` | nuumee-api-00062-v4t | All endpoints live                       |
 | 8.7  | Update referral page with API        | ✅     | Manual              | referral/page.tsx    | Uses getReferralCode API                 |
 | 8.8  | Update affiliate page with API       | ✅     | Manual              | affiliate/page.tsx   | Form calls applyForAffiliate             |
@@ -103,18 +103,31 @@
 
 ### Referral Completion
 
-| ID     | Task                                  | Status | Agent/Tool | Output             | Notes                                                            |
-| ------ | ------------------------------------- | ------ | ---------- | ------------------ | ---------------------------------------------------------------- |
-| 8.5.14 | Referrer gets 100 credits on purchase | ⬜     | Manual     | webhooks/router.py | ≥$10 min, checkout+subscription handlers, deployed rev 00005-4zc |
+| ID     | Task                                  | Status | Agent/Tool | Output             | Notes                                            |
+| ------ | ------------------------------------- | ------ | ---------- | ------------------ | ------------------------------------------------ |
+| 8.5.14 | Referrer gets 100 credits on purchase | ✅     | Manual     | webhooks/router.py | ≥$10 min, verified working Dec 8 2025, rev 00106 |
+
+### Affiliate System
+
+| ID     | Task                                     | Status | Agent/Tool | Output             | Notes                                      |
+| ------ | ---------------------------------------- | ------ | ---------- | ------------------ | ------------------------------------------ |
+| 8.5.20 | Affiliate endpoints (apply/stats/payout) | ✅     | Manual     | affiliate/router.py | Already implemented, needs tracking        |
+| 8.5.21 | Affiliate click tracking (?a=CODE)       | ⬜     | Manual     | Frontend + Backend  | Store in localStorage, record on signup    |
+| 8.5.22 | Affiliate commission on purchase         | ⬜     | Manual     | webhooks/router.py  | 30% of first purchase, add to pending      |
+| 8.5.23 | Affiliate email templates                | ⬜     | Manual     | email_templates     | approved, rejected, commission, payout     |
+| 8.5.24 | Test affiliate flow end-to-end           | ⬜     | Manual     | Test results        | See AFFILIATE_TESTING.md                   |
+
+**V2 (Post-Launch):** PayPal Payouts API for automated affiliate payouts
 
 **Phase 8.5 Completion Criteria:**
 
-- [ ] Job downloads work (GCS signing fixed)
-- [ ] Retry button works on /jobs
-- [ ] Auto-refill implemented and working
+- [x] Job downloads work (GCS signing fixed)
+- [x] Retry button works on /jobs
+- [x] Auto-refill implemented and working
 - [x] Notification preferences save to Firestore
 - [ ] All "Coming Soon" badges removed
-- [ ] Referrer reward implemented
+- [x] Referrer reward implemented ✅ VERIFIED Dec 8 2025
+- [ ] Affiliate tracking implemented
 - [ ] Billing test suite (8.5.18) - optional
 
 ---
