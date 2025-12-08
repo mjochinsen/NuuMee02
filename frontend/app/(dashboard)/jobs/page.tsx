@@ -123,6 +123,21 @@ export default function JobsPage() {
     fetchJobs();
   }, [fetchJobs]);
 
+  // Auto-refresh every 10 seconds if any job is processing or queued
+  useEffect(() => {
+    const hasActiveJobs = jobs.some(
+      (j) => j.status === 'processing' || j.status === 'queued' || j.status === 'pending'
+    );
+
+    if (hasActiveJobs && !isLoading) {
+      const interval = setInterval(() => {
+        fetchJobs();
+      }, 10000); // Poll every 10 seconds
+
+      return () => clearInterval(interval);
+    }
+  }, [jobs, isLoading, fetchJobs]);
+
   // Handle download button click
   const handleDownload = async (jobId: string) => {
     setDownloadingId(jobId);

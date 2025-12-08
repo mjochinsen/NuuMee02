@@ -140,19 +140,19 @@ async def apply_for_affiliate(
                 "message": {
                     "subject": "NuuMee Affiliate Application Received",
                     "html": f"""
-                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                        <h2 style="color: #00F0D9;">Thanks for applying, {request.name}!</h2>
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1E293B;">
+                        <h2 style="color: #0F172A;">Thanks for applying, {request.name}!</h2>
                         <p>We've received your application to join the NuuMee.AI Affiliate Program.</p>
-                        <div style="background: #1E293B; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                            <p style="margin: 0;"><strong>What happens next:</strong></p>
-                            <ol style="margin: 10px 0; padding-left: 20px;">
+                        <div style="background: #1E293B; padding: 20px; border-radius: 8px; margin: 20px 0; color: #F1F5F9;">
+                            <p style="margin: 0; color: #F1F5F9;"><strong>What happens next:</strong></p>
+                            <ol style="margin: 10px 0; padding-left: 20px; color: #F1F5F9;">
                                 <li>We'll review your application (2-3 business days)</li>
                                 <li>If approved, you'll receive your unique affiliate code</li>
                                 <li>Start promoting and earn 30% on first purchases!</li>
                             </ol>
                         </div>
-                        <p>Questions? Reply to this email or contact <a href="mailto:affiliates@nuumee.ai">affiliates@nuumee.ai</a></p>
-                        <p style="color: #94A3B8; font-size: 12px; margin-top: 30px;">
+                        <p>Questions? Reply to this email or contact <a href="mailto:affiliates@nuumee.ai" style="color: #0EA5E9;">affiliates@nuumee.ai</a></p>
+                        <p style="color: #64748B; font-size: 12px; margin-top: 30px;">
                             Application ID: {affiliate_id}
                         </p>
                     </div>
@@ -172,25 +172,25 @@ async def apply_for_affiliate(
                 "message": {
                     "subject": f"New Affiliate Application: {request.name}",
                     "html": f"""
-                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                        <h2 style="color: #00F0D9;">New Affiliate Application</h2>
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1E293B;">
+                        <h2 style="color: #0F172A;">New Affiliate Application</h2>
                         <div style="background: #1E293B; padding: 20px; border-radius: 8px; margin: 20px 0; color: #F1F5F9;">
                             <p><strong>Name:</strong> {request.name}</p>
                             <p><strong>Email:</strong> {request.email}</p>
                             <p><strong>Platform:</strong> {request.platform_type.value}</p>
-                            <p><strong>URL:</strong> <a href="{request.platform_url}">{request.platform_url}</a></p>
+                            <p><strong>URL:</strong> <a href="{request.platform_url}" style="color: #38BDF8;">{request.platform_url}</a></p>
                             <p><strong>Audience Size:</strong> {request.audience_size:,}</p>
                             <p><strong>PayPal:</strong> {request.paypal_email}</p>
                         </div>
-                        <div style="background: #0F172A; padding: 15px; border-radius: 8px; margin: 20px 0;">
-                            <p><strong>Promotion Plan:</strong></p>
-                            <p style="color: #94A3B8;">{request.promotion_plan}</p>
+                        <div style="background: #0F172A; padding: 15px; border-radius: 8px; margin: 20px 0; color: #F1F5F9;">
+                            <p style="color: #F1F5F9;"><strong>Promotion Plan:</strong></p>
+                            <p style="color: #CBD5E1;">{request.promotion_plan}</p>
                         </div>
-                        <p style="color: #94A3B8; font-size: 12px;">
+                        <p style="color: #64748B; font-size: 12px;">
                             Application ID: {affiliate_id}<br>
                             User ID: {user_id or 'Not logged in'}
                         </p>
-                        <p>Review in <a href="https://console.firebase.google.com/project/wanapi-prod/firestore/data/~2Faffiliates~2F{affiliate_id}">Firebase Console</a></p>
+                        <p>Review in <a href="https://console.firebase.google.com/project/wanapi-prod/firestore/data/~2Faffiliates~2F{affiliate_id}" style="color: #0EA5E9;">Firebase Console</a></p>
                     </div>
                     """,
                 },

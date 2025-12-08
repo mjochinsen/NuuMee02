@@ -285,6 +285,13 @@ Examples:
 4. **Use Playwright MCP for verification** - After deployments, test live site
 5. **Use GCP MCP for debugging** - Cloud Run logs, error tracking
 
+### Known Limitations
+
+| Server | Issue | Workaround |
+|--------|-------|------------|
+| `gcp` | `run-gcp-code` fails with "require is not defined" (ESM/CommonJS conflict) | Use specific tools: `get-logs`, `get-billing-info`, `list-gke-clusters`, `list-sql-instances` |
+| `apidog` | Tool names have dynamic project suffix | Check actual tool name in session (e.g., `read_project_oas_pg3h8i`) |
+
 ### Config Location
 `.mcp.json` - Contains credentials. Do NOT commit to public repos.
 

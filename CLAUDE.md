@@ -104,6 +104,14 @@ docs/        Specs, schemas, plans
 
 **Config:** `.mcp.json` (credentials - do not commit to public repos)
 
+**MCP Server Notes:**
+
+| Server | Status | Notes |
+|--------|--------|-------|
+| `gcp` | ⚠️ Partial | `run-gcp-code` broken (ESM error). Use `get-logs`, `get-billing-info`, `list-*` instead |
+| `apidog` | ✅ Working | Tool names include project suffix (e.g., `read_project_oas_pg3h8i`) |
+| Others | ✅ Working | Full functionality |
+
 ---
 
 ## Prime Commands (Load Context On-Demand)
