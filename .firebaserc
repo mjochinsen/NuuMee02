@@ -1,5 +1,13 @@
 {
   "projects": {
     "default": "wanapi-prod"
+  },
+  "targets": {},
+  "etags": {
+    "wanapi-prod": {
+      "extensionInstances": {
+        "firestore-send-email": "95358a30034ce48495ec3ec174ca1f5cd425d96f3ce925eb6e343c46677603dd"
+      }
+    }
   }
 }
