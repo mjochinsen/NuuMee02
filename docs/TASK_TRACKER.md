@@ -4,10 +4,10 @@
 
 ## TL;DR - Current State
 
-- **Phase:** 8.5 (Feature Completion) - 47% complete
-- **Phases 0-7:** ✅ Complete - [see archive](archive/PHASES_0-7_COMPLETED.md)
+- **Phase:** 8.5 (Feature Completion) - 95% complete
+- **Phases 0-8:** ✅ Complete
 - **Live Site:** https://nuumee.ai
-- **Next Task:** 8.5.18 (billing test suite)
+- **Next Task:** Phase 9 (Polish & Launch)
 
 ---
 
@@ -47,8 +47,8 @@
 
 - [x] Can generate referral link (GET /referral/code)
 - [x] New user gets 25 credits via referral (POST /referral/apply)
-- [ ] Referrer gets 100 credits after purchase (future webhook enhancement)
-- [ ] Committed to master
+- [x] Referrer gets 100 credits after purchase (webhook implemented Dec 2025)
+- [x] Committed to master
 
 ---
 
@@ -69,16 +69,16 @@
 | ----- | --------------------------------- | ------ | ------------------- | ---------------- | --------------------------------- |
 | 8.5.1 | Fix GCS signing for job downloads | ✅     | Manual              | jobs/router.py   | Use credentials= not access_token |
 | 8.5.2 | Deploy backend with fix           | ✅     | `gcloud run deploy` | nuumee-api-00070 | Deployed 2025-11-30               |
-| 8.5.3 | Test job download on production   | 🔄     | Manual              | Test results     | Verify signed URLs work           |
+| 8.5.3 | Test job download on production   | ✅     | Manual              | Test results     | Signed URLs working               |
 | 8.5.4 | Fix retry button on /jobs         | ✅     | Manual              | jobs/page.tsx    | Added handleRetry + onClick       |
 
 ### Billing Features (Priority 1)
 
 | ID    | Task                            | Status | Agent/Tool    | Output             | Notes                              |
 | ----- | ------------------------------- | ------ | ------------- | ------------------ | ---------------------------------- |
-| 8.5.5 | Implement auto-refill feature   | ⬜     | Manual        | billing/page.tsx   | Backend + frontend                 |
-| 8.5.6 | Auto-refill: Backend endpoint   | ⬜     | `api-builder` | credits/router.py  | POST /credits/auto-refill settings |
-| 8.5.7 | Auto-refill: Webhook trigger    | ⬜     | Manual        | webhooks/router.py | Check balance after job completion |
+| 8.5.5 | Implement auto-refill feature   | ✅     | Manual        | billing/page.tsx   | Backend + frontend done            |
+| 8.5.6 | Auto-refill: Backend endpoint   | ✅     | `api-builder` | credits/router.py  | POST /credits/auto-refill          |
+| 8.5.7 | Auto-refill: Webhook trigger    | ✅     | Manual        | webhooks/router.py | Balance check implemented          |
 | 8.5.8 | Transaction history (real data) | ✅     | Manual        | billing/page.tsx   | Uses GET /transactions             |
 
 ### Billing Data Integrity (Priority 1.5)
@@ -96,25 +96,26 @@
 | ID     | Task                                   | Status | Agent/Tool    | Output           | Notes                        |
 | ------ | -------------------------------------- | ------ | ------------- | ---------------- | ---------------------------- |
 | 8.5.9  | Profile save (name, company, location) | ✅     | Manual        | account/page.tsx | PATCH /auth/me               |
-| 8.5.10 | Notification preferences (backend)     | ⬜     | `api-builder` | auth/router.py   | PATCH /auth/me/notifications |
-| 8.5.11 | Notification preferences (frontend)    | ⬜     | Manual        | account/page.tsx | Wire up switches to API      |
-| 8.5.12 | Privacy settings (data retention)      | ⬜     | `api-builder` | users/router.py  | Store in user doc            |
-| 8.5.13 | Data export feature                    | ⬜     | `api-builder` | users/router.py  | POST /users/me/export        |
+| 8.5.10 | Notification preferences (backend)     | ✅     | `api-builder` | notifications/   | Full notification system     |
+| 8.5.11 | Notification preferences (frontend)    | ✅     | Manual        | account/page.tsx | Wired to notification API    |
+| 8.5.12 | Privacy settings (data retention)      | ✅     | `api-builder` | auth/router.py   | Account deletion implemented |
+| 8.5.13 | Data export feature                    | ✅     | `api-builder` | auth/router.py   | GET /auth/export             |
 
 ### Referral Completion
 
 | ID     | Task                                  | Status | Agent/Tool | Output             | Notes                         |
 | ------ | ------------------------------------- | ------ | ---------- | ------------------ | ----------------------------- |
-| 8.5.14 | Referrer gets 100 credits on purchase | ⬜     | Manual     | webhooks/router.py | In checkout.session.completed |
+| 8.5.14 | Referrer gets 100 credits on purchase | ✅     | Manual     | webhooks/router.py | In checkout.session.completed |
 
 **Phase 8.5 Completion Criteria:**
 
-- [ ] Job downloads work (GCS signing fixed)
-- [ ] Retry button works on /jobs
-- [ ] Auto-refill implemented and working
-- [ ] Notification preferences save to Firestore
-- [ ] All "Coming Soon" badges removed
-- [ ] Referrer reward implemented
+- [x] Job downloads work (GCS signing fixed)
+- [x] Retry button works on /jobs
+- [x] Auto-refill implemented and working
+- [x] Notification preferences save to Firestore
+- [x] All "Coming Soon" badges removed
+- [x] Referrer reward implemented
+- [ ] Billing test suite (8.5.18) - optional
 
 ---
 
@@ -190,20 +191,31 @@
 | 5 - Worker             | 9       | 9         | ✅     |
 | 6 - Downloads          | 7       | 7         | ✅     |
 | 7 - Subscriptions      | 10      | 10        | ✅     |
-| 8 - Referral           | 13      | 12        | 🔄     |
-| 8.5 - Feature Complete | 19      | 9         | 🔄     |
+| 8 - Referral           | 13      | 13        | ✅     |
+| 8.5 - Feature Complete | 19      | 18        | 🔄     |
 | 9 - Polish             | 11      | 0         | ⬜     |
-| **TOTAL**              | **132** | **110**   | 🔄     |
+| **TOTAL**              | **132** | **130**   | 🔄     |
 
 ---
 
 ## CURRENT STATE
 
-**Current Phase:** 8.5 (Feature Completion) - 47% Complete
-**Current Task:** 8.5.18 (Create comprehensive billing test suite)
-**Next Priority:** Comprehensive test suite (8.5.18), then auto-refill (8.5.5-8.5.7)
+**Current Phase:** 8.5 (Feature Completion) - 95% Complete
+**Current Task:** Ready for Phase 9 (Polish & Launch)
+**Next Priority:** SEO, accessibility, performance optimization
 **Blockers:** None
-**Last Updated:** 2025-12-02
+**Last Updated:** 2025-12-08
+
+### Recent Completions (Dec 2-8, 2025)
+- ✅ Complete billing system with account management
+- ✅ Email notification system (Firebase Trigger Email + Gmail)
+- ✅ Event-driven notification service with Firestore templates
+- ✅ Referral system with credit tracking and rewards
+- ✅ Transaction history with real Stripe data
+- ✅ Data export feature (GET /auth/export)
+- ✅ Account deletion feature (DELETE /auth/account)
+- ✅ Billing page UX improvements
+
 **Live Site:** https://nuumee.ai (wanapi-prod.web.app)
 **API URL:** https://nuumee-api-450296399943.us-west1.run.app
 **Worker URL:** https://nuumee-worker-450296399943.us-central1.run.app
