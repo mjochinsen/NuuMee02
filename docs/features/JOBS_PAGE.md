@@ -43,8 +43,16 @@ Each job displays:
   - REF - Reference image (click to preview)
   - SRC - Source motion video (hover to play, click to preview)
   - OUTPUT - Generated result (only for completed jobs, cyan border)
-- **Job metadata**: ID, status badge, timestamp, resolution, credits, seed
-- **Action buttons**: Details, Download, Share, Link, Delete
+- **Job metadata**: ID, status badge, timestamp, resolution, credits
+- **Action buttons** (completed jobs): Details, Download, Copy Link, Delete
+- **Processing/Queued jobs**: Elapsed time display (e.g., "Processing... 2m 30s")
+
+### Job Details Modal
+Simplified modal showing:
+- Thumbnails row: Reference, Source Video, Output (if completed)
+- Video Type, Resolution, Credits Used
+- Created/Completed timestamps
+- Download + Copy Link buttons
 
 ### Media Preview Modal
 - Opens on tile click
@@ -82,6 +90,21 @@ Jobs with `processing`, `queued`, or `pending` status trigger automatic polling 
 ### Video Playback
 - **Thumbnail hover**: Muted autoplay preview
 - **Modal**: Full controls, autoplay, playsInline for mobile
+
+### Clean Shareable URLs
+Completed jobs get a `short_id` (8-char UUID) enabling clean share URLs:
+```
+https://nuumee.ai/v/25ca1d0f
+```
+See [CLEAN_VIDEO_URLS.md](./CLEAN_VIDEO_URLS.md) for full documentation.
+
+### Elapsed Time Display
+Processing and queued jobs show elapsed time instead of action buttons:
+```
+Processing... 2m 30s
+Queued... 45s
+```
+Time updates on each 10-second auto-refresh.
 
 ## State Management
 
