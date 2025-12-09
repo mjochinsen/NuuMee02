@@ -237,6 +237,8 @@ export interface CreateJobRequest {
 
 export interface JobResponse {
   id: string;
+  short_id: string | null;
+  share_url: string | null;
   user_id: string;
   job_type: JobType;
   status: JobStatus;
@@ -251,6 +253,7 @@ export interface JobResponse {
   created_at: string;
   updated_at: string;
   completed_at: string | null;
+  view_count: number;
 }
 
 export interface JobListResponse {
@@ -316,6 +319,30 @@ export interface JobOutputResponse {
 
 export async function getJobOutput(jobId: string): Promise<JobOutputResponse> {
   return apiRequest<JobOutputResponse>(`/jobs/${jobId}/output`);
+}
+
+// Job thumbnails (signed URLs for input and output files)
+export interface JobThumbnailsResponse {
+  job_id: string;
+  reference_image_url: string | null;
+  motion_video_url: string | null;
+  output_video_url: string | null;
+}
+
+export async function getJobThumbnails(jobId: string): Promise<JobThumbnailsResponse> {
+  return apiRequest<JobThumbnailsResponse>(`/jobs/${jobId}/thumbnails`);
+}
+
+// Delete job
+export interface DeleteJobResponse {
+  message: string;
+  job_id: string;
+}
+
+export async function deleteJob(jobId: string): Promise<DeleteJobResponse> {
+  return apiRequest<DeleteJobResponse>(`/jobs/${jobId}`, {
+    method: 'DELETE',
+  });
 }
 
 // Subscription endpoints

@@ -19,7 +19,10 @@ import {
   FileText,
   User,
   Video,
-  Loader2
+  Loader2,
+  Clock,
+  Copy,
+  Check
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -39,17 +42,21 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useAuth } from '@/components/AuthProvider';
-import { getJobs, getJobOutput, createJob, JobResponse, JobStatus as ApiJobStatus, JobType, Resolution } from '@/lib/api';
+import { getJobs, getJobOutput, getJobThumbnails, deleteJob, createJob, JobResponse, JobStatus as ApiJobStatus, JobType, Resolution, JobThumbnailsResponse } from '@/lib/api';
+import { toast } from 'sonner';
 
 type JobStatus = 'completed' | 'processing' | 'failed' | 'queued' | 'pending';
 
 interface Job {
   id: string;
+  shortId?: string | null;
+  shareUrl?: string | null;
   jobType: string;
   referenceImagePath?: string;
   motionVideoPath?: string;
   status: JobStatus;
   createdAt: string;
+  createdAtRaw: string;
   updatedAt: string;
   completedAt?: string | null;
   resolution: string;
@@ -57,17 +64,37 @@ interface Job {
   errorMessage?: string;
   outputVideoPath?: string | null;
   seed?: number | null;
+  viewCount?: number;
+}
+
+// Helper to format elapsed time
+function formatElapsedTime(isoDate: string): string {
+  const created = new Date(isoDate);
+  const now = new Date();
+  const diffMs = now.getTime() - created.getTime();
+  const diffSec = Math.floor(diffMs / 1000);
+
+  if (diffSec < 60) return `${diffSec}s`;
+  const diffMin = Math.floor(diffSec / 60);
+  const remainingSec = diffSec % 60;
+  if (diffMin < 60) return `${diffMin}m ${remainingSec}s`;
+  const diffHour = Math.floor(diffMin / 60);
+  const remainingMin = diffMin % 60;
+  return `${diffHour}h ${remainingMin}m`;
 }
 
 // Convert API job to display job
 function convertApiJob(apiJob: JobResponse): Job {
   return {
     id: apiJob.id,
+    shortId: apiJob.short_id,
+    shareUrl: apiJob.share_url,
     jobType: apiJob.job_type,
     referenceImagePath: apiJob.reference_image_path,
     motionVideoPath: apiJob.motion_video_path,
     status: apiJob.status as JobStatus,
     createdAt: new Date(apiJob.created_at).toLocaleString(),
+    createdAtRaw: apiJob.created_at,
     updatedAt: new Date(apiJob.updated_at).toLocaleString(),
     completedAt: apiJob.completed_at ? new Date(apiJob.completed_at).toLocaleString() : null,
     resolution: apiJob.resolution,
@@ -75,6 +102,7 @@ function convertApiJob(apiJob: JobResponse): Job {
     errorMessage: apiJob.error_message || undefined,
     outputVideoPath: apiJob.output_video_path,
     seed: apiJob.seed,
+    viewCount: apiJob.view_count,
   };
 }
 
@@ -91,7 +119,13 @@ export default function JobsPage() {
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [retryingId, setRetryingId] = useState<string | null>(null);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
-  const jobsPerPage = 10;
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [jobToDelete, setJobToDelete] = useState<Job | null>(null);
+  const [thumbnails, setThumbnails] = useState<Record<string, JobThumbnailsResponse>>({});
+  const [loadingThumbnails, setLoadingThumbnails] = useState<Set<string>>(new Set());
+  const [previewMedia, setPreviewMedia] = useState<{ type: 'image' | 'video'; url: string; label: string } | null>(null);
+  const [copiedJobId, setCopiedJobId] = useState<string | null>(null);
+  const jobsPerPage = 25;
 
   // Fetch jobs from API
   const fetchJobs = useCallback(async () => {
@@ -138,21 +172,33 @@ export default function JobsPage() {
     }
   }, [jobs, isLoading, fetchJobs]);
 
-  // Handle download button click
+  // Handle download button click - fetches and downloads the video file
   const handleDownload = async (jobId: string) => {
     setDownloadingId(jobId);
     try {
       const response = await getJobOutput(jobId);
-      // Create temporary anchor to trigger download
+      toast.info('Downloading video...');
+
+      // Fetch the video as blob to enable proper download
+      const videoResponse = await fetch(response.download_url);
+      const blob = await videoResponse.blob();
+
+      // Create object URL and trigger download
+      const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
-      link.href = response.download_url;
-      link.download = response.filename;
+      link.href = url;
+      link.download = `${jobId}.mp4`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      toast.success('Download complete!');
     } catch (err) {
       console.error('Download failed:', err);
-      setError(err instanceof Error ? err.message : 'Download failed');
+      toast.error('Download failed', {
+        description: err instanceof Error ? err.message : 'Could not download video',
+      });
     } finally {
       setDownloadingId(null);
     }
@@ -181,6 +227,54 @@ export default function JobsPage() {
       setError(err instanceof Error ? err.message : 'Retry failed');
     } finally {
       setRetryingId(null);
+    }
+  };
+
+  // Fetch thumbnails for visible jobs
+  useEffect(() => {
+    const fetchThumbnails = async () => {
+      for (const job of jobs) {
+        if (!thumbnails[job.id] && !loadingThumbnails.has(job.id)) {
+          setLoadingThumbnails(prev => new Set(prev).add(job.id));
+          try {
+            const thumb = await getJobThumbnails(job.id);
+            setThumbnails(prev => ({ ...prev, [job.id]: thumb }));
+          } catch (err) {
+            console.error(`Failed to fetch thumbnails for ${job.id}:`, err);
+          } finally {
+            setLoadingThumbnails(prev => {
+              const next = new Set(prev);
+              next.delete(job.id);
+              return next;
+            });
+          }
+        }
+      }
+    };
+
+    if (jobs.length > 0) {
+      fetchThumbnails();
+    }
+  }, [jobs, thumbnails, loadingThumbnails]);
+
+  // Handle delete button click
+  const handleDelete = async (job: Job) => {
+    setDeletingId(job.id);
+    try {
+      await deleteJob(job.id);
+      toast.success('Job deleted', {
+        description: `Job ${job.id} has been deleted.`,
+      });
+      setJobToDelete(null);
+      // Refresh jobs list
+      await fetchJobs();
+    } catch (err) {
+      console.error('Delete failed:', err);
+      toast.error('Delete failed', {
+        description: err instanceof Error ? err.message : 'Failed to delete job',
+      });
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -213,16 +307,38 @@ export default function JobsPage() {
   };
 
   const renderJobCard = (job: Job) => {
+    const jobThumbnails = thumbnails[job.id];
+    const isLoadingThumb = loadingThumbnails.has(job.id);
+
+    // Skeleton component for loading state
+    const ThumbnailSkeleton = () => (
+      <div className="w-full h-full bg-gradient-to-r from-[#1E293B] via-[#334155] to-[#1E293B] animate-pulse" />
+    );
+
     return (
       <div key={job.id} className="border border-[#334155] rounded-2xl p-6 bg-[#0F172A] hover:border-[#00F0D9] transition-colors">
         <div className="flex gap-4">
           {/* Thumbnails */}
-          <div className="flex gap-4 flex-shrink-0">
+          <div className="flex gap-3 flex-shrink-0">
             {/* Reference Image */}
             <div className="relative group">
-              <div className="w-24 h-24 border-2 border-[#334155] rounded-xl bg-[#1E293B] flex items-center justify-center overflow-hidden group-hover:scale-105 group-hover:border-[#00F0D9] transition-all">
-                <User className="w-8 h-8 text-[#94A3B8]" />
-              </div>
+              <button
+                onClick={() => jobThumbnails?.reference_image_url && setPreviewMedia({ type: 'image', url: jobThumbnails.reference_image_url, label: 'Reference Image' })}
+                disabled={!jobThumbnails?.reference_image_url}
+                className="w-36 h-36 border-2 border-[#334155] rounded-xl bg-[#1E293B] flex items-center justify-center overflow-hidden group-hover:scale-105 group-hover:border-[#00F0D9] transition-all cursor-pointer disabled:cursor-default disabled:hover:scale-100 disabled:hover:border-[#334155]"
+              >
+                {isLoadingThumb ? (
+                  <ThumbnailSkeleton />
+                ) : jobThumbnails?.reference_image_url ? (
+                  <img
+                    src={jobThumbnails.reference_image_url}
+                    alt="Reference"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <User className="w-10 h-10 text-[#94A3B8]" />
+                )}
+              </button>
               <div className="absolute bottom-0 left-0 right-0 bg-black/60 backdrop-blur-sm text-white text-xs py-1 text-center rounded-b-xl">
                 REF
               </div>
@@ -230,18 +346,73 @@ export default function JobsPage() {
 
             {/* Motion Video */}
             <div className="relative group">
-              <div className="w-24 h-24 border-2 border-[#334155] rounded-xl bg-[#1E293B] flex items-center justify-center overflow-hidden group-hover:scale-105 group-hover:border-[#00F0D9] transition-all">
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] flex items-center justify-center group-hover:animate-pulse">
-                    <Play className="w-4 h-4 text-white" />
-                  </div>
-                </div>
-                <Video className="w-8 h-8 text-[#94A3B8] opacity-30" />
-              </div>
-              <div className="absolute bottom-0 right-0 bg-black/60 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-tr-xl rounded-bl-xl">
+              <button
+                onClick={() => jobThumbnails?.motion_video_url && setPreviewMedia({ type: 'video', url: jobThumbnails.motion_video_url, label: 'Source Video' })}
+                disabled={!jobThumbnails?.motion_video_url}
+                className="w-36 h-36 border-2 border-[#334155] rounded-xl bg-[#1E293B] flex items-center justify-center overflow-hidden group-hover:scale-105 group-hover:border-[#00F0D9] transition-all cursor-pointer disabled:cursor-default disabled:hover:scale-100 disabled:hover:border-[#334155]"
+              >
+                {isLoadingThumb ? (
+                  <ThumbnailSkeleton />
+                ) : jobThumbnails?.motion_video_url ? (
+                  <video
+                    src={jobThumbnails.motion_video_url}
+                    className="w-full h-full object-cover"
+                    muted
+                    playsInline
+                    onMouseEnter={(e) => e.currentTarget.play()}
+                    onMouseLeave={(e) => { e.currentTarget.pause(); e.currentTarget.currentTime = 0; }}
+                  />
+                ) : (
+                  <>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] flex items-center justify-center group-hover:animate-pulse">
+                        <Play className="w-5 h-5 text-white" />
+                      </div>
+                    </div>
+                    <Video className="w-10 h-10 text-[#94A3B8] opacity-30" />
+                  </>
+                )}
+              </button>
+              <div className="absolute bottom-0 left-0 right-0 bg-black/60 backdrop-blur-sm text-white text-xs py-1 text-center rounded-b-xl">
                 SRC
               </div>
             </div>
+
+            {/* Output Video (only for completed jobs) */}
+            {job.status === 'completed' && (
+              <div className="relative group">
+                <button
+                  onClick={() => jobThumbnails?.output_video_url && setPreviewMedia({ type: 'video', url: jobThumbnails.output_video_url, label: 'Output Video' })}
+                  disabled={!jobThumbnails?.output_video_url}
+                  className="w-36 h-36 border-2 border-[#00F0D9]/50 rounded-xl bg-[#1E293B] flex items-center justify-center overflow-hidden group-hover:scale-105 group-hover:border-[#00F0D9] transition-all cursor-pointer disabled:cursor-default disabled:hover:scale-100 disabled:border-[#334155]"
+                >
+                  {isLoadingThumb ? (
+                    <ThumbnailSkeleton />
+                  ) : jobThumbnails?.output_video_url ? (
+                    <video
+                      src={jobThumbnails.output_video_url}
+                      className="w-full h-full object-cover"
+                      muted
+                      playsInline
+                      onMouseEnter={(e) => e.currentTarget.play()}
+                      onMouseLeave={(e) => { e.currentTarget.pause(); e.currentTarget.currentTime = 0; }}
+                    />
+                  ) : (
+                    <>
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] flex items-center justify-center">
+                          <Play className="w-5 h-5 text-white" />
+                        </div>
+                      </div>
+                      <Video className="w-10 h-10 text-[#94A3B8] opacity-30" />
+                    </>
+                  )}
+                </button>
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] text-white text-xs py-1 text-center rounded-b-xl font-medium">
+                  OUTPUT
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Job Details */}
@@ -324,29 +495,41 @@ export default function JobsPage() {
                     )}
                     {downloadingId === job.id ? 'Downloading...' : 'Download'}
                   </Button>
-                  <Button variant="outline" size="sm" className="border-[#334155] text-[#F1F5F9] hover:border-[#00F0D9] hover:text-[#00F0D9]">
-                    <Share2 className="w-4 h-4 mr-1" />
-                    Share
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-[#334155] text-[#F1F5F9] hover:border-[#00F0D9] hover:text-[#00F0D9]"
+                    onClick={() => {
+                      const url = job.shareUrl || `${window.location.origin}/jobs/${job.id}`;
+                      navigator.clipboard.writeText(url);
+                      setCopiedJobId(job.id);
+                      toast.success('Link copied to clipboard');
+                      setTimeout(() => setCopiedJobId(null), 2000);
+                    }}
+                  >
+                    {copiedJobId === job.id ? (
+                      <Check className="w-4 h-4 mr-1 text-green-500" />
+                    ) : (
+                      <Copy className="w-4 h-4 mr-1" />
+                    )}
+                    {copiedJobId === job.id ? 'Copied!' : 'Copy Link'}
                   </Button>
-                  <Button variant="outline" size="sm" className="border-[#334155] text-[#F1F5F9] hover:border-[#00F0D9] hover:text-[#00F0D9]">
-                    <LinkIcon className="w-4 h-4 mr-1" />
-                    Link
-                  </Button>
-                  <Button variant="outline" size="sm" className="border-[#334155] text-[#F1F5F9] hover:border-red-500 hover:text-red-500">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-[#334155] text-[#F1F5F9] hover:border-red-500 hover:text-red-500"
+                    onClick={() => setJobToDelete(job)}
+                  >
                     <Trash2 className="w-4 h-4" />
                   </Button>
                 </>
               )}
 
               {job.status === 'processing' && (
-                <>
-                  <Button variant="outline" size="sm" className="border-[#334155] text-[#F1F5F9] hover:border-[#00F0D9] hover:text-[#00F0D9]">
-                    View Status
-                  </Button>
-                  <Button variant="outline" size="sm" className="border-[#334155] text-[#F1F5F9] hover:border-red-500 hover:text-red-500">
-                    Cancel
-                  </Button>
-                </>
+                <div className="flex items-center gap-2 text-sm text-[#94A3B8]">
+                  <Clock className="w-4 h-4 animate-pulse" />
+                  <span>Processing... {formatElapsedTime(job.createdAtRaw)}</span>
+                </div>
               )}
 
               {job.status === 'failed' && (
@@ -376,14 +559,10 @@ export default function JobsPage() {
               )}
 
               {job.status === 'queued' && (
-                <>
-                  <Button variant="outline" size="sm" className="border-[#334155] text-[#F1F5F9] hover:border-[#00F0D9] hover:text-[#00F0D9]">
-                    View Status
-                  </Button>
-                  <Button variant="outline" size="sm" className="border-[#334155] text-[#F1F5F9] hover:border-red-500 hover:text-red-500">
-                    Cancel
-                  </Button>
-                </>
+                <div className="flex items-center gap-2 text-sm text-[#94A3B8]">
+                  <Clock className="w-4 h-4" />
+                  <span>Queued... {formatElapsedTime(job.createdAtRaw)}</span>
+                </div>
               )}
 
               {job.status === 'pending' && (
@@ -623,85 +802,100 @@ export default function JobsPage() {
 
           {selectedJob && (
             <div className="space-y-4 mt-4">
-              {/* Job ID */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-[#94A3B8] mb-1">Job ID</p>
-                  <p className="font-mono text-sm">{selectedJob.id}</p>
+              {/* Thumbnails Row */}
+              <div className="flex gap-4 justify-center">
+                {/* Reference Image Thumbnail */}
+                <div className="text-center">
+                  <div className="w-24 h-24 border-2 border-[#334155] rounded-xl bg-[#0F172A] flex items-center justify-center overflow-hidden mb-2">
+                    {thumbnails[selectedJob.id]?.reference_image_url ? (
+                      <img
+                        src={thumbnails[selectedJob.id].reference_image_url!}
+                        alt="Reference"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <User className="w-8 h-8 text-[#94A3B8]" />
+                    )}
+                  </div>
+                  <p className="text-xs text-[#94A3B8]">Reference</p>
                 </div>
-                <div>
-                  <p className="text-sm text-[#94A3B8] mb-1">Job Type</p>
-                  <p className="capitalize">{selectedJob.jobType}</p>
-                </div>
-              </div>
 
-              {/* Paths */}
-              <div>
-                <p className="text-sm text-[#94A3B8] mb-1">Reference Image</p>
-                <p className="font-mono text-sm break-all text-[#F1F5F9]/80">{selectedJob.referenceImagePath}</p>
-              </div>
-              <div>
-                <p className="text-sm text-[#94A3B8] mb-1">Motion Video</p>
-                <p className="font-mono text-sm break-all text-[#F1F5F9]/80">{selectedJob.motionVideoPath}</p>
+                {/* Motion Video Thumbnail */}
+                <div className="text-center">
+                  <div className="w-24 h-24 border-2 border-[#334155] rounded-xl bg-[#0F172A] flex items-center justify-center overflow-hidden mb-2">
+                    {thumbnails[selectedJob.id]?.motion_video_url ? (
+                      <video
+                        src={thumbnails[selectedJob.id].motion_video_url!}
+                        className="w-full h-full object-cover"
+                        muted
+                        playsInline
+                      />
+                    ) : (
+                      <Video className="w-8 h-8 text-[#94A3B8]" />
+                    )}
+                  </div>
+                  <p className="text-xs text-[#94A3B8]">Source Video</p>
+                </div>
+
+                {/* Output Video Thumbnail (if completed) */}
+                {selectedJob.status === 'completed' && (
+                  <div className="text-center">
+                    <div className="w-24 h-24 border-2 border-[#00F0D9]/50 rounded-xl bg-[#0F172A] flex items-center justify-center overflow-hidden mb-2">
+                      {thumbnails[selectedJob.id]?.output_video_url ? (
+                        <video
+                          src={thumbnails[selectedJob.id].output_video_url!}
+                          className="w-full h-full object-cover"
+                          muted
+                          playsInline
+                        />
+                      ) : (
+                        <Play className="w-8 h-8 text-[#00F0D9]" />
+                      )}
+                    </div>
+                    <p className="text-xs text-[#00F0D9]">Output</p>
+                  </div>
+                )}
               </div>
 
               {/* Details grid */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-[#334155]">
+                <div>
+                  <p className="text-sm text-[#94A3B8] mb-1">Video Type</p>
+                  <p className="capitalize">{selectedJob.jobType.replace('_', ' ')}</p>
+                </div>
                 <div>
                   <p className="text-sm text-[#94A3B8] mb-1">Resolution</p>
                   <p>{selectedJob.resolution}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-[#94A3B8] mb-1">Credits Charged</p>
+                  <p className="text-sm text-[#94A3B8] mb-1">Credits Used</p>
                   <p className="font-semibold">{selectedJob.credits}</p>
                 </div>
-                {selectedJob.seed !== null && selectedJob.seed !== undefined && (
-                  <div>
-                    <p className="text-sm text-[#94A3B8] mb-1">Seed</p>
-                    <p className="font-mono">{selectedJob.seed}</p>
-                  </div>
-                )}
-              </div>
-
-              {/* Timestamps */}
-              <div className="grid grid-cols-2 gap-4 pt-2 border-t border-[#334155]">
                 <div>
-                  <p className="text-sm text-[#94A3B8] mb-1">Created At</p>
+                  <p className="text-sm text-[#94A3B8] mb-1">Created</p>
                   <p className="text-sm">{selectedJob.createdAt}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-[#94A3B8] mb-1">Updated At</p>
-                  <p className="text-sm">{selectedJob.updatedAt}</p>
                 </div>
                 {selectedJob.completedAt && (
                   <div>
-                    <p className="text-sm text-[#94A3B8] mb-1">Completed At</p>
+                    <p className="text-sm text-[#94A3B8] mb-1">Completed</p>
                     <p className="text-sm">{selectedJob.completedAt}</p>
                   </div>
                 )}
               </div>
 
-              {/* Output path */}
-              {selectedJob.outputVideoPath && (
-                <div className="pt-2 border-t border-[#334155]">
-                  <p className="text-sm text-[#94A3B8] mb-1">Output Video</p>
-                  <p className="font-mono text-sm break-all text-[#F1F5F9]/80">{selectedJob.outputVideoPath}</p>
-                </div>
-              )}
-
               {/* Error message */}
               {selectedJob.errorMessage && (
                 <div className="bg-red-950/20 border border-red-900/50 rounded p-3">
-                  <p className="text-sm text-[#94A3B8] mb-1">Error Message</p>
+                  <p className="text-sm text-[#94A3B8] mb-1">Error</p>
                   <p className="text-red-400 text-sm">{selectedJob.errorMessage}</p>
                 </div>
               )}
 
-              {/* Download button */}
+              {/* Action buttons */}
               {selectedJob.status === 'completed' && selectedJob.outputVideoPath && (
-                <div className="pt-4 border-t border-[#334155]">
+                <div className="flex gap-3 pt-4 border-t border-[#334155]">
                   <Button
-                    className="w-full bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] hover:opacity-90 text-white"
+                    className="flex-1 bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] hover:opacity-90 text-white"
                     onClick={() => handleDownload(selectedJob.id)}
                     disabled={downloadingId === selectedJob.id}
                   >
@@ -713,11 +907,135 @@ export default function JobsPage() {
                     ) : (
                       <>
                         <Download className="w-4 h-4 mr-2" />
-                        Download Video
+                        Download
                       </>
                     )}
                   </Button>
+                  <Button
+                    variant="outline"
+                    className="flex-1 border-[#334155] text-[#F1F5F9] hover:border-[#00F0D9] hover:text-[#00F0D9]"
+                    onClick={() => {
+                      const url = selectedJob.shareUrl || `${window.location.origin}/jobs/${selectedJob.id}`;
+                      navigator.clipboard.writeText(url);
+                      toast.success('Link copied to clipboard');
+                    }}
+                  >
+                    <Copy className="w-4 h-4 mr-2" />
+                    Copy Link
+                  </Button>
                 </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={!!jobToDelete} onOpenChange={(open) => !open && setJobToDelete(null)}>
+        <DialogContent className="bg-[#0F172A] border-red-500/30 text-[#F1F5F9] max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-[#F1F5F9] flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center">
+                <AlertCircle className="w-5 h-5 text-red-500" />
+              </div>
+              Delete Job
+            </DialogTitle>
+          </DialogHeader>
+
+          {jobToDelete && (
+            <div className="space-y-4 mt-4">
+              <p className="text-[#F1F5F9]">
+                Are you sure you want to delete this job?
+              </p>
+              <p className="text-[#94A3B8] text-sm">
+                This action cannot be undone. The video and all associated data will be permanently deleted.
+              </p>
+
+              {/* Job ID */}
+              <div className="bg-[#1E293B] border border-[#334155] rounded-lg p-4">
+                <div className="text-[#94A3B8] text-sm mb-1">Job ID</div>
+                <div className="text-[#F1F5F9] font-mono text-sm">{jobToDelete.id}</div>
+              </div>
+
+              {/* Warning */}
+              <div className="bg-red-500/5 border border-red-500/20 rounded-lg p-4">
+                <div className="flex gap-3">
+                  <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-red-400 mb-1">Warning</p>
+                    <ul className="text-red-400/80 text-sm space-y-1">
+                      <li>• The generated video will be deleted</li>
+                      <li>• All processing data will be removed</li>
+                      <li>• Shareable links will stop working</li>
+                      <li>• Credits used will not be refunded</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-3 pt-2">
+                <Button
+                  variant="outline"
+                  className="flex-1 border-[#334155] text-[#F1F5F9] hover:border-[#00F0D9] hover:text-[#00F0D9]"
+                  onClick={() => setJobToDelete(null)}
+                  disabled={deletingId === jobToDelete.id}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  className="flex-1 bg-red-500 hover:bg-red-600 text-white"
+                  onClick={() => handleDelete(jobToDelete)}
+                  disabled={deletingId === jobToDelete.id}
+                >
+                  {deletingId === jobToDelete.id ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Deleting...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Delete Job
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Media Preview Modal */}
+      <Dialog open={!!previewMedia} onOpenChange={(open) => !open && setPreviewMedia(null)}>
+        <DialogContent className="bg-[#0F172A] border-[#334155] text-[#F1F5F9] max-w-4xl p-0 overflow-hidden">
+          <DialogHeader className="p-4 border-b border-[#334155]">
+            <DialogTitle className="text-[#F1F5F9] flex items-center gap-3">
+              {previewMedia?.type === 'video' ? (
+                <Video className="w-5 h-5 text-[#00F0D9]" />
+              ) : (
+                <User className="w-5 h-5 text-[#00F0D9]" />
+              )}
+              {previewMedia?.label}
+            </DialogTitle>
+          </DialogHeader>
+
+          {previewMedia && (
+            <div className="relative bg-black flex items-center justify-center min-h-[400px] max-h-[70vh]">
+              {previewMedia.type === 'video' ? (
+                <video
+                  src={previewMedia.url}
+                  className="max-w-full max-h-[70vh] object-contain"
+                  controls
+                  autoPlay
+                  playsInline
+                />
+              ) : (
+                <img
+                  src={previewMedia.url}
+                  alt={previewMedia.label}
+                  className="max-w-full max-h-[70vh] object-contain"
+                />
               )}
             </div>
           )}

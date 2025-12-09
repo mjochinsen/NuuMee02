@@ -66,6 +66,8 @@ class CreateJobRequest(BaseModel):
 class JobResponse(BaseModel):
     """Response containing job details."""
     id: str = Field(..., description="Job ID")
+    short_id: Optional[str] = Field(None, description="Short ID for public sharing URLs")
+    share_url: Optional[str] = Field(None, description="Public share URL (nuumee.ai/v/{short_id})")
     user_id: str = Field(..., description="User who created the job")
     job_type: JobType = Field(..., description="Type of job")
     status: JobStatus = Field(..., description="Current job status")
@@ -80,11 +82,14 @@ class JobResponse(BaseModel):
     created_at: datetime = Field(..., description="When job was created")
     updated_at: datetime = Field(..., description="When job was last updated")
     completed_at: Optional[datetime] = Field(None, description="When job completed")
+    view_count: int = Field(default=0, description="Number of video views")
 
     class Config:
         json_schema_extra = {
             "example": {
                 "id": "job_abc123",
+                "short_id": "a1b2c3d4e5f6",
+                "share_url": "https://nuumee.ai/v/a1b2c3d4e5f6",
                 "user_id": "user_xyz",
                 "job_type": "animate",
                 "status": "processing",
@@ -98,7 +103,8 @@ class JobResponse(BaseModel):
                 "error_message": None,
                 "created_at": "2025-01-01T10:00:00Z",
                 "updated_at": "2025-01-01T10:05:00Z",
-                "completed_at": None
+                "completed_at": None,
+                "view_count": 0
             }
         }
 

@@ -1,6 +1,7 @@
 """Job management routes."""
 import os
 import uuid
+import secrets
 import logging
 from datetime import datetime, timezone
 from typing import Optional
@@ -78,6 +79,11 @@ def generate_job_id() -> str:
     return f"job_{uuid.uuid4().hex[:12]}"
 
 
+def generate_short_id() -> str:
+    """Generate a short ID for public video URLs (12 chars)."""
+    return secrets.token_hex(6)  # 12 hex chars = 281 trillion possibilities
+
+
 @router.post("", response_model=JobResponse)
 async def create_job(
     request: CreateJobRequest,
@@ -134,13 +140,15 @@ async def create_job(
             }
         )
 
-    # Generate job ID
+    # Generate job ID and short ID for sharing
     job_id = generate_job_id()
+    short_id = generate_short_id()
     now = datetime.now(timezone.utc)
 
     # Create job document
     job_data = {
         "id": job_id,
+        "short_id": short_id,  # For clean public URLs like nuumee.ai/v/{short_id}
         "user_id": user_id,
         "job_type": request.job_type.value,
         "status": JobStatus.PENDING.value,
@@ -155,6 +163,7 @@ async def create_job(
         "created_at": now,
         "updated_at": now,
         "completed_at": None,
+        "view_count": 0,  # Track video views
     }
 
     # Use transaction to deduct credits and create job atomically
@@ -212,6 +221,8 @@ async def create_job(
         # Return job response
         return JobResponse(
             id=job_id,
+            short_id=short_id,
+            share_url=f"https://nuumee.ai/v/{short_id}",
             user_id=user_id,
             job_type=request.job_type,
             status=job_status,
@@ -226,6 +237,7 @@ async def create_job(
             created_at=now,
             updated_at=now,
             completed_at=None,
+            view_count=0,
         )
 
     except HTTPException:
@@ -252,7 +264,8 @@ async def list_jobs(
     """
     db = get_firestore_client()
 
-    # Build query
+    # Build query - filter by user_id only (soft-deleted jobs filtered client-side for now)
+    # Note: Firestore doesn't support "field does not exist" queries
     query = db.collection("jobs").where("user_id", "==", user_id)
 
     if status:
@@ -261,10 +274,10 @@ async def list_jobs(
     # Order by created_at descending
     query = query.order_by("created_at", direction=firestore.Query.DESCENDING)
 
-    # Get total count (for pagination info)
-    # Note: Firestore doesn't have a count function in Python SDK, so we fetch all IDs
-    # For production, consider using aggregation queries or maintaining counters
-    all_docs = list(query.stream())
+    # Get all docs and filter out soft-deleted ones
+    # Note: Firestore doesn't support "field does not exist" queries,
+    # so we filter after fetching
+    all_docs = [doc for doc in query.stream() if not doc.to_dict().get("deleted_at")]
     total = len(all_docs)
 
     # Apply pagination
@@ -288,8 +301,11 @@ async def list_jobs(
         if completed_at and hasattr(completed_at, 'timestamp'):
             completed_at = datetime.fromtimestamp(completed_at.timestamp(), tz=timezone.utc)
 
+        short_id = data.get("short_id")
         jobs.append(JobResponse(
             id=data.get("id"),
+            short_id=short_id,
+            share_url=f"https://nuumee.ai/v/{short_id}" if short_id else None,
             user_id=data.get("user_id"),
             job_type=JobType(data.get("job_type", "animate")),
             status=JobStatus(data.get("status", "pending")),
@@ -304,6 +320,7 @@ async def list_jobs(
             created_at=created_at,
             updated_at=updated_at,
             completed_at=completed_at,
+            view_count=data.get("view_count", 0),
         ))
 
     return JobListResponse(
@@ -372,8 +389,11 @@ async def get_job(
     if completed_at and hasattr(completed_at, 'timestamp'):
         completed_at = datetime.fromtimestamp(completed_at.timestamp(), tz=timezone.utc)
 
+    short_id = data.get("short_id")
     return JobResponse(
         id=data.get("id"),
+        short_id=short_id,
+        share_url=f"https://nuumee.ai/v/{short_id}" if short_id else None,
         user_id=data.get("user_id"),
         job_type=JobType(data.get("job_type", "animate")),
         status=JobStatus(data.get("status", "pending")),
@@ -388,6 +408,7 @@ async def get_job(
         created_at=created_at,
         updated_at=updated_at,
         completed_at=completed_at,
+        view_count=data.get("view_count", 0),
     )
 
 
@@ -443,6 +464,156 @@ def generate_signed_download_url(bucket_name: str, blob_path: str, expiration: i
         credentials=signing_credentials,
     )
     return url
+
+
+@router.delete("/{job_id}")
+async def delete_job(
+    job_id: str,
+    user_id: str = Depends(get_current_user_id),
+):
+    """
+    Delete a job and its associated files.
+
+    This performs a soft delete (sets deleted_at) and removes GCS files.
+    Credits are NOT refunded.
+    """
+    db = get_firestore_client()
+
+    # Get job document
+    job_ref = db.collection("jobs").document(job_id)
+    job_doc = job_ref.get()
+
+    if not job_doc.exists:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    data = job_doc.to_dict()
+
+    # Verify ownership
+    if data.get("user_id") != user_id:
+        raise HTTPException(status_code=403, detail="Not authorized to delete this job")
+
+    # Delete associated files from GCS
+    try:
+        upload_bucket = os.getenv("UPLOAD_BUCKET", "nuumee-uploads")
+        output_bucket = os.getenv("OUTPUT_BUCKET", "nuumee-outputs")
+        client = storage.Client()
+
+        # Delete reference image
+        if data.get("reference_image_path"):
+            try:
+                bucket = client.bucket(upload_bucket)
+                blob = bucket.blob(data["reference_image_path"])
+                blob.delete()
+            except Exception as e:
+                logger.warning(f"Failed to delete reference image: {e}")
+
+        # Delete motion video
+        if data.get("motion_video_path"):
+            try:
+                bucket = client.bucket(upload_bucket)
+                blob = bucket.blob(data["motion_video_path"])
+                blob.delete()
+            except Exception as e:
+                logger.warning(f"Failed to delete motion video: {e}")
+
+        # Delete output video
+        if data.get("output_video_path"):
+            try:
+                bucket = client.bucket(output_bucket)
+                blob = bucket.blob(data["output_video_path"])
+                blob.delete()
+            except Exception as e:
+                logger.warning(f"Failed to delete output video: {e}")
+
+    except Exception as e:
+        logger.error(f"Error during file cleanup for job {job_id}: {e}")
+
+    # Soft delete - set deleted_at timestamp
+    job_ref.update({
+        "deleted_at": datetime.now(timezone.utc),
+        "updated_at": datetime.now(timezone.utc),
+    })
+
+    return {"message": "Job deleted successfully", "job_id": job_id}
+
+
+class ThumbnailUrls(JobOutputResponse):
+    """Response model for job thumbnails."""
+    reference_image_url: Optional[str] = None
+    motion_video_url: Optional[str] = None
+
+
+@router.get("/{job_id}/thumbnails")
+async def get_job_thumbnails(
+    job_id: str,
+    user_id: str = Depends(get_current_user_id),
+):
+    """
+    Get signed URLs for job input files (reference image and motion video).
+
+    Returns URLs valid for 1 hour.
+    """
+    db = get_firestore_client()
+
+    # Get job document
+    job_ref = db.collection("jobs").document(job_id)
+    job_doc = job_ref.get()
+
+    if not job_doc.exists:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    data = job_doc.to_dict()
+
+    # Verify ownership
+    if data.get("user_id") != user_id:
+        raise HTTPException(status_code=403, detail="Not authorized to access this job")
+
+    # Buckets match what upload router uses
+    image_bucket = os.getenv("GCS_IMAGE_BUCKET", "nuumee-images")
+    video_bucket = os.getenv("GCS_VIDEO_BUCKET", "nuumee-videos")
+    output_bucket = os.getenv("OUTPUT_BUCKET", "nuumee-outputs")
+
+    result = {
+        "job_id": job_id,
+        "reference_image_url": None,
+        "motion_video_url": None,
+        "output_video_url": None,
+    }
+
+    # Generate signed URL for reference image (stored in images bucket)
+    if data.get("reference_image_path"):
+        try:
+            result["reference_image_url"] = generate_signed_download_url(
+                bucket_name=image_bucket,
+                blob_path=data["reference_image_path"],
+                expiration=3600
+            )
+        except Exception as e:
+            logger.warning(f"Failed to generate reference image URL: {e}")
+
+    # Generate signed URL for motion video (stored in videos bucket)
+    if data.get("motion_video_path"):
+        try:
+            result["motion_video_url"] = generate_signed_download_url(
+                bucket_name=video_bucket,
+                blob_path=data["motion_video_path"],
+                expiration=3600
+            )
+        except Exception as e:
+            logger.warning(f"Failed to generate motion video URL: {e}")
+
+    # Generate signed URL for output video (stored in outputs bucket)
+    if data.get("output_video_path"):
+        try:
+            result["output_video_url"] = generate_signed_download_url(
+                bucket_name=output_bucket,
+                blob_path=data["output_video_path"],
+                expiration=3600
+            )
+        except Exception as e:
+            logger.warning(f"Failed to generate output video URL: {e}")
+
+    return result
 
 
 @router.get("/{job_id}/output", response_model=JobOutputResponse)

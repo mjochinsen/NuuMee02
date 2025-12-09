@@ -15,6 +15,10 @@
         "destination": "/ref/index.html"
       },
       {
+        "source": "/v/**",
+        "destination": "/v/index.html"
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }
