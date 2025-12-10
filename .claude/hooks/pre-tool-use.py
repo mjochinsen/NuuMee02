@@ -177,6 +177,24 @@ elif tool_name == "Bash":
             audit_run = session_state.get("audit_run", False)
             if not audit_run:
                 warnings.append("WARNING: Committing without running /audit quick first.")
+
+            # TYPE-CHECK before commit (block if errors)
+            try:
+                import subprocess
+                frontend_dir = os.path.join(project_root, "frontend")
+                if os.path.exists(frontend_dir):
+                    result = subprocess.run(
+                        ["pnpm", "tsc", "--noEmit"],
+                        cwd=frontend_dir,
+                        capture_output=True,
+                        timeout=30
+                    )
+                    if result.returncode != 0:
+                        error_count = result.stderr.decode().count("error TS")
+                        if error_count > 0:
+                            warnings.append(f"⚠️ TypeScript has {error_count} errors. Run /typecheck to see details.")
+            except Exception as e:
+                pass  # Don't block commit if type-check fails to run
     else:
         decision = "deny"
 

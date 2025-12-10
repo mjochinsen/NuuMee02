@@ -225,7 +225,15 @@ See: [DELEGATION_CONTRACT.md](../docs/agents/orchestration/DELEGATION_CONTRACT.m
 | Starting domain work       | `/prime-frontend` or `/prime-backend`   |
 | Session handoff            | `/whats-next`                           |
 | Need agent help            | `/ask-fiby`                             |
-| Deploy to production       | `/deploy-firebase`                      |
+| Deploy to production       | `/deploy` or `/deploy backend/frontend` |
+| Type check frontend        | `/typecheck`                            |
+| Test API endpoints         | `/test-api` or `/test-api health`       |
+| View Cloud Run logs        | `/logs` or `/logs api/worker/errors`    |
+| Git commit with message    | `/commit` or `/commit fix: description` |
+| Stripe status summary      | `/stripe-check`                         |
+| Run migration script       | `/migrate script_name.py`               |
+| Firestore stats            | `/db-stats`                             |
+| GCP billing check          | `/cost-check`                           |
 | Check PR status            | `mcp__github__list_pull_requests`       |
 | Query subscriptions        | `mcp__stripe__list_subscriptions`       |
 | Debug Cloud Run            | `mcp__gcp__get-logs`                    |

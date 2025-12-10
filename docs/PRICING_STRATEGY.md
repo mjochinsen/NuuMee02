@@ -1,8 +1,8 @@
 # NuuMee Pricing Strategy
 
-**Version:** 3.0
-**Updated:** 2025-11-26
-**Status:** FINAL - Approved for Production
+**Version:** 3.2
+**Updated:** 2025-12-10
+**Status:** FINAL - Extender pricing + insufficient credits policy
 
 ---
 
@@ -47,17 +47,24 @@ credits = (video_seconds × resolution_multiplier) ÷ 10
 
 **Correct backend rule:**
 ```
-extenderCredits = baseCredits × 0.50
+extenderCredits = EXTENDER_FIXED_CREDITS[resolution]
 ```
 
-**Meaning:**
-- Adds 50% of the base cost regardless of resolution
-- Not a fixed price per resolution
-- Follows video length after extension
+| Resolution | Extender Cost | WaveSpeed Cost | Margin |
+|------------|---------------|----------------|--------|
+| 480p       | 5 credits     | $0.25          | 50%    |
+| 720p       | 10 credits    | $0.50          | 50%    |
 
-**Example:** 10s @ 720p:
-- Base = 1.5 credits
-- Extender = 0.75 credits
+**Why fixed cost (not % of base):**
+- WaveSpeed charges per OUTPUT second at target resolution
+- 5s extension @ 720p = 5 × $0.10 = $0.50 cost to us
+- Must charge $1.00 (10 credits) for 50% margin
+- Previous 50% formula was LOSING money (-567% margin!)
+
+**Example:** 10s @ 720p + Extender:
+- Base = 1.5 credits ($0.15)
+- Extender = 10 credits ($1.00) ← fixed, not % of base
+- Total = 11.5 credits
 
 ### Upscaler (2K Output)
 
@@ -88,6 +95,8 @@ All free and unlimited:
 ## 3. Total Credit Calculation (Final Code)
 
 ```javascript
+const EXTENDER_FIXED_CREDITS = { "480p": 5, "720p": 10 };
+
 function calculateTotalCredits(config) {
   const billed = Math.max(5, Math.ceil(config.seconds));
   const multiplier = config.resolution === "720p" ? 1.5 : 1.0;
@@ -96,9 +105,9 @@ function calculateTotalCredits(config) {
   const base = (billed * multiplier) / 10;
   let total = base;
 
-  // 50% cost extender
+  // Extender = FIXED cost per resolution (WaveSpeed charges per output second)
   if (config.extender) {
-    total += base * 0.50;
+    total += EXTENDER_FIXED_CREDITS[config.resolution];
   }
 
   // Upscaler = 100% of base
@@ -180,23 +189,33 @@ function calculateTotalCredits(config) {
 
 ---
 
-## 8. Profit Margins (Corrected)
+## 8. Profit Margins (Corrected v3.1)
 
-### Example 1 — 10s 720p
-- Base = 1.5 credits
-- Retail = $0.15
-- Cost ≈ $0.08
-- **Margin ≈ 46%**
+### Example 1 — 10s 720p (base only)
+- Base = 1.5 credits = $0.15 retail
+- WaveSpeed cost ≈ $0.08
+- **Margin ≈ 46%** ✅
 
-### Example 2 — 30s 720p + Extender + Upscaler
-- Base = 4.5
-- Extender = 2.25
-- Upscale = 4.5
-- Total = 11.25 credits → $1.12
-- Internal cost ≈ $0.43
-- **Margin ≈ 62%**
+### Example 2 — 10s 720p + Extender
+- Base = 1.5 credits = $0.15
+- Extender = 10 credits = $1.00 (fixed)
+- Total = 11.5 credits = $1.15 retail
+- WaveSpeed cost = $0.08 (base) + $0.50 (extend) = $0.58
+- **Margin ≈ 50%** ✅
 
-*(All margins validated in pricing model spreadsheet.)*
+### Example 3 — 30s 720p + Extender + Upscaler
+- Base = 4.5 credits = $0.45
+- Extender = 10 credits = $1.00 (fixed)
+- Upscale = 4.5 credits = $0.45
+- Total = 19 credits = $1.90 retail
+- WaveSpeed cost ≈ $0.24 (base) + $0.50 (extend) + $0.35 (upscale) = $1.09
+- **Margin ≈ 43%** ✅
+
+### v3.0 Bug (FIXED)
+Previous extender formula `baseCredits × 0.50` was **losing money**:
+- 10s 720p extend charged 0.75 credits ($0.075)
+- WaveSpeed cost was $0.50
+- **Loss of $0.425 per extend (-567% margin)** ❌
 
 ---
 
@@ -210,8 +229,14 @@ RESOLUTION_MULTIPLIER = {
     "720p": 1.5
 }
 
-EXTENDER_MULTIPLIER = 0.50
-UPSCALER_MULTIPLIER = 1.00
+# EXTENDER: Fixed credits per resolution (NOT a multiplier!)
+# WaveSpeed charges per output second, so extend cost is independent of base video length
+EXTENDER_FIXED_CREDITS = {
+    "480p": 5,   # $0.50 retail, $0.25 cost = 50% margin
+    "720p": 10,  # $1.00 retail, $0.50 cost = 50% margin
+}
+
+UPSCALER_MULTIPLIER = 1.00  # 100% of base (doubles the cost)
 
 MIN_VIDEO_SECONDS = 5
 MAX_VIDEO_SECONDS = 120
@@ -223,16 +248,16 @@ MAX_VIDEO_SECONDS = 120
 
 ### Generate Button
 ```
-🎬 Generate Video (3.75 credits)
+🎬 Generate Video (13 credits)
 ```
 
 ### Cost Breakdown (collapsed detail)
 ```
 Base: 1.5 credits (10s @ 720p)
-Extender: +0.75 credits
+Extender: +10 credits (+5s @ 720p)
 Upscaler: +1.5 credits
 ─────────────────────────
-Total: 3.75 credits
+Total: 13 credits
 ```
 
 ---
@@ -284,7 +309,57 @@ Total: 3.75 credits
 
 ---
 
-## ✅ FINAL STATUS
+## 12. Insufficient Credits Policy
+
+### Backend Rule: STRICT (No Leeway)
+
+```python
+if current_balance < credits_to_charge:
+    raise HTTPException(status_code=402, detail="insufficient_credits")
+```
+
+| Scenario | Behavior |
+|----------|----------|
+| Balance < Required | Block with HTTP 402 |
+| Leeway | None (strict enforcement) |
+| Negative balance | Not allowed |
+
+### Frontend UX Requirements
+
+1. **Pre-check & Disable**
+   - Calculate total cost before user clicks Generate
+   - Disable add-on toggles user can't afford (grayed out)
+   - Disable Generate button if total > balance
+
+2. **Clear Messaging**
+   ```
+   ⚠️ Need 6 more credits
+   [Buy Credits] button
+   ```
+   - Show exact shortfall: `required - balance`
+   - Link directly to credit purchase
+
+3. **Auto-Refill Option**
+   - Users can enable auto-refill in billing settings
+   - When balance drops below threshold → auto-purchase
+   - Uses saved payment method
+   - Configurable: threshold + package size
+
+### Error Response Format (API)
+
+```json
+{
+  "error": "insufficient_credits",
+  "message": "Insufficient credits. Required: 11.5, Available: 4",
+  "required_credits": 11.5,
+  "available_credits": 4,
+  "shortfall": 7.5
+}
+```
+
+---
+
+## ✅ FINAL STATUS (v3.2)
 
 This pricing file is now:
 
@@ -293,6 +368,19 @@ This pricing file is now:
 - ✔ aligned with Terms & front-end
 - ✔ aligned with Stripe setup
 - ✔ aligned with affiliate/referral pages
-- ✔ sustainable margin
+- ✔ sustainable margin (all add-ons now 43-50%)
 - ✔ clear for users
 - ✔ ready for production launch
+
+### v3.2 Change Log (2025-12-10)
+- Added Section 12: Insufficient Credits Policy
+- Documented strict enforcement (no leeway)
+- Specified frontend UX requirements (disable, messaging, auto-refill)
+- Defined API error response format
+
+### v3.1 Change Log (2025-12-10)
+- **CRITICAL FIX:** Extender pricing changed from % of base to fixed credits
+- 480p extend: 5 credits (was ~0.5 credits)
+- 720p extend: 10 credits (was ~0.75 credits)
+- Reason: WaveSpeed charges per output second, not per base video length
+- Previous formula was losing $0.425 per 720p extend (-567% margin)

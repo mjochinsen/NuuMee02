@@ -90,8 +90,8 @@ function convertApiJob(apiJob: JobResponse): Job {
     shortId: apiJob.short_id,
     shareUrl: apiJob.share_url,
     jobType: apiJob.job_type,
-    referenceImagePath: apiJob.reference_image_path,
-    motionVideoPath: apiJob.motion_video_path,
+    referenceImagePath: apiJob.reference_image_path || undefined,
+    motionVideoPath: apiJob.motion_video_path || undefined,
     status: apiJob.status as JobStatus,
     createdAt: new Date(apiJob.created_at).toLocaleString(),
     createdAtRaw: apiJob.created_at,
@@ -344,35 +344,40 @@ export default function JobsPage() {
               </div>
             </div>
 
-            {/* Motion Video */}
+            {/* Source Video - motion_video_url for ANIMATE, input_video_url for EXTEND/UPSCALE */}
             <div className="relative group">
-              <button
-                onClick={() => jobThumbnails?.motion_video_url && setPreviewMedia({ type: 'video', url: jobThumbnails.motion_video_url, label: 'Source Video' })}
-                disabled={!jobThumbnails?.motion_video_url}
-                className="w-36 h-36 border-2 border-[#334155] rounded-xl bg-[#1E293B] flex items-center justify-center overflow-hidden group-hover:scale-105 group-hover:border-[#00F0D9] transition-all cursor-pointer disabled:cursor-default disabled:hover:scale-100 disabled:hover:border-[#334155]"
-              >
-                {isLoadingThumb ? (
-                  <ThumbnailSkeleton />
-                ) : jobThumbnails?.motion_video_url ? (
-                  <video
-                    src={jobThumbnails.motion_video_url}
-                    className="w-full h-full object-cover"
-                    muted
-                    playsInline
-                    onMouseEnter={(e) => e.currentTarget.play()}
-                    onMouseLeave={(e) => { e.currentTarget.pause(); e.currentTarget.currentTime = 0; }}
-                  />
-                ) : (
-                  <>
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] flex items-center justify-center group-hover:animate-pulse">
-                        <Play className="w-5 h-5 text-white" />
-                      </div>
-                    </div>
-                    <Video className="w-10 h-10 text-[#94A3B8] opacity-30" />
-                  </>
-                )}
-              </button>
+              {(() => {
+                const srcUrl = jobThumbnails?.motion_video_url || jobThumbnails?.input_video_url;
+                return (
+                  <button
+                    onClick={() => srcUrl && setPreviewMedia({ type: 'video', url: srcUrl, label: 'Source Video' })}
+                    disabled={!srcUrl}
+                    className="w-36 h-36 border-2 border-[#334155] rounded-xl bg-[#1E293B] flex items-center justify-center overflow-hidden group-hover:scale-105 group-hover:border-[#00F0D9] transition-all cursor-pointer disabled:cursor-default disabled:hover:scale-100 disabled:hover:border-[#334155]"
+                  >
+                    {isLoadingThumb ? (
+                      <ThumbnailSkeleton />
+                    ) : srcUrl ? (
+                      <video
+                        src={srcUrl}
+                        className="w-full h-full object-cover"
+                        muted
+                        playsInline
+                        onMouseEnter={(e) => e.currentTarget.play()}
+                        onMouseLeave={(e) => { e.currentTarget.pause(); e.currentTarget.currentTime = 0; }}
+                      />
+                    ) : (
+                      <>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] flex items-center justify-center group-hover:animate-pulse">
+                            <Play className="w-5 h-5 text-white" />
+                          </div>
+                        </div>
+                        <Video className="w-10 h-10 text-[#94A3B8] opacity-30" />
+                      </>
+                    )}
+                  </button>
+                );
+              })()}
               <div className="absolute bottom-0 left-0 right-0 bg-black/60 backdrop-blur-sm text-white text-xs py-1 text-center rounded-b-xl">
                 SRC
               </div>
@@ -422,6 +427,12 @@ export default function JobsPage() {
                 <div className="flex items-center gap-3 mb-1">
                   <span className="text-[#F1F5F9] font-mono">{job.id}</span>
                   {getStatusBadge(job.status)}
+                  <Badge variant="outline" className="border-[#334155] text-[#94A3B8] text-xs uppercase">
+                    {job.jobType === 'animate' ? '🎬 Animate' :
+                     job.jobType === 'extend' ? '⏩ Extend' :
+                     job.jobType === 'upscale' ? '📈 Upscale' :
+                     job.jobType === 'foley' ? '🔊 Foley' : job.jobType}
+                  </Badge>
                 </div>
                 <div className="text-[#94A3B8] text-sm">{job.createdAt}</div>
               </div>
@@ -534,7 +545,17 @@ export default function JobsPage() {
 
               {job.status === 'failed' && (
                 <>
-                  <Button variant="outline" size="sm" className="border-[#334155] text-[#F1F5F9] hover:border-[#00F0D9] hover:text-[#00F0D9]">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-[#334155] text-[#F1F5F9] hover:border-[#00F0D9] hover:text-[#00F0D9]"
+                    onClick={() => {
+                      toast.error('Job Failed', {
+                        description: job.errorMessage || 'Unknown error occurred',
+                        duration: 10000,
+                      });
+                    }}
+                  >
                     <FileText className="w-4 h-4 mr-1" />
                     Error Log
                   </Button>
@@ -551,10 +572,12 @@ export default function JobsPage() {
                     )}
                     {retryingId === job.id ? 'Retrying...' : 'Retry'}
                   </Button>
-                  <Button variant="outline" size="sm" className="border-[#334155] text-[#F1F5F9] hover:border-[#00F0D9] hover:text-[#00F0D9]">
-                    <Mail className="w-4 h-4 mr-1" />
-                    Support
-                  </Button>
+                  <Link href="/support">
+                    <Button variant="outline" size="sm" className="border-[#334155] text-[#F1F5F9] hover:border-[#00F0D9] hover:text-[#00F0D9]">
+                      <Mail className="w-4 h-4 mr-1" />
+                      Support
+                    </Button>
+                  </Link>
                 </>
               )}
 

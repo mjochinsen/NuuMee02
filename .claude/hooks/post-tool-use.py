@@ -74,6 +74,9 @@ log_entry = {
     "tool_input_preview": str(tool_input)[:100]
 }
 
+# Output dict for feedback to Claude
+output = {}
+
 # Track specific tool types
 if tool_name == "Write":
     file_path = tool_input.get("file_path", "")
@@ -88,8 +91,16 @@ elif tool_name == "Task":
     log_entry["subagent"] = subagent_type
 
 elif tool_name == "Bash":
-    command = tool_input.get("command", "")[:50]
-    log_entry["command"] = command
+    command = tool_input.get("command", "")
+    log_entry["command"] = command[:50]
+
+    # DEPLOY PROMPT after git push
+    if "git push" in command and "error" not in str(tool_response).lower():
+        output["message"] = "✅ Push complete! Deploy to production?\n• `/deploy` - Deploy both backend + frontend\n• `/deploy backend` - Cloud Run only\n• `/deploy frontend` - Firebase only"
+
+    # BUG FIX MEMORY PROMPT
+    if any(word in command.lower() for word in ["fix", "patch", "hotfix"]):
+        output["message"] = "🐛 Bug fix detected! Consider: `/remember bug: [describe what was fixed and why]`"
 
 elif tool_name == "SlashCommand":
     # CRITICAL: Detect prime and audit commands, update session state
@@ -171,8 +182,10 @@ if tool_name in ["Edit", "Write"] and any(word in response_str for word in ["fix
         ctx = "video"
     else:
         ctx = "general"
-    # Don't auto-write bugs - too noisy. Let agents decide.
+    # Suggest memory capture for bug fixes
+    if "fix" in response_str or "bug" in response_str:
+        output["message"] = f"🐛 Bug fix in {os.path.basename(file_path)}. Consider: `/remember bug: [cause] → [fix]`"
 
 # Output (optional feedback to Claude)
-output = {}
+# Note: output dict may have messages from git push, bug fix detection, etc.
 print(json.dumps(output))

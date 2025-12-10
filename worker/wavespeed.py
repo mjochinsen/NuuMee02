@@ -32,6 +32,7 @@ class JobStatus(str, Enum):
     CREATED = "created"
     PROCESSING = "processing"
     COMPLETED = "completed"
+    SUCCESS = "success"  # Some WaveSpeed endpoints return this instead of "completed"
     FAILED = "failed"
 
 
@@ -208,6 +209,7 @@ class WaveSpeedClient:
             "duration": duration,
             "resolution": resolution,
             "seed": seed,
+            "enable_prompt_expansion": True,  # Let WaveSpeed expand/interpret prompts
         }
 
         if audio_url:
@@ -345,8 +347,9 @@ class WaveSpeedClient:
             if callback:
                 callback(status, elapsed)
 
-            if status == JobStatus.COMPLETED.value:
-                logger.info(f"Job completed after {elapsed:.1f}s")
+            # Check for completion (WaveSpeed uses both "completed" and "success")
+            if status in (JobStatus.COMPLETED.value, JobStatus.SUCCESS.value):
+                logger.info(f"Job completed after {elapsed:.1f}s (status={status})")
                 return result
 
             if status == JobStatus.FAILED.value:

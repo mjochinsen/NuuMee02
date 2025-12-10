@@ -229,8 +229,14 @@ export type Resolution = '480p' | '720p';
 
 export interface CreateJobRequest {
   job_type?: JobType;
-  reference_image_path: string;
-  motion_video_path: string;
+  // ANIMATE job fields
+  reference_image_path?: string;
+  motion_video_path?: string;
+  // EXTEND/UPSCALE job fields
+  source_job_id?: string;
+  input_video_path?: string;
+  extension_prompt?: string;
+  // Common fields
   resolution?: Resolution;
   seed?: number | null;
 }
@@ -242,8 +248,14 @@ export interface JobResponse {
   user_id: string;
   job_type: JobType;
   status: JobStatus;
-  reference_image_path: string;
-  motion_video_path: string;
+  // ANIMATE fields
+  reference_image_path: string | null;
+  motion_video_path: string | null;
+  // EXTEND/UPSCALE fields
+  source_job_id: string | null;
+  input_video_path: string | null;
+  extension_prompt: string | null;
+  // Common fields
   resolution: Resolution;
   seed: number | null;
   credits_charged: number;
@@ -326,6 +338,7 @@ export interface JobThumbnailsResponse {
   job_id: string;
   reference_image_url: string | null;
   motion_video_url: string | null;
+  input_video_url: string | null;  // For EXTEND/UPSCALE jobs
   output_video_url: string | null;
 }
 

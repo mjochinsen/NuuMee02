@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { FileCode, LayoutGrid, Video, Clock, DollarSign, Upload, X, Image as ImageIcon, Loader2, CheckCircle, AlertCircle, FlaskConical } from 'lucide-react';
+import { FileCode, LayoutGrid, Video, Clock, DollarSign, Upload, X, Image as ImageIcon, Loader2, CheckCircle, AlertCircle, FlaskConical, Film } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { PostProcessingOptions } from '@/components/PostProcessingOptions';
 import { useAuth } from '@/components/AuthProvider';
 import { getSignedUrl, uploadToGCS, createJob, ApiError, JobResponse, Resolution as ApiResolution } from '@/lib/api';
+import { JobPickerModal } from '@/components/JobPickerModal';
 
 // Test mode: Enable via ?test=1 query param or localStorage
 const checkTestMode = (): boolean => {
@@ -54,6 +55,11 @@ export default function CreateVideoPage() {
   const [loadingTestFiles, setLoadingTestFiles] = useState(false);
   const [createdJob, setCreatedJob] = useState<JobResponse | null>(null);
   const [isCreatingJob, setIsCreatingJob] = useState(false);
+
+  // Job picker state (for "From My Jobs" selection)
+  const [jobPickerOpen, setJobPickerOpen] = useState(false);
+  const [selectedJobForMotion, setSelectedJobForMotion] = useState<JobResponse | null>(null);
+  const [selectedJobThumbnailUrl, setSelectedJobThumbnailUrl] = useState<string | null>(null);
 
   const imageInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
@@ -102,7 +108,9 @@ export default function CreateVideoPage() {
   // 480p: $0.04/sec, 720p: $0.08/sec - minimum 5 seconds
   const estimatedTime = '2 to 5 minutes';
   const creditCost = resolution === '480p' ? 10 : 20; // Simplified credit cost
-  const canGenerate = referenceImage && motionVideo;
+  // Can generate if we have an image AND either a video file OR a selected job
+  const hasMotionSource = motionVideo || selectedJobForMotion;
+  const canGenerate = referenceImage && hasMotionSource;
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -145,7 +153,27 @@ export default function CreateVideoPage() {
       console.log('Setting motion video');
       setMotionVideo(file);
       setMotionVideoPreview(URL.createObjectURL(file));
+      // Clear selected job when uploading a file
+      setSelectedJobForMotion(null);
+      setSelectedJobThumbnailUrl(null);
     }
+  };
+
+  // Handle job selection from JobPickerModal
+  const handleJobSelect = (job: JobResponse, thumbnailUrl: string) => {
+    setSelectedJobForMotion(job);
+    setSelectedJobThumbnailUrl(thumbnailUrl);
+    // Clear uploaded file when selecting a job
+    setMotionVideo(null);
+    if (motionVideoPreview) URL.revokeObjectURL(motionVideoPreview);
+    setMotionVideoPreview(null);
+    if (videoInputRef.current) videoInputRef.current.value = '';
+  };
+
+  // Clear selected job
+  const clearSelectedJob = () => {
+    setSelectedJobForMotion(null);
+    setSelectedJobThumbnailUrl(null);
   };
 
   const removeImage = useCallback(() => {
@@ -168,8 +196,13 @@ export default function CreateVideoPage() {
       return;
     }
 
-    if (!referenceImage || !motionVideo) {
-      setGenerateError('Please select both an image and a video');
+    if (!referenceImage) {
+      setGenerateError('Please select a reference image');
+      return;
+    }
+
+    if (!motionVideo && !selectedJobForMotion) {
+      setGenerateError('Please select a motion source (upload or from your jobs)');
       return;
     }
 
@@ -205,25 +238,38 @@ export default function CreateVideoPage() {
       setImageUpload({ status: 'success', progress: 100, filePath: imageSignedUrl.file_path });
       console.log('Image uploaded successfully');
 
-      // Step 2: Upload motion video
-      console.log('Step 2: Getting signed URL for video...');
-      setVideoUpload({ status: 'uploading', progress: 0 });
+      // Step 2: Get motion video path (either upload new file or use existing job output)
+      let motionVideoPath: string;
 
-      const videoSignedUrl = await getSignedUrl({
-        file_type: 'video',
-        file_name: motionVideo.name,
-        content_type: motionVideo.type,
-      });
-      console.log('Got video signed URL:', videoSignedUrl.file_path);
+      if (selectedJobForMotion) {
+        // Use output from previous job
+        console.log('Step 2: Using video from previous job:', selectedJobForMotion.short_id || selectedJobForMotion.id);
+        setVideoUpload({ status: 'success', progress: 100 });
+        motionVideoPath = selectedJobForMotion.output_video_path!;
+      } else if (motionVideo) {
+        // Upload new file
+        console.log('Step 2: Getting signed URL for video...');
+        setVideoUpload({ status: 'uploading', progress: 0 });
 
-      console.log('Uploading video to GCS...');
-      await uploadToGCS(
-        motionVideo,
-        videoSignedUrl.upload_url,
-        (progress) => setVideoUpload({ status: 'uploading', progress })
-      );
-      setVideoUpload({ status: 'success', progress: 100, filePath: videoSignedUrl.file_path });
-      console.log('Video uploaded successfully');
+        const videoSignedUrl = await getSignedUrl({
+          file_type: 'video',
+          file_name: motionVideo.name,
+          content_type: motionVideo.type,
+        });
+        console.log('Got video signed URL:', videoSignedUrl.file_path);
+
+        console.log('Uploading video to GCS...');
+        await uploadToGCS(
+          motionVideo,
+          videoSignedUrl.upload_url,
+          (progress) => setVideoUpload({ status: 'uploading', progress })
+        );
+        setVideoUpload({ status: 'success', progress: 100, filePath: videoSignedUrl.file_path });
+        console.log('Video uploaded successfully');
+        motionVideoPath = videoSignedUrl.file_path;
+      } else {
+        throw new Error('No motion source selected');
+      }
 
       // Step 3: Create job
       console.log('Step 3: Creating job...');
@@ -233,7 +279,7 @@ export default function CreateVideoPage() {
       const job = await createJob({
         job_type: 'animate',
         reference_image_path: imageSignedUrl.file_path,
-        motion_video_path: videoSignedUrl.file_path,
+        motion_video_path: motionVideoPath,
         resolution: resolution as ApiResolution,
         seed: isNaN(seedValue as number) ? null : seedValue,
       });
@@ -245,6 +291,7 @@ export default function CreateVideoPage() {
       // Clear form after successful submission
       removeImage();
       removeVideo();
+      clearSelectedJob();
 
     } catch (error) {
       console.error('Generation failed:', error);
@@ -255,6 +302,8 @@ export default function CreateVideoPage() {
           setGenerateError('Please sign in to generate videos');
         } else if (error.status === 402) {
           setGenerateError('Insufficient credits. Please purchase more credits to continue.');
+        } else if (error.status === 403) {
+          setGenerateError('You cannot use this video. It may belong to another user or no longer exist.');
         } else {
           setGenerateError(error.message);
         }
@@ -274,7 +323,7 @@ export default function CreateVideoPage() {
     } finally {
       setIsGenerating(false);
     }
-  }, [referenceImage, motionVideo, user, profile, creditCost, resolution, seed, removeImage, removeVideo]);
+  }, [referenceImage, motionVideo, selectedJobForMotion, user, profile, creditCost, resolution, seed, removeImage, removeVideo]);
 
   return (
     <main className="container mx-auto px-6 py-12 max-w-7xl">
@@ -365,7 +414,7 @@ export default function CreateVideoPage() {
                 </div>
               </div>
 
-              {/* Motion Video Upload */}
+              {/* Motion Video Upload / Job Selection */}
               <div className="border-2 border-dashed border-[#334155] rounded-xl p-6 hover:border-[#00F0D9] transition-colors relative">
                 <input
                   ref={videoInputRef}
@@ -375,6 +424,7 @@ export default function CreateVideoPage() {
                   className="hidden"
                 />
                 {motionVideoPreview ? (
+                  // Show uploaded file
                   <div className="relative">
                     <video
                       src={motionVideoPreview}
@@ -389,18 +439,62 @@ export default function CreateVideoPage() {
                     </button>
                     <p className="text-[#94A3B8] text-sm mt-2 truncate">{motionVideo?.name}</p>
                   </div>
-                ) : (
-                  <div className="text-center">
-                    <Upload className="w-12 h-12 text-[#94A3B8] mx-auto mb-3" />
-                    <p className="text-[#F1F5F9] mb-1">🎬 Motion Source Video</p>
-                    <p className="text-[#94A3B8] text-sm mb-4">MP4, MOV • Max 500MB • 120s • 9:16 portrait</p>
-                    <Button
-                      variant="outline"
-                      className="border-[#334155] text-[#F1F5F9] hover:border-[#00F0D9]"
-                      onClick={() => videoInputRef.current?.click()}
+                ) : selectedJobForMotion ? (
+                  // Show selected job
+                  <div className="relative">
+                    {selectedJobThumbnailUrl ? (
+                      <video
+                        src={selectedJobThumbnailUrl}
+                        className="w-full h-48 object-cover rounded-lg"
+                        controls
+                        muted
+                        playsInline
+                      />
+                    ) : (
+                      <div className="w-full h-48 bg-[#0F172A] rounded-lg flex items-center justify-center">
+                        <Video className="w-12 h-12 text-[#64748B]" />
+                      </div>
+                    )}
+                    <button
+                      onClick={clearSelectedJob}
+                      className="absolute top-2 right-2 p-1 bg-red-500 rounded-full hover:bg-red-600 transition-colors"
                     >
-                      Choose File
-                    </Button>
+                      <X className="w-4 h-4 text-white" />
+                    </button>
+                    <div className="mt-2 flex items-center gap-2">
+                      <Film className="w-4 h-4 text-[#00F0D9]" />
+                      <span className="text-[#00F0D9] text-sm font-medium">
+                        From job {selectedJobForMotion.short_id || selectedJobForMotion.id.slice(0, 8)}
+                      </span>
+                      <span className="text-[#64748B] text-xs">
+                        • {selectedJobForMotion.resolution.toUpperCase()}
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  // Show empty state with two buttons
+                  <div className="text-center">
+                    <Video className="w-12 h-12 text-[#94A3B8] mx-auto mb-3" />
+                    <p className="text-[#F1F5F9] mb-1">🎬 Motion Source Video</p>
+                    <p className="text-[#94A3B8] text-sm mb-4">Upload a new video or use output from your previous jobs</p>
+                    <div className="flex gap-3 justify-center">
+                      <Button
+                        variant="outline"
+                        className="border-[#334155] text-[#F1F5F9] hover:border-[#00F0D9] hover:text-[#00F0D9]"
+                        onClick={() => videoInputRef.current?.click()}
+                      >
+                        <Upload className="w-4 h-4 mr-2" />
+                        Upload File
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="border-[#00F0D9] text-[#00F0D9] hover:bg-[#00F0D9]/10"
+                        onClick={() => setJobPickerOpen(true)}
+                      >
+                        <Film className="w-4 h-4 mr-2" />
+                        From My Jobs
+                      </Button>
+                    </div>
                   </div>
                 )}
                 <div className="flex items-center justify-between mt-4 pt-4 border-t border-[#334155]">
@@ -467,15 +561,15 @@ export default function CreateVideoPage() {
                   )}
                 </div>
 
-                {/* Video upload progress */}
+                {/* Video upload/selection progress */}
                 <div className="flex items-center gap-3">
                   {videoUpload.status === 'uploading' && <Loader2 className="w-4 h-4 animate-spin text-[#00F0D9]" />}
                   {videoUpload.status === 'success' && <CheckCircle className="w-4 h-4 text-green-500" />}
                   {videoUpload.status === 'error' && <AlertCircle className="w-4 h-4 text-red-500" />}
                   <span className="text-[#94A3B8] text-sm flex-1">
-                    {videoUpload.status === 'idle' && 'Waiting to upload video...'}
+                    {videoUpload.status === 'idle' && (selectedJobForMotion ? 'Using video from previous job...' : 'Waiting to upload video...')}
                     {videoUpload.status === 'uploading' && `Uploading video... ${Math.round(videoUpload.progress)}%`}
-                    {videoUpload.status === 'success' && 'Video uploaded'}
+                    {videoUpload.status === 'success' && (selectedJobForMotion ? 'Using video from previous job' : 'Video uploaded')}
                     {videoUpload.status === 'error' && 'Video upload failed'}
                   </span>
                   {videoUpload.status === 'uploading' && (
@@ -497,9 +591,9 @@ export default function CreateVideoPage() {
 
             <Button
               onClick={handleGenerate}
-              disabled={!referenceImage || !motionVideo || isGenerating}
+              disabled={!canGenerate || isGenerating}
               className={`w-full h-14 text-white ${
-                referenceImage && motionVideo && !isGenerating
+                canGenerate && !isGenerating
                   ? 'bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] hover:opacity-90 cursor-pointer'
                   : 'bg-gray-600 opacity-50 cursor-not-allowed'
               }`}
@@ -507,12 +601,12 @@ export default function CreateVideoPage() {
               {isGenerating ? (
                 <>
                   <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Uploading files...
+                  {selectedJobForMotion ? 'Processing...' : 'Uploading files...'}
                 </>
               ) : (
                 <>
                   <Video className="w-5 h-5 mr-2" />
-                  {referenceImage && motionVideo ? `Generate Video — Cost ${creditCost} credits` : 'Select image and video to generate'}
+                  {canGenerate ? `Generate Video — Cost ${creditCost} credits` : 'Select image and video to generate'}
                 </>
               )}
             </Button>
@@ -615,6 +709,13 @@ export default function CreateVideoPage() {
         <h2 className="text-[#F1F5F9] text-xl font-semibold mb-4">Post-Processing Options</h2>
         <PostProcessingOptions />
       </div>
+
+      {/* Job Picker Modal */}
+      <JobPickerModal
+        open={jobPickerOpen}
+        onClose={() => setJobPickerOpen(false)}
+        onSelect={handleJobSelect}
+      />
     </main>
   );
 }

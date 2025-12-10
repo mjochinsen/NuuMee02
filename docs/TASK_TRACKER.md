@@ -4,10 +4,11 @@
 
 ## TL;DR - Current State
 
-- **Phase:** 8.5 (Feature Completion) - 95% complete
-- **Phases 0-8:** ✅ Complete
+- **Phase:** 10 (Post-Processing) - MVP DEPLOYED ✅
+- **Phases 0-8.5:** ✅ Complete
+- **Phase 10:** ✅ MVP Deployed (Extend/Upscale backend + frontend wired)
 - **Live Site:** https://nuumee.ai
-- **Next Task:** Phase 9 (Polish & Launch)
+- **Next Task:** Phase 9 (Polish & Launch) or Worker routing for EXTEND/UPSCALE jobs
 
 ---
 
@@ -120,6 +121,18 @@
 
 **V2 (Post-Launch):** PayPal Payouts API for automated affiliate payouts
 
+### Video Creation Pipeline (Priority 2)
+
+| ID     | Task                                    | Status | Agent/Tool | Output                   | Notes                                           |
+| ------ | --------------------------------------- | ------ | ---------- | ------------------------ | ----------------------------------------------- |
+| 8.5.26 | Create JobPickerModal component         | ✅     | Manual     | JobPickerModal.tsx       | Grid of thumbnails, pagination, search, preview |
+| 8.5.27 | Modify /videos/create for job selection | ✅     | Manual     | videos/create/page.tsx   | Two buttons: Upload File, From My Jobs          |
+| 8.5.28 | Backend: GCS path ownership validation  | ✅     | Manual     | jobs/router.py           | Validate user owns motion_video_path            |
+| 8.5.29 | Test job chaining flow end-to-end       | ✅     | Manual     | Test results             | Build + deploy verified                         |
+| 8.5.30 | Deploy video pipeline feature           | ✅     | Manual     | Production               | nuumee-api-00113, firebase hosting deployed     |
+
+See [JOB_PICKER_MODAL.md](./features/JOB_PICKER_MODAL.md) for full implementation plan.
+
 **Phase 8.5 Completion Criteria:**
 
 - [x] Job downloads work (GCS signing fixed)
@@ -129,6 +142,7 @@
 - [ ] All "Coming Soon" badges removed
 - [x] Referrer reward implemented ✅ VERIFIED Dec 8 2025
 - [ ] Affiliate tracking implemented
+- [x] Job Picker Modal for chaining videos (8.5.26-8.5.30) ✅ Dec 9 2025
 - [ ] Billing test suite (8.5.18) - optional
 
 ---
@@ -190,6 +204,42 @@
 
 ---
 
+## PHASE 10 — POST-PROCESSING (Video Extend & Upscale)
+
+**Goal:** Enable Video Extender (+5 seconds) and Upscaler (to 4K) features
+**Status:** MVP DEPLOYED ✅
+**Detailed Plan:** [docs/plans/PHASE10_POST_PROCESSING.md](plans/PHASE10_POST_PROCESSING.md)
+
+| ID    | Task                              | Status | Notes                                        |
+| ----- | --------------------------------- | ------ | -------------------------------------------- |
+| 10.1  | Fix pricing (per-second → fixed)  | ✅     | Extend: 5/10 credits, Upscale: 100% of base  |
+| 10.2  | Add source_job_id to models       | ✅     | CreateJobRequest + JobResponse               |
+| 10.3  | Add source_video_path to models   | ✅     | For tracking source video GCS path           |
+| 10.4  | Add extension_prompt to models    | ✅     | Optional prompt for extend jobs              |
+| 10.5  | Add validate_source_job()         | ✅     | Validates ownership + completion + output    |
+| 10.6  | Update create_job() for EXTEND    | ✅     | Handles job_type=extend via single endpoint  |
+| 10.7  | Update create_job() for UPSCALE   | ✅     | Handles job_type=upscale                     |
+| 10.8  | Update frontend types (api.ts)    | ✅     | JobResponse, CreateJobRequest updated        |
+| 10.9  | Disable "Upload File" button      | ✅     | Shows "Coming soon" tooltip                  |
+| 10.10 | Wire Generate buttons to API      | ✅     | handleExtendJob, handleUpscaleJob            |
+| 10.11 | Deploy backend (Cloud Run)        | ✅     | nuumee-api-00114-5n5                         |
+| 10.12 | Deploy frontend (Firebase)        | ✅     | https://nuumee.ai                            |
+| 10.13 | Verify pricing endpoints          | ✅     | extend/480p=5, extend/720p=10, upscale=5     |
+
+**Remaining (Deferred):**
+- Worker routing for EXTEND/UPSCALE job types (WaveSpeed methods exist)
+- Automated tests
+- Credit pre-check on component mount
+
+**Phase 10 Completion Criteria:**
+- [x] Pricing correct (extend fixed, upscale 100%)
+- [x] Backend handles EXTEND/UPSCALE via create_job()
+- [x] Frontend wired to API
+- [x] Deployed to production
+- [ ] Worker routes EXTEND/UPSCALE to WaveSpeed (deferred)
+
+---
+
 ## ONGOING — MOCK UI REMOVAL
 
 **Goal:** Remove all mock/hardcoded UI and replace with real API data or empty states
@@ -231,19 +281,19 @@
 | 6 - Downloads          | 7       | 7         | ✅     |
 | 7 - Subscriptions      | 10      | 10        | ✅     |
 | 8 - Referral           | 13      | 13        | ✅     |
-| 8.5 - Feature Complete | 20      | 18        | 🔄     |
+| 8.5 - Feature Complete | 25      | 18        | 🔄     |
 | 9 - Polish             | 17      | 0         | ⬜     |
-| **TOTAL**              | **139** | **130**   | 🔄     |
+| **TOTAL**              | **144** | **130**   | 🔄     |
 
 ---
 
 ## CURRENT STATE
 
-**Current Phase:** 8.5 (Feature Completion) - 90% Complete
-**Current Task:** Ready for Phase 9 (Polish & Launch)
-**Next Priority:** SEO/JSON-LD (marketing ready), then performance optimization
+**Current Phase:** 8.5 (Feature Completion) - 72% Complete
+**Current Task:** Job Picker Modal (8.5.26-8.5.30) - Video pipeline chaining
+**Next Priority:** Job Picker Modal, then SEO/JSON-LD, then performance optimization
 **Blockers:** None
-**Last Updated:** 2025-12-08 (expanded Phase 9 with detailed SEO tasks)
+**Last Updated:** 2025-12-09 (added Job Picker Modal tasks 8.5.26-8.5.30)
 
 ### Recent Completions (Dec 2-8, 2025)
 

@@ -32,22 +32,36 @@ router = APIRouter(prefix="/jobs", tags=["Jobs"])
 # Credit costs per resolution (based on WaveSpeed pricing + NuuMee margin)
 # WaveSpeed: 480p=$0.04/sec, 720p=$0.08/sec
 # NuuMee: 1 credit = $0.10, so we charge ~2x WaveSpeed cost
+ANIMATE_CREDIT_RATES = {
+    Resolution.RES_480P: 0.8,  # credits per second
+    Resolution.RES_720P: 1.6,  # credits per second
+}
+
+# Extender: FIXED cost per resolution (not per-second!)
+# See docs/PRICING_STRATEGY.md for rationale
+EXTEND_FIXED_CREDITS = {
+    Resolution.RES_480P: 5.0,   # Fixed 5 credits for 480p extend
+    Resolution.RES_720P: 10.0,  # Fixed 10 credits for 720p extend
+}
+
+# Upscaler: 100% of base credits (calculated from source video)
+# This doubles the cost of the video
+UPSCALE_MULTIPLIER = 1.0  # 100% of base credits
+
+# Foley: flat rate
+FOLEY_FIXED_CREDITS = 5.0
+
+# Legacy CREDIT_COSTS for backward compatibility (animate only)
 CREDIT_COSTS = {
-    JobType.ANIMATE: {
-        Resolution.RES_480P: 0.8,  # credits per second
-        Resolution.RES_720P: 1.6,  # credits per second
-    },
-    JobType.EXTEND: {
-        Resolution.RES_480P: 1.0,
-        Resolution.RES_720P: 2.0,
-    },
-    JobType.UPSCALE: {
-        Resolution.RES_480P: 0.4,
-        Resolution.RES_720P: 0.6,
+    JobType.ANIMATE: ANIMATE_CREDIT_RATES,
+    JobType.EXTEND: EXTEND_FIXED_CREDITS,  # Note: these are FIXED, not rates
+    JobType.UPSCALE: {  # Placeholder - actual calculation uses source video
+        Resolution.RES_480P: 5.0,
+        Resolution.RES_720P: 5.0,
     },
     JobType.FOLEY: {
-        Resolution.RES_480P: 1.0,  # flat rate per job
-        Resolution.RES_720P: 1.0,
+        Resolution.RES_480P: FOLEY_FIXED_CREDITS,
+        Resolution.RES_720P: FOLEY_FIXED_CREDITS,
     },
 }
 
@@ -61,15 +75,37 @@ DEFAULT_DURATION_SECONDS = 10
 def calculate_credits(
     job_type: JobType,
     resolution: Resolution,
-    duration_seconds: int = DEFAULT_DURATION_SECONDS
+    duration_seconds: int = DEFAULT_DURATION_SECONDS,
+    source_base_credits: float = None
 ) -> float:
-    """Calculate credit cost for a job."""
-    rate = CREDIT_COSTS.get(job_type, {}).get(resolution, 1.0)
+    """Calculate credit cost for a job.
 
-    if job_type == JobType.FOLEY:
-        # Flat rate for foley
+    Args:
+        job_type: Type of job (ANIMATE, EXTEND, UPSCALE, FOLEY)
+        resolution: Output resolution
+        duration_seconds: Video duration (used for ANIMATE only)
+        source_base_credits: Base credits of source video (used for UPSCALE only)
+
+    Returns:
+        Credit cost for the job
+    """
+    # EXTEND: Fixed cost based on resolution (not per-second!)
+    if job_type == JobType.EXTEND:
+        return EXTEND_FIXED_CREDITS.get(resolution, 5.0)
+
+    # UPSCALE: 100% of source video's base credits
+    if job_type == JobType.UPSCALE:
+        if source_base_credits is not None:
+            return max(source_base_credits * UPSCALE_MULTIPLIER, MIN_CREDITS)
+        # Fallback if source credits unknown (shouldn't happen)
         return MIN_CREDITS
 
+    # FOLEY: Flat rate
+    if job_type == JobType.FOLEY:
+        return FOLEY_FIXED_CREDITS
+
+    # ANIMATE: Per-second rate
+    rate = ANIMATE_CREDIT_RATES.get(resolution, 0.8)
     cost = rate * duration_seconds
     return max(cost, MIN_CREDITS)
 
@@ -84,6 +120,95 @@ def generate_short_id() -> str:
     return secrets.token_hex(6)  # 12 hex chars = 281 trillion possibilities
 
 
+def validate_gcs_path_ownership(path: str, user_id: str, field_name: str) -> None:
+    """
+    Validate that a GCS path belongs to the current user.
+
+    Path format: {user_id}/{job_id}/filename.ext
+
+    Raises HTTPException 403 if the path doesn't belong to the user.
+    Raises HTTPException 400 if the path format is invalid.
+    """
+    if not path:
+        return  # Empty paths are handled elsewhere
+
+    parts = path.split("/")
+    if len(parts) < 2:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid {field_name} path format"
+        )
+
+    path_user_id = parts[0]
+    if path_user_id != user_id:
+        logger.warning(
+            f"User {user_id} attempted to use {field_name} belonging to {path_user_id}: {path}"
+        )
+        raise HTTPException(
+            status_code=403,
+            detail=f"Cannot use another user's {field_name}"
+        )
+
+
+async def validate_source_job(
+    db,
+    source_job_id: str,
+    user_id: str
+) -> dict:
+    """
+    Validate that a source job exists, belongs to the user, and has completed output.
+
+    Args:
+        db: Firestore client
+        source_job_id: ID of the source job
+        user_id: Current user's ID
+
+    Returns:
+        Source job data dict
+
+    Raises:
+        HTTPException 404 if job not found
+        HTTPException 403 if job belongs to different user
+        HTTPException 400 if job not completed or has no output
+    """
+    job_ref = db.collection("jobs").document(source_job_id)
+    job_doc = job_ref.get()
+
+    if not job_doc.exists:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Source job {source_job_id} not found"
+        )
+
+    job_data = job_doc.to_dict()
+
+    # Check ownership
+    if job_data.get("user_id") != user_id:
+        logger.warning(
+            f"User {user_id} attempted to use job {source_job_id} belonging to {job_data.get('user_id')}"
+        )
+        raise HTTPException(
+            status_code=403,
+            detail="Cannot use another user's job as source"
+        )
+
+    # Check job is completed
+    if job_data.get("status") != JobStatus.COMPLETED.value:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Source job must be completed. Current status: {job_data.get('status')}"
+        )
+
+    # Check job has output video
+    if not job_data.get("output_video_path"):
+        raise HTTPException(
+            status_code=400,
+            detail="Source job has no output video"
+        )
+
+    return job_data
+
+
 @router.post("", response_model=JobResponse)
 async def create_job(
     request: CreateJobRequest,
@@ -93,23 +218,57 @@ async def create_job(
     Create a new video generation job.
 
     This endpoint:
-    1. Validates the user has sufficient credits
-    2. Deducts credits from user's balance
-    3. Creates job document in Firestore
-    4. Returns job details
+    1. Validates inputs based on job_type
+    2. Validates the user has sufficient credits
+    3. Deducts credits from user's balance
+    4. Creates job document in Firestore
+    5. Returns job details
 
     The job will be picked up by the worker service for processing.
 
-    **Credit Calculation:**
-    - 480p: ~0.8 credits/second (min 5 credits)
-    - 720p: ~1.6 credits/second (min 5 credits)
-    - Actual cost depends on video duration
+    **Job Types:**
+    - ANIMATE: Requires reference_image_path and motion_video_path
+    - EXTEND: Requires source_job_id, optional extension_prompt
+    - UPSCALE: Requires source_job_id
 
-    **Required:**
-    - reference_image_path: GCS path from upload endpoint
-    - motion_video_path: GCS path from upload endpoint
+    **Credit Calculation:**
+    - ANIMATE: ~0.8-1.6 credits/second based on resolution
+    - EXTEND: Fixed 5 credits (480p) or 10 credits (720p)
+    - UPSCALE: 100% of source video's base credits
     """
     db = get_firestore_client()
+
+    # Variables for source job (EXTEND/UPSCALE only)
+    source_job_data = None
+    input_video_path = None  # Named to match worker expectation
+    source_base_credits = None
+
+    # Validate based on job type
+    if request.job_type == JobType.ANIMATE:
+        # ANIMATE requires reference_image_path and motion_video_path
+        if not request.reference_image_path or not request.motion_video_path:
+            raise HTTPException(
+                status_code=400,
+                detail="ANIMATE jobs require reference_image_path and motion_video_path"
+            )
+        validate_gcs_path_ownership(request.reference_image_path, user_id, "reference image")
+        validate_gcs_path_ownership(request.motion_video_path, user_id, "motion video")
+
+    elif request.job_type in (JobType.EXTEND, JobType.UPSCALE):
+        # EXTEND/UPSCALE require source_job_id
+        if not request.source_job_id:
+            raise HTTPException(
+                status_code=400,
+                detail=f"{request.job_type.value.upper()} jobs require source_job_id"
+            )
+        # Validate source job ownership and get its data
+        source_job_data = await validate_source_job(db, request.source_job_id, user_id)
+        input_video_path = source_job_data.get("output_video_path")  # Worker reads this as input
+        source_base_credits = source_job_data.get("credits_charged", MIN_CREDITS)
+
+    else:
+        # FOLEY or other future types
+        pass
 
     # Get user document
     user_ref = db.collection("users").document(user_id)
@@ -121,11 +280,12 @@ async def create_job(
     user_data = user_doc.to_dict()
     current_credits = user_data.get("credits_balance", 0)
 
-    # Calculate credit cost (using default duration, actual cost determined after processing)
+    # Calculate credit cost based on job type
     credits_to_charge = calculate_credits(
         request.job_type,
         request.resolution,
-        DEFAULT_DURATION_SECONDS
+        duration_seconds=DEFAULT_DURATION_SECONDS,
+        source_base_credits=source_base_credits
     )
 
     # Check sufficient credits
@@ -152,8 +312,14 @@ async def create_job(
         "user_id": user_id,
         "job_type": request.job_type.value,
         "status": JobStatus.PENDING.value,
+        # ANIMATE fields
         "reference_image_path": request.reference_image_path,
         "motion_video_path": request.motion_video_path,
+        # EXTEND/UPSCALE fields
+        "source_job_id": request.source_job_id,
+        "input_video_path": input_video_path,  # Worker expects this field name
+        "extension_prompt": request.extension_prompt,
+        # Common fields
         "resolution": request.resolution.value,
         "seed": request.seed,
         "credits_charged": credits_to_charge,
@@ -226,8 +392,14 @@ async def create_job(
             user_id=user_id,
             job_type=request.job_type,
             status=job_status,
+            # ANIMATE fields
             reference_image_path=request.reference_image_path,
             motion_video_path=request.motion_video_path,
+            # EXTEND/UPSCALE fields
+            source_job_id=request.source_job_id,
+            input_video_path=input_video_path,
+            extension_prompt=request.extension_prompt,
+            # Common fields
             resolution=request.resolution,
             seed=request.seed,
             credits_charged=credits_to_charge,
@@ -309,8 +481,14 @@ async def list_jobs(
             user_id=data.get("user_id"),
             job_type=JobType(data.get("job_type", "animate")),
             status=JobStatus(data.get("status", "pending")),
+            # ANIMATE fields
             reference_image_path=data.get("reference_image_path"),
             motion_video_path=data.get("motion_video_path"),
+            # EXTEND/UPSCALE fields
+            source_job_id=data.get("source_job_id"),
+            input_video_path=data.get("input_video_path"),
+            extension_prompt=data.get("extension_prompt"),
+            # Common fields
             resolution=Resolution(data.get("resolution", "480p")),
             seed=data.get("seed"),
             credits_charged=data.get("credits_charged", 0),
@@ -397,8 +575,14 @@ async def get_job(
         user_id=data.get("user_id"),
         job_type=JobType(data.get("job_type", "animate")),
         status=JobStatus(data.get("status", "pending")),
+        # ANIMATE fields
         reference_image_path=data.get("reference_image_path"),
         motion_video_path=data.get("motion_video_path"),
+        # EXTEND/UPSCALE fields
+        source_job_id=data.get("source_job_id"),
+        input_video_path=data.get("input_video_path"),
+        extension_prompt=data.get("extension_prompt"),
+        # Common fields
         resolution=Resolution(data.get("resolution", "480p")),
         seed=data.get("seed"),
         credits_charged=data.get("credits_charged", 0),
@@ -577,6 +761,7 @@ async def get_job_thumbnails(
         "job_id": job_id,
         "reference_image_url": None,
         "motion_video_url": None,
+        "input_video_url": None,  # For EXTEND/UPSCALE jobs
         "output_video_url": None,
     }
 
@@ -601,6 +786,17 @@ async def get_job_thumbnails(
             )
         except Exception as e:
             logger.warning(f"Failed to generate motion video URL: {e}")
+
+    # Generate signed URL for input video (for EXTEND/UPSCALE jobs - stored in outputs bucket)
+    if data.get("input_video_path"):
+        try:
+            result["input_video_url"] = generate_signed_download_url(
+                bucket_name=output_bucket,  # Input comes from previous job's output
+                blob_path=data["input_video_path"],
+                expiration=3600
+            )
+        except Exception as e:
+            logger.warning(f"Failed to generate input video URL: {e}")
 
     # Generate signed URL for output video (stored in outputs bucket)
     if data.get("output_video_path"):

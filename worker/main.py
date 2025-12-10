@@ -340,11 +340,13 @@ def process_extend_job(job_data: dict) -> str:
     resolution = job_data.get("resolution", "480p")
     duration = job_data.get("duration", 5)
     seed = job_data.get("seed", -1) or -1
-    prompt = job_data.get("prompt", "")
+    # API stores as extension_prompt
+    prompt = job_data.get("extension_prompt", "")
 
-    # Get signed URL for input video
+    # Get signed URL for input video (from a previous job's output)
     video_path = job_data["input_video_path"]
-    video_url = generate_signed_url(VIDEO_BUCKET, video_path)
+    # Input video comes from previous job output, which is in OUTPUT_BUCKET
+    video_url = generate_signed_url(OUTPUT_BUCKET, video_path)
 
     logger.info(f"Processing extend job {job_id}: duration={duration}, resolution={resolution}")
 
@@ -390,9 +392,10 @@ def process_upscale_job(job_data: dict) -> str:
     job_id = job_data["id"]
     target_resolution = job_data.get("target_resolution", "1080p")
 
-    # Get signed URL for input video
+    # Get signed URL for input video (from a previous job's output)
     video_path = job_data["input_video_path"]
-    video_url = generate_signed_url(VIDEO_BUCKET, video_path)
+    # Input video comes from previous job output, which is in OUTPUT_BUCKET
+    video_url = generate_signed_url(OUTPUT_BUCKET, video_path)
 
     logger.info(f"Processing upscale job {job_id}: target={target_resolution}")
 
@@ -436,9 +439,10 @@ def process_foley_job(job_data: dict) -> str:
     seed = job_data.get("seed", -1) or -1
     prompt = job_data.get("audio_prompt", "")
 
-    # Get signed URL for input video
+    # Get signed URL for input video (from a previous job's output)
     video_path = job_data["input_video_path"]
-    video_url = generate_signed_url(VIDEO_BUCKET, video_path)
+    # Input video comes from previous job output, which is in OUTPUT_BUCKET
+    video_url = generate_signed_url(OUTPUT_BUCKET, video_path)
 
     logger.info(f"Processing foley job {job_id}")
 

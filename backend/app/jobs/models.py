@@ -34,14 +34,29 @@ class CreateJobRequest(BaseModel):
         default=JobType.ANIMATE,
         description="Type of job to create"
     )
-    reference_image_path: str = Field(
-        ...,
-        description="GCS path to reference image (from upload endpoint)"
+    # ANIMATE job fields (required for ANIMATE, ignored for EXTEND/UPSCALE)
+    reference_image_path: Optional[str] = Field(
+        default=None,
+        description="GCS path to reference image (required for ANIMATE jobs)"
     )
-    motion_video_path: str = Field(
-        ...,
-        description="GCS path to motion source video (from upload endpoint)"
+    motion_video_path: Optional[str] = Field(
+        default=None,
+        description="GCS path to motion source video (required for ANIMATE jobs)"
     )
+    # EXTEND/UPSCALE job fields
+    source_job_id: Optional[str] = Field(
+        default=None,
+        description="ID of the source job to extend/upscale (required for EXTEND/UPSCALE jobs)"
+    )
+    input_video_path: Optional[str] = Field(
+        default=None,
+        description="GCS path to input video for processing (auto-populated from source_job_id)"
+    )
+    extension_prompt: Optional[str] = Field(
+        default=None,
+        description="Prompt for video extension (optional for EXTEND jobs)"
+    )
+    # Common fields
     resolution: Resolution = Field(
         default=Resolution.RES_480P,
         description="Output resolution (480p or 720p)"
@@ -53,13 +68,29 @@ class CreateJobRequest(BaseModel):
 
     class Config:
         json_schema_extra = {
-            "example": {
-                "job_type": "animate",
-                "reference_image_path": "uploads/user123/1234567890_reference.jpg",
-                "motion_video_path": "uploads/user123/1234567890_video.mp4",
-                "resolution": "720p",
-                "seed": None
-            }
+            "examples": [
+                {
+                    "title": "ANIMATE job",
+                    "job_type": "animate",
+                    "reference_image_path": "uploads/user123/1234567890_reference.jpg",
+                    "motion_video_path": "uploads/user123/1234567890_video.mp4",
+                    "resolution": "720p",
+                    "seed": None
+                },
+                {
+                    "title": "EXTEND job",
+                    "job_type": "extend",
+                    "source_job_id": "job_abc123",
+                    "extension_prompt": "The character continues walking forward",
+                    "resolution": "720p"
+                },
+                {
+                    "title": "UPSCALE job",
+                    "job_type": "upscale",
+                    "source_job_id": "job_abc123",
+                    "resolution": "720p"
+                }
+            ]
         }
 
 
@@ -71,8 +102,14 @@ class JobResponse(BaseModel):
     user_id: str = Field(..., description="User who created the job")
     job_type: JobType = Field(..., description="Type of job")
     status: JobStatus = Field(..., description="Current job status")
-    reference_image_path: str = Field(..., description="GCS path to reference image")
-    motion_video_path: str = Field(..., description="GCS path to motion video")
+    # ANIMATE job fields (may be empty for EXTEND/UPSCALE)
+    reference_image_path: Optional[str] = Field(None, description="GCS path to reference image")
+    motion_video_path: Optional[str] = Field(None, description="GCS path to motion video")
+    # EXTEND/UPSCALE job fields
+    source_job_id: Optional[str] = Field(None, description="ID of source job (for EXTEND/UPSCALE)")
+    input_video_path: Optional[str] = Field(None, description="GCS path to input video for processing")
+    extension_prompt: Optional[str] = Field(None, description="Extension prompt (for EXTEND)")
+    # Common fields
     resolution: Resolution = Field(..., description="Output resolution")
     seed: Optional[int] = Field(None, description="Random seed used")
     credits_charged: float = Field(..., description="Credits charged for this job")

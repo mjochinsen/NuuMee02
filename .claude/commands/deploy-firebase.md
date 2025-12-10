@@ -1,8 +1,15 @@
 ---
-description: Deploy Next.js application to Firebase Hosting at nuumee.ai
+description: "[DEPRECATED] Use /deploy frontend instead"
 ---
 
-# Deploy to Firebase Hosting
+# Deploy to Firebase Hosting (DEPRECATED)
+
+> **DEPRECATED:** This command is replaced by `/deploy frontend`
+> Use `/deploy`, `/deploy backend`, or `/deploy frontend` instead.
+
+---
+
+## OLD CONTENT BELOW (kept for reference)
 
 You are being asked to deploy the NuuMee Next.js application to Firebase Hosting.
 
