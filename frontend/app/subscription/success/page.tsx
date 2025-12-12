@@ -16,13 +16,13 @@ function SubscriptionSuccessContent() {
       name: 'Creator',
       price: '$29',
       credits: 400,
-      features: ['400 credits per month', 'No watermarks', 'Up to 4K resolution', 'Priority support', 'All post-processing tools', 'API access', '50% credit rollover'],
+      features: ['400 credits per month', 'No watermarks', 'Up to 1080p resolution', 'Priority support', 'All post-processing tools', 'API access', '50% credit rollover'],
     },
     studio: {
       name: 'Studio',
       price: '$99',
       credits: 1600,
-      features: ['1,600 credits per month', 'No watermarks', 'Up to 8K resolution', '24/7 premium support', 'All post-processing tools', 'Advanced API access', '50% credit rollover', 'Priority processing', 'Custom models'],
+      features: ['1,600 credits per month', 'No watermarks', 'Up to 1080p resolution', '24/7 premium support', 'All post-processing tools', 'Advanced API access', '50% credit rollover', 'Priority processing'],
     },
   };
 

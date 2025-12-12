@@ -17,8 +17,8 @@ export function Header() {
   const pathname = usePathname();
   const { user, profile, loading, signOut } = useAuth();
 
-  // Get credits from profile, null while loading
-  const credits = loading ? null : (profile?.credits_balance ?? 0);
+  // Get credits from profile, null while loading or if profile not yet synced
+  const credits = loading || !profile ? null : (profile.credits_balance ?? 0);
 
   const isActive = (path: string) => pathname === path;
 

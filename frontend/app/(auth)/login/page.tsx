@@ -62,6 +62,7 @@ function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialMode = searchParams.get('mode') === 'signup' ? 'signup' : 'login';
+  const redirectTo = searchParams.get('redirect') || '/billing/';
 
   const [mode, setMode] = useState<PageMode>(initialMode);
   const [showPassword, setShowPassword] = useState(false);
@@ -131,7 +132,7 @@ function LoginPageContent() {
         const token = await result.user.getIdToken();
         applyStoredReferralCode(token);
       }
-      router.push('/billing/');
+      router.push(redirectTo);
     } catch (err: unknown) {
       setError(getFirebaseErrorMessage(err));
     } finally {
@@ -162,7 +163,7 @@ function LoginPageContent() {
     try {
       setIsLoading(true);
       await signInWithEmailAndPassword(auth, email, password);
-      router.push('/billing/');
+      router.push(redirectTo);
     } catch (err: unknown) {
       setError(getFirebaseErrorMessage(err));
     } finally {
@@ -202,7 +203,7 @@ function LoginPageContent() {
       const token = await userCredential.user.getIdToken();
       // Apply referral code for new signups (fire-and-forget with keepalive)
       applyStoredReferralCode(token);
-      router.push('/billing/');
+      router.push(redirectTo);
     } catch (err: unknown) {
       setError(getFirebaseErrorMessage(err));
     } finally {

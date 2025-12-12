@@ -340,7 +340,7 @@ export default function JobsPage() {
                 )}
               </button>
               <div className="absolute bottom-0 left-0 right-0 bg-black/60 backdrop-blur-sm text-white text-xs py-1 text-center rounded-b-xl">
-                REF
+                Actor
               </div>
             </div>
 
@@ -379,7 +379,7 @@ export default function JobsPage() {
                 );
               })()}
               <div className="absolute bottom-0 left-0 right-0 bg-black/60 backdrop-blur-sm text-white text-xs py-1 text-center rounded-b-xl">
-                SRC
+                Video
               </div>
             </div>
 
@@ -428,7 +428,7 @@ export default function JobsPage() {
                   <span className="text-[#F1F5F9] font-mono">{job.id}</span>
                   {getStatusBadge(job.status)}
                   <Badge variant="outline" className="border-[#334155] text-[#94A3B8] text-xs uppercase">
-                    {job.jobType === 'animate' ? '🎬 Animate' :
+                    {job.jobType === 'animate' ? '🔄 Replace' :
                      job.jobType === 'extend' ? '⏩ Extend' :
                      job.jobType === 'upscale' ? '📈 Upscale' :
                      job.jobType === 'foley' ? '🔊 Foley' : job.jobType}

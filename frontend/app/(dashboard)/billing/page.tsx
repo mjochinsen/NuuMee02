@@ -60,7 +60,7 @@ export default function BillingPage() {
   const { profile, user, loading, refreshProfile } = useAuth();
   const router = useRouter();
   const credits = loading ? null : (profile?.credits_balance ?? 0);
-  const creditValue = (credits ?? 0) * 0.50;
+  const creditValue = (credits ?? 0) * 0.10;
   const currentPlan = profile?.subscription_tier || 'free';
   const billingPeriod = profile?.billing_period;  // "month", "year", or null
   // For paid subscribers with missing billing_period, default to monthly display
@@ -699,7 +699,7 @@ export default function BillingPage() {
                   features: [
                     '400 credits per month',
                     'No watermarks',
-                    'Up to 4K resolution',
+                    'Up to 1080p resolution',
                     'Priority support',
                     'All post-processing tools',
                     'API access',
@@ -1072,7 +1072,7 @@ export default function BillingPage() {
           features: currentPlan === 'creator' ? [
             '400 credits per month',
             'No watermarks',
-            'Up to 4K resolution',
+            'Up to 1080p resolution',
             'Priority support',
             'API access',
           ] : [],

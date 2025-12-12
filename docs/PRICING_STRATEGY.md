@@ -66,7 +66,14 @@ extenderCredits = EXTENDER_FIXED_CREDITS[resolution]
 - Extender = 10 credits ($1.00) ← fixed, not % of base
 - Total = 11.5 credits
 
-### Upscaler (2K Output)
+### Upscaler (1080p Output)
+
+**WaveSpeed Capabilities:**
+The WaveSpeed Video Upscaler Pro API supports multiple output resolutions:
+- 720p, 1080p, 2K (1440p), 4K (2160p)
+
+**NuuMee Offering:**
+Currently only offering **1080p** output to users. Higher resolutions (2K, 4K) may be added later with tiered pricing.
 
 **Correct rule:**
 ```
@@ -76,6 +83,7 @@ upscaleCredits = baseCredits
 **Meaning:**
 - Upscaler cost = 100% of the base cost
 - Doubles the cost of the video
+- Output: 1080p Full HD (current offering)
 
 **Example:** 30s @ 720p:
 - Base = 4.5 credits

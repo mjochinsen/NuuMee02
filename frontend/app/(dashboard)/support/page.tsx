@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   Search,
@@ -16,7 +16,10 @@ import {
   Send,
   ExternalLink,
   CheckCircle2,
+  Loader2,
 } from 'lucide-react';
+import { useAuth } from '@/components/AuthProvider';
+import { submitSupportTicket } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -37,6 +40,7 @@ import {
 } from '@/components/ui/accordion';
 
 export default function SupportPage() {
+  const { user, profile } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [email, setEmail] = useState('');
   const [subject, setSubject] = useState('');
@@ -44,6 +48,16 @@ export default function SupportPage() {
   const [jobId, setJobId] = useState('');
   const [message, setMessage] = useState('');
   const [showSuccess, setShowSuccess] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [ticketId, setTicketId] = useState<string | null>(null);
+
+  // Pre-fill email from auth
+  useEffect(() => {
+    if (profile?.email && !email) {
+      setEmail(profile.email);
+    }
+  }, [profile?.email, email]);
 
   const popularSearches = ['Getting Started', 'Video Quality', 'Credits', 'API Issues'];
 
@@ -74,11 +88,11 @@ export default function SupportPage() {
       questions: [
         {
           question: 'How do credits work?',
-          answer: 'Each video generation costs credits based on video length and quality. Short videos (< 30s) cost 1 credit, medium videos (30-60s) cost 2 credits, and long videos (60-120s) cost 3 credits.',
+          answer: 'Each video generation costs credits based on resolution: 5 credits for 480p, 10 credits for 720p. Post-processing add-ons like Video Extender or Upscaler cost additional credits.',
         },
         {
           question: 'How much does each video cost?',
-          answer: 'Pricing varies by video length: 1-3 credits per video. Credits cost $0.50 each when purchased in bulk. Subscription plans offer better rates.',
+          answer: 'Pricing varies by resolution: 5 credits for 480p, 10 credits for 720p. 1 credit = $0.10 at retail value. Subscription plans offer better rates.',
         },
         {
           question: 'Can I get a refund if my video fails?',
@@ -103,11 +117,11 @@ export default function SupportPage() {
         },
         {
           question: 'What resolution should I use?',
-          answer: 'We recommend 720p for the best balance of quality and processing speed. 1080p is available on Creator and Studio plans. 4K upscaling is available as a post-processing option.',
+          answer: 'We recommend 720p for the best balance of quality and processing speed. After generation, you can use the Upscaler to enhance your video to 1080p.',
         },
         {
-          question: 'Can I upscale to 4K?',
-          answer: 'Yes! After your video is generated, use the 4K Upscaler post-processing option. This costs an additional 2 credits per video.',
+          question: 'Can I upscale my video?',
+          answer: 'Yes! After your video is generated, use the Upscaler post-processing option to enhance to 1080p. This costs 100% of your base video cost (doubles the total).',
         },
       ],
     },
@@ -188,16 +202,50 @@ export default function SupportPage() {
     { title: 'Troubleshoot Common Issues', duration: '4:12' },
   ];
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setShowSuccess(true);
-    setTimeout(() => {
-      setShowSuccess(false);
+    setSubmitError(null);
+
+    // Validation
+    if (!email || !subject || !category || !message) {
+      setSubmitError('Please fill in all required fields');
+      return;
+    }
+
+    if (message.length < 10) {
+      setSubmitError('Please provide more details in your message (at least 10 characters)');
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const response = await submitSupportTicket({
+        email,
+        subject,
+        category,
+        job_id: jobId || undefined,
+        message,
+      });
+
+      setTicketId(response.ticket_id);
+      setShowSuccess(true);
+      // Reset form
       setSubject('');
       setCategory('');
       setJobId('');
       setMessage('');
-    }, 3000);
+
+      // Hide success after 5 seconds
+      setTimeout(() => {
+        setShowSuccess(false);
+        setTicketId(null);
+      }, 5000);
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : 'Failed to submit ticket. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -401,7 +449,11 @@ export default function SupportPage() {
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <CheckCircle2 className="w-16 h-16 text-[#00F0D9] mb-4" />
             <h3 className="text-xl font-semibold text-[#F1F5F9] mb-2">Ticket Submitted!</h3>
-            <p className="text-[#94A3B8]">We&apos;ll get back to you as soon as possible.</p>
+            <p className="text-[#94A3B8] mb-2">We&apos;ll get back to you within 24-48 hours.</p>
+            {ticketId && (
+              <p className="text-[#64748B] text-sm">Ticket ID: {ticketId.slice(0, 8)}</p>
+            )}
+            <p className="text-[#94A3B8] mt-4 text-sm">A confirmation email has been sent to your inbox.</p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl">
@@ -480,9 +532,28 @@ export default function SupportPage() {
               <p className="text-[#94A3B8] text-sm">Upload screenshots or files that may help us understand your issue</p>
             </div>
 
-            <Button type="submit" className="w-full bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] hover:opacity-90 text-white">
-              <Send className="w-4 h-4 mr-2" />
-              Submit Ticket
+            {submitError && (
+              <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+                <p className="text-red-400 text-sm">{submitError}</p>
+              </div>
+            )}
+
+            <Button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] hover:opacity-90 text-white disabled:opacity-50"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Submitting...
+                </>
+              ) : (
+                <>
+                  <Send className="w-4 h-4 mr-2" />
+                  Submit Ticket
+                </>
+              )}
             </Button>
           </form>
         )}

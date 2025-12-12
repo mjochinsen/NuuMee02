@@ -45,9 +45,9 @@ export default function PricingPage() {
   };
 
   const plans = [
-    { name: 'Free', price: 0, period: 'forever', credits: 25, creditsLabel: '25 credits (one-time)', features: ['25 credits total', '720p resolution', 'Watermarked output', 'Basic support'] },
-    { name: 'Creator', price: billingCycle === 'monthly' ? 29 : 23, period: 'per month', credits: 400, creditsLabel: '400 credits/month', featured: true, features: ['400 credits/month', 'Up to 4K resolution', 'No watermarks', 'Priority support', 'API access', '50% credit rollover'] },
-    { name: 'Studio', price: billingCycle === 'monthly' ? 99 : 79, period: 'per month', credits: 1600, creditsLabel: '1,600 credits/month', features: ['1,600 credits/month', 'Up to 8K resolution', 'No watermarks', '24/7 premium support', 'Priority processing', 'Custom models'] },
+    { name: 'Free', price: 0, period: 'forever', credits: 25, creditsLabel: '25 credits (one-time)', features: ['25 credits total', '480p resolution', 'Watermarked output', 'Basic support'] },
+    { name: 'Creator', price: billingCycle === 'monthly' ? 29 : 23, period: 'per month', credits: 400, creditsLabel: '400 credits/month', featured: true, features: ['400 credits/month', 'Up to 1080p resolution', 'No watermarks', 'Priority support', 'API access', '50% credit rollover'] },
+    { name: 'Studio', price: billingCycle === 'monthly' ? 99 : 79, period: 'per month', credits: 1600, creditsLabel: '1,600 credits/month', features: ['1,600 credits/month', 'Up to 1080p resolution', 'No watermarks', '24/7 premium support', 'Priority processing'] },
   ];
 
   const creditPackages = [

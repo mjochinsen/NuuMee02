@@ -167,6 +167,8 @@ GET  /api/v3/predictions/{request_id}/result
 
 **Use:** Upscale video resolution (720p → 1080p/2K/4K).
 
+**NuuMee Implementation:** Currently only offering **1080p** to users. Higher resolutions (2K, 4K) may be added later with tiered pricing.
+
 ### Endpoint
 ```
 POST /api/v3/wavespeed-ai/video-upscaler-pro
@@ -179,6 +181,8 @@ GET  /api/v3/predictions/{request_id}/result
 |-----------|------|----------|---------|--------|
 | `video` | string | YES | - | Input video URL |
 | `target_resolution` | string | NO | "1080p" | "720p" \| "1080p" \| "2k" \| "4k" |
+
+**Note:** NuuMee hardcodes `target_resolution: "1080p"` in the worker.
 
 ### Pricing (per 5 seconds)
 
@@ -290,7 +294,8 @@ def poll_result(request_id: str, max_wait: int = 300) -> dict:
 
 *1080p available in Extend API but NOT exposed in NuuMee UI.
 
-**Upscaler workflow:** Generate at 480p/720p → Upscale to 2K/4K via Video Upscaler Pro.
+**Upscaler workflow:** Generate at 480p/720p → Upscale to 1080p via Video Upscaler Pro.
+*(API supports 2K/4K but NuuMee currently only offers 1080p)*
 
 ---
 

@@ -795,3 +795,25 @@ export async function deleteAccount(request: DeleteAccountRequest = {}): Promise
     body: JSON.stringify(request),
   });
 }
+
+// Support Tickets
+export interface SubmitTicketRequest {
+  email: string;
+  subject: string;
+  category: string;
+  job_id?: string;
+  message: string;
+}
+
+export interface SubmitTicketResponse {
+  success: boolean;
+  message: string;
+  ticket_id: string;
+}
+
+export async function submitSupportTicket(request: SubmitTicketRequest): Promise<SubmitTicketResponse> {
+  return apiRequest<SubmitTicketResponse>('/support/ticket', {
+    method: 'POST',
+    body: JSON.stringify(request),
+  });
+}

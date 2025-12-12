@@ -68,7 +68,7 @@ NuuMee02/
 
 ### docs/PRICING_STRATEGY.md
 Business pricing logic version 3.0:
-- Credit system (1 credit = $0.50)
+- Credit system (1 credit = $0.10)
 - Subscription tiers (Starter, Creator, Pro)
 - Generation costs (Animate Image, Lip Sync, etc.)
 - Stripe integration details

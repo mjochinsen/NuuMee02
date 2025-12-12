@@ -438,7 +438,7 @@ export function PostProcessingOptions() {
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-3">
                 <label htmlFor="upscaler" className="text-[#F1F5F9] cursor-pointer font-medium">
-                  B. Video Upscaler (4K)
+                  B. Video Upscaler (1080p)
                 </label>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -448,7 +448,7 @@ export function PostProcessingOptions() {
                   </TooltipTrigger>
                   <TooltipContent className="bg-[#1E293B] border border-[#334155] text-[#F1F5F9] max-w-sm p-4">
                     <div className="space-y-2">
-                      <p className="mb-2">Enhance your completed video to stunning 4K resolution (3840x2160).</p>
+                      <p className="mb-2">Enhance your completed video to crisp 1080p Full HD resolution.</p>
                       <div className="space-y-1">
                         <p className="text-[#00F0D9]">What it does:</p>
                         <ul className="list-disc list-inside text-sm text-[#94A3B8]">

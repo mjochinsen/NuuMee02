@@ -71,6 +71,30 @@ MIN_CREDITS = 5.0
 # Default estimated duration for cost calculation
 DEFAULT_DURATION_SECONDS = 10
 
+# Demo job configuration - blob paths (without gs://bucket/ prefix)
+# These paths are stored in Firestore and used for signed URL generation
+DEMO_IMAGE_PATH = "demo/REF.jpeg"  # in nuumee-images bucket
+DEMO_VIDEO_PATH = "demo/SRC.mp4"   # in nuumee-videos bucket (used as motion source)
+DEMO_OUTPUT_PATH = "demo/output.mp4"  # in nuumee-outputs bucket
+
+# Full GCS URIs for path matching (frontend sends these)
+DEMO_IMAGE_URI = "gs://nuumee-images/demo/REF.jpeg"
+DEMO_VIDEO_URI = "gs://nuumee-videos/demo/SRC.mp4"
+
+
+def is_demo_job(reference_image_path: str, motion_video_path: str) -> bool:
+    """Check if the job inputs match demo files (free, pre-generated output).
+
+    Accepts both full GCS URIs and blob paths for flexibility.
+    """
+    # Check against full URIs (what frontend sends)
+    if reference_image_path == DEMO_IMAGE_URI and motion_video_path == DEMO_VIDEO_URI:
+        return True
+    # Also check blob paths in case they're stored that way
+    if reference_image_path == DEMO_IMAGE_PATH and motion_video_path == DEMO_VIDEO_PATH:
+        return True
+    return False
+
 
 def calculate_credits(
     job_type: JobType,
@@ -243,6 +267,16 @@ async def create_job(
     input_video_path = None  # Named to match worker expectation
     source_base_credits = None
 
+    # Check if this is a demo job (free, pre-generated output)
+    demo_mode = False
+    if request.job_type == JobType.ANIMATE:
+        demo_mode = is_demo_job(
+            request.reference_image_path or "",
+            request.motion_video_path or ""
+        )
+        if demo_mode:
+            logger.info(f"Demo job detected for user {user_id}")
+
     # Validate based on job type
     if request.job_type == JobType.ANIMATE:
         # ANIMATE requires reference_image_path and motion_video_path
@@ -251,8 +285,10 @@ async def create_job(
                 status_code=400,
                 detail="ANIMATE jobs require reference_image_path and motion_video_path"
             )
-        validate_gcs_path_ownership(request.reference_image_path, user_id, "reference image")
-        validate_gcs_path_ownership(request.motion_video_path, user_id, "motion video")
+        # Skip ownership validation for demo jobs (demo files are shared)
+        if not demo_mode:
+            validate_gcs_path_ownership(request.reference_image_path, user_id, "reference image")
+            validate_gcs_path_ownership(request.motion_video_path, user_id, "motion video")
 
     elif request.job_type in (JobType.EXTEND, JobType.UPSCALE):
         # EXTEND/UPSCALE require source_job_id
@@ -288,8 +324,12 @@ async def create_job(
         source_base_credits=source_base_credits
     )
 
-    # Check sufficient credits
-    if current_credits < credits_to_charge:
+    # Demo jobs are free
+    if demo_mode:
+        credits_to_charge = 0.0
+
+    # Check sufficient credits (skip for demo jobs)
+    if not demo_mode and current_credits < credits_to_charge:
         raise HTTPException(
             status_code=402,
             detail={
@@ -305,16 +345,20 @@ async def create_job(
     short_id = generate_short_id()
     now = datetime.now(timezone.utc)
 
-    # Create job document
+    # Create job document - demo jobs are immediately completed
+    # For demo jobs, store blob paths (not full URIs) for proper signed URL generation
+    ref_image_path = DEMO_IMAGE_PATH if demo_mode else request.reference_image_path
+    motion_path = DEMO_VIDEO_PATH if demo_mode else request.motion_video_path
+
     job_data = {
         "id": job_id,
         "short_id": short_id,  # For clean public URLs like nuumee.ai/v/{short_id}
         "user_id": user_id,
         "job_type": request.job_type.value,
-        "status": JobStatus.PENDING.value,
+        "status": JobStatus.COMPLETED.value if demo_mode else JobStatus.PENDING.value,
         # ANIMATE fields
-        "reference_image_path": request.reference_image_path,
-        "motion_video_path": request.motion_video_path,
+        "reference_image_path": ref_image_path,
+        "motion_video_path": motion_path,
         # EXTEND/UPSCALE fields
         "source_job_id": request.source_job_id,
         "input_video_path": input_video_path,  # Worker expects this field name
@@ -323,16 +367,53 @@ async def create_job(
         "resolution": request.resolution.value,
         "seed": request.seed,
         "credits_charged": credits_to_charge,
-        "wavespeed_request_id": None,
-        "output_video_path": None,
+        "wavespeed_request_id": "demo" if demo_mode else None,
+        "output_video_path": DEMO_OUTPUT_PATH if demo_mode else None,
         "error_message": None,
         "created_at": now,
         "updated_at": now,
-        "completed_at": None,
+        "completed_at": now if demo_mode else None,
         "view_count": 0,  # Track video views
+        "is_demo": demo_mode,  # Flag for tracking
     }
 
-    # Use transaction to deduct credits and create job atomically
+    # Demo jobs: just create the job, no credit deduction or worker needed
+    if demo_mode:
+        try:
+            job_ref = db.collection("jobs").document(job_id)
+            job_ref.set(job_data)
+            logger.info(f"Demo job {job_id} created for user {user_id}")
+
+            return JobResponse(
+                id=job_id,
+                short_id=short_id,
+                share_url=f"https://nuumee.ai/v/{short_id}",
+                user_id=user_id,
+                job_type=request.job_type,
+                status=JobStatus.COMPLETED,
+                reference_image_path=ref_image_path,
+                motion_video_path=motion_path,
+                source_job_id=request.source_job_id,
+                input_video_path=input_video_path,
+                extension_prompt=request.extension_prompt,
+                resolution=request.resolution,
+                seed=request.seed,
+                credits_charged=0.0,
+                wavespeed_request_id="demo",
+                output_video_path=DEMO_OUTPUT_PATH,
+                error_message=None,
+                created_at=now,
+                updated_at=now,
+                completed_at=now,
+                view_count=0,
+            )
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to create demo job: {str(e)}"
+            )
+
+    # Regular jobs: use transaction to deduct credits and create job atomically
     @firestore.transactional
     def create_job_transaction(transaction, user_ref, job_ref, job_data, credits_to_charge):
         # Re-read user document in transaction
