@@ -38,69 +38,69 @@ Create a separate Cloud Run service (`nuumee-ffmpeg-worker`) for FFmpeg-based po
 | A.5 | Copy shared utilities (GCS, Firestore) | ✅ | Inline in main.py |
 | A.6 | **TEST:** Local build + health check | ✅ | FFmpeg 7.1.3, libass OK, 20 fonts |
 
-### PHASE B: Cloud Tasks Queue (15 min)
+### PHASE B: Cloud Tasks Queue (15 min) ✅
 
 | ID | Task | Status | Notes |
 |----|------|--------|-------|
-| B.1 | Create Cloud Tasks queue `nuumee-ffmpeg-jobs` | ⬜ | |
-| B.2 | Update backend to route subtitle/watermark jobs | ⬜ | |
-| B.3 | **TEST:** Job enqueue verification | ⬜ | |
+| B.1 | Create Cloud Tasks queue `nuumee-ffmpeg-jobs` | ✅ | us-central1, max 5 concurrent |
+| B.2 | Update backend to route subtitle/watermark jobs | ✅ | Added enqueue_ffmpeg_job() |
+| B.3 | **TEST:** Job enqueue verification | ⬜ | Pending Cloud Run deploy |
 
-### PHASE C: FFmpeg Verification (15 min)
-
-| ID | Task | Status | Notes |
-|----|------|--------|-------|
-| C.1 | Deploy minimal worker to Cloud Run | ⬜ | |
-| C.2 | Add FFmpeg capability test endpoint | ⬜ | |
-| C.3 | **TEST:** Verify libass + fonts available | ⬜ | |
-| C.4 | Test audio extraction command | ⬜ | |
-
-### PHASE D: Google STT Integration (45 min)
+### PHASE C: FFmpeg Verification (15 min) ✅
 
 | ID | Task | Status | Notes |
 |----|------|--------|-------|
-| D.1 | Add google-cloud-speech to requirements | ⬜ | |
-| D.2 | Create `stt.py` module | ⬜ | |
-| D.3 | Implement sync transcribe (<60s videos) | ⬜ | |
-| D.4 | Implement async transcribe (60-120s videos) | ⬜ | |
-| D.5 | Add word-level timestamps extraction | ⬜ | |
-| D.6 | **TEST:** Transcribe sample audio file | ⬜ | |
+| C.1 | Deploy minimal worker to Cloud Run | ✅ | us-central1 |
+| C.2 | Add FFmpeg capability test endpoint | ✅ | /ffmpeg-check |
+| C.3 | **TEST:** Verify libass + fonts available | ✅ | FFmpeg 7.1.3, libass OK, 20 fonts |
+| C.4 | Test audio extraction command | ⬜ | Deferred to Phase F |
 
-### PHASE E: ASS Subtitle Generator (45 min)
+### PHASE D: Google STT Integration (45 min) ✅
 
 | ID | Task | Status | Notes |
 |----|------|--------|-------|
-| E.1 | Create `subtitles.py` module | ⬜ | |
-| E.2 | Port ASS time formatting from JS | ⬜ | |
-| E.3 | Create style definitions (Rainbow, Classic, Bold, Minimal) | ⬜ | |
-| E.4 | Implement `generate_ass()` function | ⬜ | |
-| E.5 | Add minimum word duration handling (0.2s) | ⬜ | |
-| E.6 | **TEST:** Generate ASS from sample timestamps | ⬜ | |
+| D.1 | Add google-cloud-speech to requirements | ✅ | Already in requirements.txt |
+| D.2 | Create `stt.py` module | ✅ | |
+| D.3 | Implement sync transcribe (<60s videos) | ✅ | |
+| D.4 | Implement async transcribe (60-120s videos) | ✅ | |
+| D.5 | Add word-level timestamps extraction | ✅ | |
+| D.6 | **TEST:** Transcribe sample audio file | ⬜ | Deferred to E2E test |
 
-### PHASE F: Subtitle Job Handler (1 hour)
-
-| ID | Task | Status | Notes |
-|----|------|--------|-------|
-| F.1 | Add `process_subtitles_job()` to main.py | ⬜ | |
-| F.2 | Implement video download from GCS | ⬜ | |
-| F.3 | Implement audio extraction (FFmpeg) | ⬜ | |
-| F.4 | Implement STT → ASS pipeline | ⬜ | |
-| F.5 | Implement subtitle burning (FFmpeg) | ⬜ | |
-| F.6 | Implement result upload to GCS | ⬜ | |
-| F.7 | Add Firestore status updates | ⬜ | |
-| F.8 | Add error handling + credit refund | ⬜ | |
-| F.9 | **TEST:** End-to-end subtitle job locally | ⬜ | |
-
-### PHASE G: Watermark Handler (30 min)
+### PHASE E: ASS Subtitle Generator (45 min) ✅
 
 | ID | Task | Status | Notes |
 |----|------|--------|-------|
-| G.1 | Upload watermark PNG to GCS | ⬜ | gs://nuumee-assets/watermark.png |
-| G.2 | Add `process_watermark_job()` to main.py | ⬜ | |
-| G.3 | Implement FFmpeg overlay filter | ⬜ | |
-| G.4 | Configure position (bottom-right, 10% margin) | ⬜ | |
-| G.5 | Configure opacity (70%) | ⬜ | |
-| G.6 | **TEST:** End-to-end watermark job locally | ⬜ | |
+| E.1 | Create `subtitles.py` module | ✅ | |
+| E.2 | Port ASS time formatting from JS | ✅ | to_ass_time() |
+| E.3 | Create style definitions (Rainbow, Classic, Bold, Minimal) | ✅ | |
+| E.4 | Implement `generate_ass()` function | ✅ | |
+| E.5 | Add minimum word duration handling (0.2s) | ✅ | MIN_WORD_DURATION |
+| E.6 | **TEST:** Generate ASS from sample timestamps | ⬜ | Deferred to E2E test |
+
+### PHASE F: Subtitle Job Handler (1 hour) ✅
+
+| ID | Task | Status | Notes |
+|----|------|--------|-------|
+| F.1 | Add `process_subtitles_job()` to main.py | ✅ | |
+| F.2 | Implement video download from GCS | ✅ | |
+| F.3 | Implement audio extraction (FFmpeg) | ✅ | |
+| F.4 | Implement STT → ASS pipeline | ✅ | |
+| F.5 | Implement subtitle burning (FFmpeg) | ✅ | |
+| F.6 | Implement result upload to GCS | ✅ | |
+| F.7 | Add Firestore status updates | ✅ | Via process_job() |
+| F.8 | Add error handling + credit refund | ✅ | Via process_job() |
+| F.9 | **TEST:** End-to-end subtitle job locally | ⬜ | Needs prod test |
+
+### PHASE G: Watermark Handler (30 min) ✅
+
+| ID | Task | Status | Notes |
+|----|------|--------|-------|
+| G.1 | Upload watermark PNG to GCS | ⬜ | Needs asset |
+| G.2 | Add `process_watermark_job()` to main.py | ✅ | |
+| G.3 | Implement FFmpeg overlay filter | ✅ | filter_complex |
+| G.4 | Configure position (bottom-right, 10% margin) | ✅ | 5% default |
+| G.5 | Configure opacity (70%) | ✅ | 0.7 default |
+| G.6 | **TEST:** End-to-end watermark job locally | ⬜ | Needs prod test |
 
 ### PHASE H: Backend Integration (30 min)
 
@@ -232,7 +232,7 @@ If issues arise:
 
 ## Current Progress
 
-**Phase:** B (Cloud Tasks Queue)
+**Phase:** H (Backend Integration)
 **Last Updated:** 2025-12-12
 **Blocker:** None
 
@@ -242,3 +242,20 @@ If issues arise:
   - FFmpeg 7.1.3 with libass
   - 20 fonts available
   - Health endpoint working
+- Phase B: Cloud Tasks Queue ✅
+  - Queue: nuumee-ffmpeg-jobs in us-central1
+  - Backend routing: enqueue_ffmpeg_job() added
+- Phase C: FFmpeg Verification ✅
+  - Cloud Run: https://nuumee-ffmpeg-worker-450296399943.us-central1.run.app
+  - FFmpeg 7.1.3, libass available, 20 fonts
+- Phase D: Google STT Integration ✅
+  - transcribe_audio_sync() for <60s
+  - transcribe_audio_async() for 60-120s
+- Phase E: ASS Subtitle Generator ✅
+  - 4 styles: rainbow, classic, bold, minimal
+  - MIN_WORD_DURATION = 0.2s
+- Phase F: Subtitle Job Handler ✅
+  - Full pipeline: download → extract audio → STT → ASS → burn → upload
+- Phase G: Watermark Handler ✅
+  - Configurable position, opacity, margin
+  - Needs watermark asset upload

@@ -20,7 +20,7 @@ steps:
       - '--image'
       - 'gcr.io/$PROJECT_ID/nuumee-ffmpeg-worker:$COMMIT_SHA'
       - '--region'
-      - 'asia-northeast1'
+      - 'us-central1'
       - '--platform'
       - 'managed'
       - '--memory'

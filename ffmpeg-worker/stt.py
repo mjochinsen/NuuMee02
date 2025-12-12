@@ -3,10 +3,21 @@
 Handles audio transcription with word-level timestamps.
 """
 import logging
-from typing import List, Dict, Optional
+from typing import List, Dict
 from google.cloud import speech_v1 as speech
 
 logger = logging.getLogger(__name__)
+
+# Initialize client (lazy)
+_speech_client: speech.SpeechClient = None
+
+
+def get_speech_client() -> speech.SpeechClient:
+    """Get Speech-to-Text client (lazy initialization)."""
+    global _speech_client
+    if _speech_client is None:
+        _speech_client = speech.SpeechClient()
+    return _speech_client
 
 
 def transcribe_audio_sync(audio_path: str, language_code: str = "en-US") -> List[Dict]:
@@ -20,8 +31,25 @@ def transcribe_audio_sync(audio_path: str, language_code: str = "en-US") -> List
     Returns:
         List of word dictionaries with start_time, end_time, word
     """
-    # TODO: Implement in Phase D
-    raise NotImplementedError("Sync transcription not yet implemented")
+    client = get_speech_client()
+
+    # Read audio file
+    with open(audio_path, "rb") as f:
+        audio_content = f.read()
+
+    audio = speech.RecognitionAudio(content=audio_content)
+    config = speech.RecognitionConfig(
+        encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
+        sample_rate_hertz=16000,
+        language_code=language_code,
+        enable_word_time_offsets=True,
+        enable_automatic_punctuation=True,
+    )
+
+    logger.info(f"Transcribing audio (sync): {audio_path}")
+    response = client.recognize(config=config, audio=audio)
+
+    return extract_word_timestamps(response)
 
 
 def transcribe_audio_async(audio_gcs_uri: str, language_code: str = "en-US") -> List[Dict]:
@@ -35,8 +63,24 @@ def transcribe_audio_async(audio_gcs_uri: str, language_code: str = "en-US") -> 
     Returns:
         List of word dictionaries with start_time, end_time, word
     """
-    # TODO: Implement in Phase D
-    raise NotImplementedError("Async transcription not yet implemented")
+    client = get_speech_client()
+
+    audio = speech.RecognitionAudio(uri=audio_gcs_uri)
+    config = speech.RecognitionConfig(
+        encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
+        sample_rate_hertz=16000,
+        language_code=language_code,
+        enable_word_time_offsets=True,
+        enable_automatic_punctuation=True,
+    )
+
+    logger.info(f"Transcribing audio (async): {audio_gcs_uri}")
+    operation = client.long_running_recognize(config=config, audio=audio)
+
+    logger.info("Waiting for STT operation to complete...")
+    response = operation.result(timeout=300)  # 5 minute timeout
+
+    return extract_word_timestamps(response)
 
 
 def extract_word_timestamps(response) -> List[Dict]:

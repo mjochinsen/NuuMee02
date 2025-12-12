@@ -211,8 +211,89 @@ def process_subtitles_job(job_data: dict) -> str:
     Returns:
         Output video GCS path
     """
-    # TODO: Implement in Phase F
-    raise NotImplementedError("Subtitles job handler not yet implemented")
+    import subprocess
+    from stt import transcribe_audio_sync, transcribe_audio_async
+    from subtitles import generate_ass
+
+    job_id = job_data["id"]
+    input_video_path = job_data.get("input_video_path")
+    options = job_data.get("options", {})
+    subtitle_style = options.get("subtitle_style", "classic")
+
+    if not input_video_path:
+        raise ValueError("No input_video_path provided")
+
+    # Create temp directory for processing
+    with tempfile.TemporaryDirectory() as tmpdir:
+        # Step 1: Download source video
+        local_video = os.path.join(tmpdir, "input.mp4")
+        download_from_gcs(OUTPUT_BUCKET, input_video_path, local_video)
+
+        # Step 2: Extract audio
+        local_audio = os.path.join(tmpdir, "audio.wav")
+        extract_cmd = [
+            "ffmpeg", "-i", local_video,
+            "-vn", "-acodec", "pcm_s16le",
+            "-ar", "16000", "-ac", "1",
+            local_audio, "-y"
+        ]
+        logger.info(f"Extracting audio: {' '.join(extract_cmd)}")
+        result = subprocess.run(extract_cmd, capture_output=True, text=True)
+        if result.returncode != 0:
+            raise RuntimeError(f"Audio extraction failed: {result.stderr}")
+
+        # Check audio duration to decide sync vs async
+        probe_cmd = [
+            "ffprobe", "-v", "quiet",
+            "-show_entries", "format=duration",
+            "-of", "default=noprint_wrappers=1:nokey=1",
+            local_audio
+        ]
+        duration_result = subprocess.run(probe_cmd, capture_output=True, text=True)
+        audio_duration = float(duration_result.stdout.strip()) if duration_result.stdout.strip() else 0
+        logger.info(f"Audio duration: {audio_duration}s")
+
+        # Step 3: Transcribe audio
+        if audio_duration < 60:
+            # Use sync API for short audio
+            words = transcribe_audio_sync(local_audio)
+        else:
+            # Upload audio to GCS for async API
+            audio_gcs_path = f"temp/{job_id}/audio.wav"
+            upload_to_gcs(local_audio, OUTPUT_BUCKET, audio_gcs_path, content_type="audio/wav")
+            audio_gcs_uri = f"gs://{OUTPUT_BUCKET}/{audio_gcs_path}"
+            words = transcribe_audio_async(audio_gcs_uri)
+
+        if not words:
+            raise ValueError("No words transcribed from audio")
+
+        logger.info(f"Transcribed {len(words)} words")
+
+        # Step 4: Generate ASS subtitle file
+        ass_content = generate_ass(words, style_id=subtitle_style)
+        local_ass = os.path.join(tmpdir, "subtitles.ass")
+        with open(local_ass, "w", encoding="utf-8") as f:
+            f.write(ass_content)
+
+        # Step 5: Burn subtitles onto video
+        local_output = os.path.join(tmpdir, "output.mp4")
+        burn_cmd = [
+            "ffmpeg", "-i", local_video,
+            "-vf", f"ass={local_ass}",
+            "-c:v", "libx264", "-crf", "18",
+            "-c:a", "copy",
+            local_output, "-y"
+        ]
+        logger.info(f"Burning subtitles: {' '.join(burn_cmd)}")
+        result = subprocess.run(burn_cmd, capture_output=True, text=True)
+        if result.returncode != 0:
+            raise RuntimeError(f"Subtitle burning failed: {result.stderr}")
+
+        # Step 6: Upload result to GCS
+        output_gcs_path = f"processed/{job_id}/subtitled.mp4"
+        upload_to_gcs(local_output, OUTPUT_BUCKET, output_gcs_path)
+
+        return output_gcs_path
 
 
 def process_watermark_job(job_data: dict) -> str:
@@ -230,8 +311,71 @@ def process_watermark_job(job_data: dict) -> str:
     Returns:
         Output video GCS path
     """
-    # TODO: Implement in Phase G
-    raise NotImplementedError("Watermark job handler not yet implemented")
+    import subprocess
+
+    job_id = job_data["id"]
+    input_video_path = job_data.get("input_video_path")
+    options = job_data.get("options", {})
+
+    # Watermark configuration
+    watermark_path = options.get("watermark_path", "assets/watermark.png")
+    position = options.get("position", "bottom-right")  # bottom-right, bottom-left, top-right, top-left
+    opacity = options.get("opacity", 0.7)
+    margin_percent = options.get("margin_percent", 5)
+
+    if not input_video_path:
+        raise ValueError("No input_video_path provided")
+
+    # Create temp directory for processing
+    with tempfile.TemporaryDirectory() as tmpdir:
+        # Step 1: Download source video
+        local_video = os.path.join(tmpdir, "input.mp4")
+        download_from_gcs(OUTPUT_BUCKET, input_video_path, local_video)
+
+        # Step 2: Download watermark image
+        local_watermark = os.path.join(tmpdir, "watermark.png")
+        download_from_gcs(ASSETS_BUCKET, watermark_path, local_watermark)
+
+        # Step 3: Build FFmpeg overlay filter
+        # Calculate position based on margin percentage
+        # W=video width, H=video height, w=overlay width, h=overlay height
+        margin = f"(W*{margin_percent}/100)"
+        positions = {
+            "bottom-right": f"W-w-{margin}:H-h-{margin}",
+            "bottom-left": f"{margin}:H-h-{margin}",
+            "top-right": f"W-w-{margin}:{margin}",
+            "top-left": f"{margin}:{margin}",
+        }
+        overlay_pos = positions.get(position, positions["bottom-right"])
+
+        # Build filter with opacity
+        # format=rgba converts to RGBA, colorchannelmixer adjusts alpha
+        filter_complex = (
+            f"[1:v]format=rgba,colorchannelmixer=aa={opacity}[watermark];"
+            f"[0:v][watermark]overlay={overlay_pos}:format=auto,format=yuv420p"
+        )
+
+        # Step 4: Apply watermark
+        local_output = os.path.join(tmpdir, "output.mp4")
+        overlay_cmd = [
+            "ffmpeg",
+            "-i", local_video,
+            "-i", local_watermark,
+            "-filter_complex", filter_complex,
+            "-c:v", "libx264", "-crf", "18",
+            "-c:a", "copy",
+            local_output, "-y"
+        ]
+        logger.info(f"Applying watermark: ffmpeg -i video -i watermark -filter_complex ...")
+        result = subprocess.run(overlay_cmd, capture_output=True, text=True)
+        if result.returncode != 0:
+            raise RuntimeError(f"Watermark overlay failed: {result.stderr}")
+
+        # Step 5: Upload result to GCS
+        output_gcs_path = f"processed/{job_id}/watermarked.mp4"
+        upload_to_gcs(local_output, OUTPUT_BUCKET, output_gcs_path)
+
+        return output_gcs_path
 
 
 def process_job(job_id: str):

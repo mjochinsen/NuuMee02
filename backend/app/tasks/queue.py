@@ -19,6 +19,14 @@ WORKER_URL = os.environ.get(
     "https://nuumee-worker-450296399943.us-central1.run.app"
 )
 
+# FFmpeg Worker Configuration (for subtitles/watermark post-processing)
+FFMPEG_LOCATION = os.environ.get("FFMPEG_TASKS_LOCATION", "us-central1")
+FFMPEG_QUEUE_NAME = os.environ.get("FFMPEG_TASKS_QUEUE", "nuumee-ffmpeg-jobs")
+FFMPEG_WORKER_URL = os.environ.get(
+    "FFMPEG_WORKER_URL",
+    "https://nuumee-ffmpeg-worker-450296399943.us-central1.run.app"
+)
+
 # Tasks client (lazy initialization)
 _tasks_client: Optional[tasks_v2.CloudTasksClient] = None
 
@@ -97,4 +105,90 @@ def get_queue_stats() -> dict:
         }
     except Exception as e:
         logger.error(f"Failed to get queue stats: {e}")
+        return {"error": str(e)}
+
+
+def enqueue_ffmpeg_job(
+    job_id: str,
+    job_type: str,
+    input_video_path: str,
+    output_path: str,
+    options: dict = None,
+    delay_seconds: int = 0
+) -> str:
+    """Enqueue an FFmpeg post-processing job (subtitles/watermark).
+
+    Args:
+        job_id: Job document ID (for status updates)
+        job_type: Type of FFmpeg job ("subtitles" or "watermark")
+        input_video_path: GCS path to input video
+        output_path: GCS path for output video
+        options: Job-specific options (e.g., subtitle_style for subtitles)
+        delay_seconds: Optional delay before task execution
+
+    Returns:
+        Task name (full path)
+    """
+    client = get_tasks_client()
+
+    # Construct the queue path for FFmpeg queue
+    queue_path = client.queue_path(PROJECT_ID, FFMPEG_LOCATION, FFMPEG_QUEUE_NAME)
+
+    # Build the task payload
+    payload = {
+        "job_id": job_id,
+        "job_type": job_type,
+        "input_video_path": input_video_path,
+        "output_path": output_path,
+        "options": options or {}
+    }
+
+    # Build the task
+    task = {
+        "http_request": {
+            "http_method": tasks_v2.HttpMethod.POST,
+            "url": FFMPEG_WORKER_URL,
+            "headers": {"Content-Type": "application/json"},
+            "body": json.dumps(payload).encode(),
+        }
+    }
+
+    # Add schedule time if delay specified
+    if delay_seconds > 0:
+        schedule_time = datetime.utcnow() + timedelta(seconds=delay_seconds)
+        timestamp = timestamp_pb2.Timestamp()
+        timestamp.FromDatetime(schedule_time)
+        task["schedule_time"] = timestamp
+
+    # Create the task
+    response = client.create_task(request={"parent": queue_path, "task": task})
+
+    logger.info(f"Created FFmpeg task for job {job_id} ({job_type}): {response.name}")
+    return response.name
+
+
+def get_ffmpeg_queue_stats() -> dict:
+    """Get FFmpeg queue statistics.
+
+    Returns:
+        Dict with queue stats
+    """
+    client = get_tasks_client()
+    queue_path = client.queue_path(PROJECT_ID, FFMPEG_LOCATION, FFMPEG_QUEUE_NAME)
+
+    try:
+        queue = client.get_queue(request={"name": queue_path})
+        return {
+            "name": queue.name,
+            "state": queue.state.name,
+            "rate_limits": {
+                "max_dispatches_per_second": queue.rate_limits.max_dispatches_per_second,
+                "max_concurrent_dispatches": queue.rate_limits.max_concurrent_dispatches,
+            },
+            "retry_config": {
+                "max_attempts": queue.retry_config.max_attempts,
+            }
+        }
+    except Exception as e:
+        logger.error(f"Failed to get FFmpeg queue stats: {e}")
         return {"error": str(e)}

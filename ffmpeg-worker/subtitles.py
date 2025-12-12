@@ -66,8 +66,65 @@ def generate_ass(words: List[Dict], style_id: str = "classic", title: str = "Nuu
     Returns:
         Complete ASS file content as string
     """
-    # TODO: Implement in Phase E
-    raise NotImplementedError("ASS generation not yet implemented")
+    style = STYLES.get(style_id, STYLES["classic"])
+    is_rainbow = style_id == "rainbow"
+
+    # ASS file header
+    header = f"""[Script Info]
+Title: {title}
+ScriptType: v4.00+
+PlayResX: 1920
+PlayResY: 1080
+WrapStyle: 0
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+{style["ass_styles"]}
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+"""
+
+    # Generate dialogue lines for each word
+    events = []
+    rainbow_styles = ["Rainbow1", "Rainbow2", "Rainbow3", "Rainbow4"]
+
+    for i, word_data in enumerate(words):
+        # Parse timestamps (format: "1.234s" or just float)
+        start_str = word_data.get("start_time", "0")
+        end_str = word_data.get("end_time", "0")
+
+        # Remove 's' suffix if present
+        if isinstance(start_str, str):
+            start_str = start_str.rstrip("s")
+        if isinstance(end_str, str):
+            end_str = end_str.rstrip("s")
+
+        start_sec = float(start_str)
+        end_sec = float(end_str)
+
+        # Ensure minimum word duration
+        if end_sec - start_sec < MIN_WORD_DURATION:
+            end_sec = start_sec + MIN_WORD_DURATION
+
+        # Format times
+        start_time = to_ass_time(start_sec)
+        end_time = to_ass_time(end_sec)
+
+        # Get word text
+        word = word_data.get("word", "")
+
+        # Choose style (cycle for rainbow)
+        if is_rainbow:
+            style_name = rainbow_styles[i % len(rainbow_styles)]
+        else:
+            style_name = "Default"
+
+        # Create dialogue line
+        event = f"Dialogue: 0,{start_time},{end_time},{style_name},,0,0,0,,{word}"
+        events.append(event)
+
+    return header + "\n".join(events) + "\n"
 
 
 def get_available_styles() -> Dict:
