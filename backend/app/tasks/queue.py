@@ -143,13 +143,24 @@ def enqueue_ffmpeg_job(
         "options": options or {}
     }
 
-    # Build the task
+    # Service account for OIDC authentication to Cloud Run
+    # Use the nuumee-api service account which has invoker permission on FFmpeg worker
+    service_account_email = os.environ.get(
+        "TASKS_SERVICE_ACCOUNT",
+        f"nuumee-api@{PROJECT_ID}.iam.gserviceaccount.com"
+    )
+
+    # Build the task with OIDC token for authenticated Cloud Run
     task = {
         "http_request": {
             "http_method": tasks_v2.HttpMethod.POST,
             "url": FFMPEG_WORKER_URL,
             "headers": {"Content-Type": "application/json"},
             "body": json.dumps(payload).encode(),
+            "oidc_token": {
+                "service_account_email": service_account_email,
+                "audience": FFMPEG_WORKER_URL,
+            },
         }
     }
 

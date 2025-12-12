@@ -1,40 +1,85 @@
 """ASS Subtitle Generator for NuuMee FFmpeg Worker.
 
 Converts word timestamps to ASS subtitle format with various styles.
+Styles are loaded from GCS config file at runtime for easy customization.
 """
+import json
 import logging
-from typing import List, Dict
+import os
+from typing import Dict, List, Optional
+
+from google.cloud import storage
 
 logger = logging.getLogger(__name__)
 
-# Subtitle style definitions
-STYLES = {
-    "rainbow": {
-        "name": "Rainbow",
-        "description": "Multi-color cycling text",
-        "ass_styles": """Style: Rainbow1,DejaVu Sans,22,&H000080FF,&H000000FF,&H00000000,&H80000000,1,0,0,0,100,100,0,0,1,3,2,2,20,20,80,1
-Style: Rainbow2,DejaVu Sans,22,&H0000FF80,&H000000FF,&H00000000,&H80000000,1,0,0,0,100,100,0,0,1,3,2,2,20,20,80,1
-Style: Rainbow3,DejaVu Sans,22,&H0080FF00,&H000000FF,&H00000000,&H80000000,1,0,0,0,100,100,0,0,1,3,2,2,20,20,80,1
-Style: Rainbow4,DejaVu Sans,22,&H00FF8000,&H000000FF,&H00000000,&H80000000,1,0,0,0,100,100,0,0,1,3,2,2,20,20,80,1""",
-    },
+# GCS config location
+CONFIG_BUCKET = os.environ.get("NUUMEE_ASSETS_BUCKET", "nuumee-assets")
+CONFIG_PATH = "config/subtitle-styles.json"
+
+# Cache for loaded styles (refreshed on worker restart or manual reload)
+_styles_cache: Optional[Dict] = None
+_min_word_duration: float = 0.2
+
+# Fallback styles if GCS config fails to load
+FALLBACK_STYLES = {
     "classic": {
         "name": "Classic White",
         "description": "White text with black outline",
-        "ass_styles": """Style: Default,DejaVu Sans,24,&H00FFFFFF,&H000000FF,&H00000000,&H80000000,0,0,0,0,100,100,0,0,1,2,1,2,20,20,40,1""",
-    },
-    "bold": {
-        "name": "Bold Yellow",
-        "description": "Yellow text with thick outline",
-        "ass_styles": """Style: Default,DejaVu Sans,26,&H0000FFFF,&H000000FF,&H00000000,&H80000000,1,0,0,0,100,100,0,0,1,3,2,2,20,20,40,1""",
-    },
-    "minimal": {
-        "name": "Minimal",
-        "description": "Small white text with subtle shadow",
-        "ass_styles": """Style: Default,DejaVu Sans,18,&H00FFFFFF,&H000000FF,&H00000000,&H40000000,0,0,0,0,100,100,0,0,1,1,1,2,20,20,30,1""",
+        "is_multi_style": False,
+        "ass_styles": [
+            "Style: Default,DejaVu Sans,24,&H00FFFFFF,&H000000FF,&H00000000,&H80000000,0,0,0,0,100,100,0,0,1,2,1,2,20,20,40,1"
+        ],
+        "style_names": ["Default"],
     },
 }
 
-MIN_WORD_DURATION = 0.2  # Minimum display time for each word
+
+def load_styles_from_gcs(force_reload: bool = False) -> Dict:
+    """
+    Load subtitle styles from GCS config file.
+
+    Args:
+        force_reload: If True, bypass cache and reload from GCS
+
+    Returns:
+        Dict of style configurations
+    """
+    global _styles_cache, _min_word_duration
+
+    if _styles_cache is not None and not force_reload:
+        return _styles_cache
+
+    try:
+        client = storage.Client()
+        bucket = client.bucket(CONFIG_BUCKET)
+        blob = bucket.blob(CONFIG_PATH)
+
+        if not blob.exists():
+            logger.warning(f"Config file not found at gs://{CONFIG_BUCKET}/{CONFIG_PATH}, using fallback styles")
+            _styles_cache = FALLBACK_STYLES
+            return _styles_cache
+
+        config_content = blob.download_as_text()
+        config = json.loads(config_content)
+
+        _styles_cache = config.get("styles", FALLBACK_STYLES)
+        _min_word_duration = config.get("min_word_duration", 0.2)
+
+        logger.info(f"Loaded {len(_styles_cache)} subtitle styles from GCS config")
+        return _styles_cache
+
+    except Exception as e:
+        logger.error(f"Failed to load styles from GCS: {e}, using fallback")
+        _styles_cache = FALLBACK_STYLES
+        return _styles_cache
+
+
+def get_min_word_duration() -> float:
+    """Get minimum word duration from config."""
+    global _min_word_duration
+    # Ensure styles are loaded (which also loads min_word_duration)
+    load_styles_from_gcs()
+    return _min_word_duration
 
 
 def to_ass_time(seconds: float) -> str:
@@ -60,14 +105,25 @@ def generate_ass(words: List[Dict], style_id: str = "classic", title: str = "Nuu
 
     Args:
         words: List of {"word": str, "start_time": str, "end_time": str}
-        style_id: Style identifier (rainbow, classic, bold, minimal)
+        style_id: Style identifier (rainbow, classic, bold, minimal, large)
         title: Title for the subtitle file
 
     Returns:
         Complete ASS file content as string
     """
-    style = STYLES.get(style_id, STYLES["classic"])
-    is_rainbow = style_id == "rainbow"
+    styles = load_styles_from_gcs()
+    min_duration = get_min_word_duration()
+
+    style = styles.get(style_id, styles.get("classic", FALLBACK_STYLES["classic"]))
+    is_multi_style = style.get("is_multi_style", False)
+    style_names = style.get("style_names", ["Default"])
+
+    # Build ASS styles section
+    ass_styles_lines = style.get("ass_styles", [])
+    if isinstance(ass_styles_lines, list):
+        ass_styles = "\n".join(ass_styles_lines)
+    else:
+        ass_styles = ass_styles_lines
 
     # ASS file header
     header = f"""[Script Info]
@@ -79,7 +135,7 @@ WrapStyle: 0
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-{style["ass_styles"]}
+{ass_styles}
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
@@ -87,7 +143,6 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 
     # Generate dialogue lines for each word
     events = []
-    rainbow_styles = ["Rainbow1", "Rainbow2", "Rainbow3", "Rainbow4"]
 
     for i, word_data in enumerate(words):
         # Parse timestamps (format: "1.234s" or just float)
@@ -104,8 +159,8 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
         end_sec = float(end_str)
 
         # Ensure minimum word duration
-        if end_sec - start_sec < MIN_WORD_DURATION:
-            end_sec = start_sec + MIN_WORD_DURATION
+        if end_sec - start_sec < min_duration:
+            end_sec = start_sec + min_duration
 
         # Format times
         start_time = to_ass_time(start_sec)
@@ -114,11 +169,11 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
         # Get word text
         word = word_data.get("word", "")
 
-        # Choose style (cycle for rainbow)
-        if is_rainbow:
-            style_name = rainbow_styles[i % len(rainbow_styles)]
+        # Choose style (cycle for multi-style like rainbow)
+        if is_multi_style and len(style_names) > 1:
+            style_name = style_names[i % len(style_names)]
         else:
-            style_name = "Default"
+            style_name = style_names[0] if style_names else "Default"
 
         # Create dialogue line
         event = f"Dialogue: 0,{start_time},{end_time},{style_name},,0,0,0,,{word}"
@@ -129,10 +184,16 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 
 def get_available_styles() -> Dict:
     """Return available subtitle styles with metadata."""
+    styles = load_styles_from_gcs()
     return {
         style_id: {
-            "name": style["name"],
-            "description": style["description"],
+            "name": style.get("name", style_id),
+            "description": style.get("description", ""),
         }
-        for style_id, style in STYLES.items()
+        for style_id, style in styles.items()
     }
+
+
+def reload_styles() -> Dict:
+    """Force reload styles from GCS. Call this to pick up config changes."""
+    return load_styles_from_gcs(force_reload=True)
