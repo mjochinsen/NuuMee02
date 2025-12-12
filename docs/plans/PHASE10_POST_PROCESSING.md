@@ -368,13 +368,13 @@
 
 ### 7.1 Deploy backend with new endpoints
 - [ ] **Status:** TODO
-- **Command:** `./deploy-api.sh`
+- **Command:** `/deploy backend`
 - **Deps:** All Category 2 complete
 - **Notes:** Verify endpoints accessible
 
 ### 7.2 Deploy frontend with wired buttons
 - [ ] **Status:** TODO
-- **Command:** `./deploy-frontend.sh`
+- **Command:** `/deploy frontend`
 - **Deps:** All Category 5 complete, 7.1
 - **Notes:** Test on staging first if available
 

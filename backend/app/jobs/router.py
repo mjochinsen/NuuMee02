@@ -148,7 +148,8 @@ def validate_gcs_path_ownership(path: str, user_id: str, field_name: str) -> Non
     """
     Validate that a GCS path belongs to the current user.
 
-    Path format: {user_id}/{job_id}/filename.ext
+    Path format: uploads/{user_id}/{timestamp}_{filename}
+    Example: uploads/abc123/1701432000_reference.jpg
 
     Raises HTTPException 403 if the path doesn't belong to the user.
     Raises HTTPException 400 if the path format is invalid.
@@ -157,13 +158,14 @@ def validate_gcs_path_ownership(path: str, user_id: str, field_name: str) -> Non
         return  # Empty paths are handled elsewhere
 
     parts = path.split("/")
-    if len(parts) < 2:
+    # Expected format: uploads/{user_id}/{timestamp}_{filename}
+    if len(parts) < 3 or parts[0] != "uploads":
         raise HTTPException(
             status_code=400,
             detail=f"Invalid {field_name} path format"
         )
 
-    path_user_id = parts[0]
+    path_user_id = parts[1]  # User ID is the second part after "uploads/"
     if path_user_id != user_id:
         logger.warning(
             f"User {user_id} attempted to use {field_name} belonging to {path_user_id}: {path}"

@@ -125,10 +125,12 @@ export default function JobsPage() {
   const [loadingThumbnails, setLoadingThumbnails] = useState<Set<string>>(new Set());
   const [previewMedia, setPreviewMedia] = useState<{ type: 'image' | 'video'; url: string; label: string } | null>(null);
   const [copiedJobId, setCopiedJobId] = useState<string | null>(null);
+  const [timerTick, setTimerTick] = useState(0); // Forces re-render for elapsed time display
   const jobsPerPage = 25;
 
   // Fetch jobs from API
-  const fetchJobs = useCallback(async () => {
+  // showLoading: when false, silently updates without showing loading spinner (for polling)
+  const fetchJobs = useCallback(async (showLoading: boolean = true) => {
     if (!user) {
       setJobs([]);
       setTotalJobs(0);
@@ -136,7 +138,9 @@ export default function JobsPage() {
       return;
     }
 
-    setIsLoading(true);
+    if (showLoading) {
+      setIsLoading(true);
+    }
     setError(null);
 
     try {
@@ -147,9 +151,14 @@ export default function JobsPage() {
     } catch (err) {
       console.error('Failed to fetch jobs:', err);
       setError(err instanceof Error ? err.message : 'Failed to load jobs');
-      setJobs([]);
+      // Only clear jobs on initial load error, keep existing jobs on poll error
+      if (showLoading) {
+        setJobs([]);
+      }
     } finally {
-      setIsLoading(false);
+      if (showLoading) {
+        setIsLoading(false);
+      }
     }
   }, [user, currentPage, activeFilter]);
 
@@ -158,6 +167,7 @@ export default function JobsPage() {
   }, [fetchJobs]);
 
   // Auto-refresh every 10 seconds if any job is processing or queued
+  // Uses silent polling (showLoading=false) to avoid flickering
   useEffect(() => {
     const hasActiveJobs = jobs.some(
       (j) => j.status === 'processing' || j.status === 'queued' || j.status === 'pending'
@@ -165,12 +175,27 @@ export default function JobsPage() {
 
     if (hasActiveJobs && !isLoading) {
       const interval = setInterval(() => {
-        fetchJobs();
+        fetchJobs(false); // Silent poll - no loading spinner
       }, 10000); // Poll every 10 seconds
 
       return () => clearInterval(interval);
     }
   }, [jobs, isLoading, fetchJobs]);
+
+  // Update elapsed time display every second for active jobs (local timer only, no API calls)
+  useEffect(() => {
+    const hasActiveJobs = jobs.some(
+      (j) => j.status === 'processing' || j.status === 'queued' || j.status === 'pending'
+    );
+
+    if (hasActiveJobs) {
+      const timer = setInterval(() => {
+        setTimerTick(t => t + 1); // Force re-render to update elapsed time
+      }, 1000);
+
+      return () => clearInterval(timer);
+    }
+  }, [jobs]);
 
   // Handle download button click - fetches and downloads the video file
   const handleDownload = async (jobId: string) => {
@@ -653,7 +678,7 @@ export default function JobsPage() {
           <Button
             variant="outline"
             size="icon"
-            onClick={fetchJobs}
+            onClick={() => fetchJobs()}
             disabled={isLoading}
             className="border-[#334155] text-[#F1F5F9] hover:border-[#00F0D9] hover:text-[#00F0D9] disabled:opacity-50"
           >
@@ -757,7 +782,7 @@ export default function JobsPage() {
             <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
             <h3 className="text-red-400 mb-2">Failed to load jobs</h3>
             <p className="text-[#94A3B8] mb-4">{error}</p>
-            <Button onClick={fetchJobs} variant="outline" className="border-[#334155] text-[#F1F5F9]">
+            <Button onClick={() => fetchJobs()} variant="outline" className="border-[#334155] text-[#F1F5F9]">
               <RefreshCw className="w-4 h-4 mr-2" />
               Retry
             </Button>

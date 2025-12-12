@@ -4,267 +4,228 @@
 
 ## TL;DR - Current State
 
-- **Phase:** 10 (Post-Processing) - MVP DEPLOYED ✅
-- **Phases 0-8.5:** ✅ Complete
-- **Phase 10:** ✅ MVP Deployed (Extend/Upscale backend + frontend wired)
-- **Live Site:** https://nuumee.ai
-- **Next Task:** Phase 9 (Polish & Launch) or Worker routing for EXTEND/UPSCALE jobs
+- **Phase:** 11 (V1.0 Launch Prep) - IN PROGRESS
+- **Phases 0-10:** ✅ Complete
+- **Live Site:** https://nuumee.ai (TEST MODE)
+- **Next Task:** Phase 11.1 - Bug Fixes, then Admin Panel
+- **Target:** V1.0 Launch with Stripe LIVE mode
 
 ---
 
 ## STATUS LEGEND
 
-| Symbol | Meaning     |
-| ------ | ----------- |
-| ⬜     | Not started |
-| 🔄     | In progress |
-| ✅     | Complete    |
+| Symbol | Meaning        |
+| ------ | -------------- |
+| ⬜     | Not started    |
+| 🔄     | In progress    |
+| ✅     | Complete       |
+| 🔮     | Deferred (V2+) |
 
 ---
 
-## PHASE 8 — REFERRAL & AFFILIATE
+## PHASE 11 — V1.0 LAUNCH PREP (CURRENT)
 
-**Goal:** Referral codes, affiliate program
-**Estimated Time:** 3-4 hours
-**Dependencies:** Phase 7 complete
+**Goal:** Production-ready for real users with real payments
+**Estimated Time:** 20-25 hours total
+**Dependencies:** Phases 8.5-10 complete
 
-| ID   | Task                                 | Status | Agent/Tool          | Output               | Notes                                    |
-| ---- | ------------------------------------ | ------ | ------------------- | -------------------- | ---------------------------------------- |
-| 8.1  | Create backend/app/referral/ folder  | ✅     | `api-builder`       | router.py, models.py | Done via sub-agent                       |
-| 8.2  | Implement GET /referral/code         | ✅     | `api-builder`       | router.py            | Get/generate referral code               |
-| 8.3  | Implement POST /referral/apply       | ✅     | `api-builder`       | router.py            | Apply code, get 25 credits               |
-| 8.4  | Create backend/app/affiliate/ folder | ✅     | `api-builder`       | router.py, models.py | Done via sub-agent                       |
-| 8.5  | Implement affiliate endpoints        | ✅     | `api-builder`       | router.py            | apply, stats, payout (needs tracking)    |
-| 8.6  | Deploy updated backend               | ✅     | `gcloud run deploy` | nuumee-api-00062-v4t | All endpoints live                       |
-| 8.7  | Update referral page with API        | ✅     | Manual              | referral/page.tsx    | Uses getReferralCode API                 |
-| 8.8  | Update affiliate page with API       | ✅     | Manual              | affiliate/page.tsx   | Form calls applyForAffiliate             |
-| 8.9  | Deploy frontend                      | ✅     | `firebase deploy`   | wanapi-prod.web.app  | All pages deployed                       |
-| 8.10 | Remove mock UI from referral page    | ✅     | Manual              | referral/page.tsx    | Leaderboard hidden, activity shows empty |
-| 8.11 | Run comprehensive audit              | ✅     | `/audit quick`      | No issues found      | Security: clean, TODOs: 0, Build: pass   |
-| 8.12 | Deploy and test                      | ✅     | `firebase deploy`   | wanapi-prod.web.app  | Deployed, auth-protected page works      |
-| 8.13 | Commit and push Phase 8              | ✅     | Git                 | ace5d00              | "Phase 8: Remove mock UI"                |
+### Execution Order (Optimized Sequence)
 
-**Phase 8 Completion Criteria:**
+```
+1. Bug Fixes (unblock UX)
+2. Missing Features (Subtitles, Watermark, Support attach)
+3. Admin Panel (need before data cleanup)
+4. SEO (marketing readiness)
+5. E2E Billing Tests (safety net)
+6. Database Cleanup (after admin to verify)
+7. Stripe LIVE Mode (LAST - point of no return)
+```
 
-- [x] Can generate referral link (GET /referral/code)
-- [x] New user gets 25 credits via referral (POST /referral/apply)
-- [ ] Referrer gets 100 credits after purchase (webhook implemented Dec 2025)
-- [x] Committed to master
+### 11.1 Bug Fixes (Priority 0 - Blocking)
 
----
+| ID     | Task                                     | Status | Effort | Notes              |
+| ------ | ---------------------------------------- | ------ | ------ | ------------------ |
+| 11.1.1 | Fix Jobs page flickering during polling  | ✅     | 30m    | TESTED AND WORKING |
+| 11.1.2 | Verify Generate job polling works smooth | ✅     | 30m    | TESTED AND WORKING |
 
-## PHASE 8.5 — FEATURE COMPLETION (PRIORITY)
+### 11.2 Missing Features (Priority 1 - Launch Blockers)
 
-**Goal:** Make all features fully functional - NO "Coming Soon" placeholders
-**Priority Order:**
+| ID     | Task                               | Status | Effort | Notes                                      |
+| ------ | ---------------------------------- | ------ | ------ | ------------------------------------------ |
+| 11.2.1 | Support page: Fix attach file      | ✅     | 30m    | Inline base64 (500KB), Dec 12 2025         |
+| 11.2.2 | Support page: CC support@nuumee.ai | ✅     | 30m    | Reply-to header, Dec 12 2025               |
+| 11.2.3 | Post-Processing E: Auto Subtitles  | ⬜     | 3-4h   | Port n8n + Google STT + ASS code           |
+| 11.2.4 | Post-Processing F: Add Watermark   | ⬜     | 1-2h   | FFmpeg overlay, user-provided or NuuMee    |
+| 11.2.5 | Try Example onboarding feature     | ✅     | -      | 3-step demo with localStorage, Dec 12 2025 |
 
-1. **Billing** - bulletproof, error-free, clear
-2. **Job/Video creation** - end-to-end must work
-3. **Complete all features** - everything needed for working product
+### 11.3 Admin Panel (Priority 2 - Operations Critical)
 
-**Dependencies:** Phase 8 complete
+**Location:** `/admin555/*` (Next.js pages, password protected)
+**Approach:** Next.js pages consistent with app
 
-### Critical Fixes (BLOCKING)
+| ID     | Task                      | Status | Effort | Notes                                       |
+| ------ | ------------------------- | ------ | ------ | ------------------------------------------- |
+| 11.3.1 | Admin layout + auth guard | ⬜     | 1h     | Password protection, admin-only access      |
+| 11.3.2 | Users page                | ⬜     | 2h     | Search, view credits/plan/jobs, add credits |
+| 11.3.3 | Jobs page                 | ⬜     | 1.5h   | Queued/running/failed/completed, errors     |
+| 11.3.4 | Payments page             | ⬜     | 1.5h   | Revenue, subscribers, failed payments       |
+| 11.3.5 | System Health page        | ⬜     | 1h     | Worker status, API health, GCP costs        |
+| 11.3.6 | Promo Codes page          | ⬜     | 1h     | Generate invite codes, track usage          |
 
-| ID    | Task                              | Status | Agent/Tool          | Output           | Notes                             |
-| ----- | --------------------------------- | ------ | ------------------- | ---------------- | --------------------------------- |
-| 8.5.1 | Fix GCS signing for job downloads | ✅     | Manual              | jobs/router.py   | Use credentials= not access_token |
-| 8.5.2 | Deploy backend with fix           | ✅     | `gcloud run deploy` | nuumee-api-00070 | Deployed 2025-11-30               |
-| 8.5.3 | Test job download on production   | ✅     | Manual              | Test results     | Signed URLs working               |
-| 8.5.4 | Fix retry button on /jobs         | ✅     | Manual              | jobs/page.tsx    | Added handleRetry + onClick       |
+### 11.4 SEO (Priority 3 - Marketing Ready)
 
-### Billing Features (Priority 1)
+| ID     | Task               | Status | Effort | Notes                         |
+| ------ | ------------------ | ------ | ------ | ----------------------------- |
+| 11.4.1 | JSON-LD: Homepage  | ⬜     | 30m    | Organization + WebPage schema |
+| 11.4.2 | JSON-LD: Pricing   | ⬜     | 30m    | Product schema                |
+| 11.4.3 | JSON-LD: Examples  | ⬜     | 30m    | ItemList schema               |
+| 11.4.4 | JSON-LD: Support   | ⬜     | 30m    | FAQPage schema                |
+| 11.4.5 | Create sitemap.xml | ⬜     | 30m    | All public pages              |
+| 11.4.6 | Create robots.txt  | ⬜     | 15m    | Proper crawl directives       |
+| 11.4.7 | Meta tags audit    | ⬜     | 1h     | title, description, og:image  |
 
-| ID    | Task                            | Status | Agent/Tool    | Output             | Notes                     |
-| ----- | ------------------------------- | ------ | ------------- | ------------------ | ------------------------- |
-| 8.5.5 | Implement auto-refill feature   | ✅     | Manual        | billing/page.tsx   | Backend + frontend done   |
-| 8.5.6 | Auto-refill: Backend endpoint   | ✅     | `api-builder` | credits/router.py  | POST /credits/auto-refill |
-| 8.5.7 | Auto-refill: Webhook trigger    | ✅     | Manual        | webhooks/router.py | Balance check implemented |
-| 8.5.8 | Transaction history (real data) | ✅     | Manual        | billing/page.tsx   | Uses GET /transactions    |
+### 11.5 E2E Billing Tests (Priority 4 - Safety Net)
 
-### Billing Data Integrity (Priority 1.5)
+| ID     | Task                               | Status | Effort | Notes                  |
+| ------ | ---------------------------------- | ------ | ------ | ---------------------- |
+| 11.5.1 | Test: Signup → Purchase → Generate | ⬜     | 1h     | Happy path end-to-end  |
+| 11.5.2 | Test: Subscribe → Cancel → Resub   | ⬜     | 1h     | Subscription lifecycle |
+| 11.5.3 | Test: Webhook failure recovery     | ⬜     | 1h     | Payment resilience     |
+| 11.5.4 | Test: Credit deduction accuracy    | ⬜     | 1h     | Verify amounts match   |
 
-| ID     | Task                                    | Status | Agent/Tool | Output                         | Notes                                  |
-| ------ | --------------------------------------- | ------ | ---------- | ------------------------------ | -------------------------------------- |
-| 8.5.15 | Create billing_period sync script       | ✅     | Manual     | scripts/sync_billing_period.py | Sync from Stripe for existing users    |
-| 8.5.16 | Fix UI for missing billing_period       | ✅     | Manual     | billing/page.tsx               | Auto-sync on page load + manual button |
-| 8.5.17 | Add card last4 to transaction metadata  | ✅     | Manual     | webhooks/router.py             | Store pm_xxxx last4 in transactions    |
-| 8.5.18 | Create comprehensive billing test suite | ⬜     | Manual     | e2e/billing-flows.spec.ts      | All subscription state transitions     |
-| 8.5.19 | Create Subscription State Matrix doc    | ✅     | Manual     | docs/SUBSCRIPTION_STATE_MATRIX | Full flow documentation                |
+### 11.6 Database Cleanup (Priority 5 - Fresh Start)
 
-### Account Features (Priority 3)
+| ID     | Task                               | Status | Effort | Notes                            |
+| ------ | ---------------------------------- | ------ | ------ | -------------------------------- |
+| 11.6.1 | Create cleanup script              | ⬜     | 1h     | Delete test users, jobs, txns    |
+| 11.6.2 | Backup current data (just in case) | ⬜     | 30m    | Firestore export                 |
+| 11.6.3 | Run cleanup, verify via admin      | ⬜     | 30m    | Use admin panel to confirm clean |
 
-| ID     | Task                                   | Status | Agent/Tool    | Output           | Notes                        |
-| ------ | -------------------------------------- | ------ | ------------- | ---------------- | ---------------------------- |
-| 8.5.9  | Profile save (name, company, location) | ✅     | Manual        | account/page.tsx | PATCH /auth/me               |
-| 8.5.10 | Notification preferences (backend)     | ✅     | `api-builder` | notifications/   | Full notification system     |
-| 8.5.11 | Notification preferences (frontend)    | ✅     | Manual        | account/page.tsx | Wired to notification API    |
-| 8.5.12 | Privacy settings (data retention)      | ✅     | `api-builder` | auth/router.py   | Account deletion implemented |
-| 8.5.13 | Data export feature                    | ✅     | `api-builder` | auth/router.py   | GET /auth/export             |
+### 11.7 Stripe LIVE Mode (Priority 6 - LAST STEP)
 
-### Referral Completion
+| ID     | Task                                   | Status | Effort | Notes                              |
+| ------ | -------------------------------------- | ------ | ------ | ---------------------------------- |
+| 11.7.1 | Complete Stripe business verification  | ⬜     | 30m    | Bank, identity, address            |
+| 11.7.2 | Recreate products/prices in LIVE       | ⬜     | 1h     | Creator, Studio, credit packs      |
+| 11.7.3 | Update price IDs in env/code           | ⬜     | 30m    | Store in env, not hardcoded        |
+| 11.7.4 | Create LIVE webhook endpoint           | ⬜     | 30m    | New signing secret                 |
+| 11.7.5 | Update all API keys (backend+frontend) | ⬜     | 30m    | STRIPE_SECRET_KEY, PUBLISHABLE_KEY |
+| 11.7.6 | Test real payment end-to-end           | ⬜     | 30m    | Real card, small amount            |
+| 11.7.7 | Verify statement descriptor            | ⬜     | 15m    | Shows "NUUMEE" not "UNKNOWN"       |
+| 11.7.8 | Deploy final production build          | ⬜     | 30m    | Backend + Frontend                 |
 
-| ID     | Task                                  | Status | Agent/Tool | Output             | Notes                                            |
-| ------ | ------------------------------------- | ------ | ---------- | ------------------ | ------------------------------------------------ |
-| 8.5.14 | Referrer gets 100 credits on purchase | ✅     | Manual     | webhooks/router.py | ≥$10 min, verified working Dec 8 2025, rev 00106 |
-| 8.5.25 | Referral Activity UI on /referral     | ⬜     | Manual     | referral/page.tsx  | Show signups, purchases, credits earned          |
+**Phase 11 Completion Criteria:**
 
-### Affiliate System
-
-| ID     | Task                                     | Status | Agent/Tool | Output             | Notes                                      |
-| ------ | ---------------------------------------- | ------ | ---------- | ------------------ | ------------------------------------------ |
-| 8.5.20 | Affiliate endpoints (apply/stats/payout) | ✅     | Manual     | affiliate/router.py | Already implemented, needs tracking        |
-| 8.5.21 | Affiliate click tracking (?a=CODE)       | ⬜     | Manual     | Frontend + Backend  | Store in localStorage, record on signup    |
-| 8.5.22 | Affiliate commission on purchase         | ⬜     | Manual     | webhooks/router.py  | 30% of first purchase, add to pending      |
-| 8.5.23 | Affiliate email templates                | ⬜     | Manual     | email_templates     | approved, rejected, commission, payout     |
-| 8.5.24 | Test affiliate flow end-to-end           | ⬜     | Manual     | Test results        | See AFFILIATE_TESTING.md                   |
-
-**V2 (Post-Launch):** PayPal Payouts API for automated affiliate payouts
-
-### Video Creation Pipeline (Priority 2)
-
-| ID     | Task                                    | Status | Agent/Tool | Output                   | Notes                                           |
-| ------ | --------------------------------------- | ------ | ---------- | ------------------------ | ----------------------------------------------- |
-| 8.5.26 | Create JobPickerModal component         | ✅     | Manual     | JobPickerModal.tsx       | Grid of thumbnails, pagination, search, preview |
-| 8.5.27 | Modify /videos/create for job selection | ✅     | Manual     | videos/create/page.tsx   | Two buttons: Upload File, From My Jobs          |
-| 8.5.28 | Backend: GCS path ownership validation  | ✅     | Manual     | jobs/router.py           | Validate user owns motion_video_path            |
-| 8.5.29 | Test job chaining flow end-to-end       | ✅     | Manual     | Test results             | Build + deploy verified                         |
-| 8.5.30 | Deploy video pipeline feature           | ✅     | Manual     | Production               | nuumee-api-00113, firebase hosting deployed     |
-
-See [JOB_PICKER_MODAL.md](./features/JOB_PICKER_MODAL.md) for full implementation plan.
-
-**Phase 8.5 Completion Criteria:**
-
-- [x] Job downloads work (GCS signing fixed)
-- [x] Retry button works on /jobs
-- [x] Auto-refill implemented and working
-- [x] Notification preferences save to Firestore
-- [ ] All "Coming Soon" badges removed
-- [x] Referrer reward implemented ✅ VERIFIED Dec 8 2025
-- [ ] Affiliate tracking implemented
-- [x] Job Picker Modal for chaining videos (8.5.26-8.5.30) ✅ Dec 9 2025
-- [ ] Billing test suite (8.5.18) - optional
+- [ ] No flickering on job status pages
+- [ ] Support attach file works (max 10MB)
+- [ ] Auto Subtitles (E) working
+- [ ] Add Watermark (F) working
+- [ ] Admin panel operational (6 pages)
+- [ ] SEO: sitemap, robots, JSON-LD on all public pages
+- [ ] E2E billing tests pass
+- [ ] Database clean of test data
+- [ ] Stripe LIVE mode active
+- [ ] Real payment tested successfully
 
 ---
 
-## PHASE 9 — POLISH & LAUNCH
+## PHASE 8.5 — FEATURE COMPLETION ✅
 
-**Goal:** Production-ready quality, SEO-ready for marketing
-**Estimated Time:** 4-6 hours
-**Dependencies:** Phase 8.5 complete
+**Status:** Complete (launch-critical items done, affiliate deferred)
 
-### SEO & Crawlers (Priority 1 - Marketing Ready)
+### Completed Features
 
-| ID   | Task                              | Status | Agent/Tool      | Output             | Notes                                          |
-| ---- | --------------------------------- | ------ | --------------- | ------------------ | ---------------------------------------------- |
-| 9.1  | JSON-LD: Homepage                 | ⬜     | `seo-meta-tags` | Organization schema | WebPage + Organization                        |
-| 9.2  | JSON-LD: Pricing                  | ⬜     | `seo-meta-tags` | Product schema      | WebPage + Product                             |
-| 9.3  | JSON-LD: Examples                 | ⬜     | `seo-meta-tags` | ItemList schema     | WebPage + ItemList                            |
-| 9.4  | JSON-LD: Support                  | ⬜     | `seo-meta-tags` | FAQPage schema      | Structured FAQ                                |
-| 9.5  | Create sitemap.xml                | ⬜     | `seo-meta-tags` | public/sitemap.xml  | All public pages listed                       |
-| 9.6  | Create robots.txt                 | ⬜     | `seo-meta-tags` | public/robots.txt   | Proper crawl directives                       |
-| 9.7  | Meta tags audit                   | ⬜     | `seo-meta-tags` | All pages           | title, description, og:image                  |
+| ID     | Task                                   | Status | Notes                               |
+| ------ | -------------------------------------- | ------ | ----------------------------------- |
+| 8.5.1  | Fix GCS signing for job downloads      | ✅     | Use credentials= not access_token   |
+| 8.5.2  | Deploy backend with fix                | ✅     | nuumee-api-00070                    |
+| 8.5.3  | Test job download on production        | ✅     | Signed URLs working                 |
+| 8.5.4  | Fix retry button on /jobs              | ✅     | Added handleRetry + onClick         |
+| 8.5.5  | Implement auto-refill feature          | ✅     | Backend + frontend done             |
+| 8.5.6  | Auto-refill: Backend endpoint          | ✅     | POST /credits/auto-refill           |
+| 8.5.7  | Auto-refill: Webhook trigger           | ✅     | Balance check implemented           |
+| 8.5.8  | Transaction history (real data)        | ✅     | Uses GET /transactions              |
+| 8.5.9  | Profile save                           | ✅     | PATCH /auth/me                      |
+| 8.5.10 | Notification preferences (backend)     | ✅     | Full notification system            |
+| 8.5.11 | Notification preferences (frontend)    | ✅     | Wired to notification API           |
+| 8.5.12 | Privacy settings (data retention)      | ✅     | Account deletion implemented        |
+| 8.5.13 | Data export feature                    | ✅     | GET /auth/export                    |
+| 8.5.14 | Referrer gets 100 credits on purchase  | ✅     | Verified Dec 8 2025                 |
+| 8.5.15 | Billing period sync script             | ✅     | scripts/sync_billing_period.py      |
+| 8.5.16 | Fix UI for missing billing_period      | ✅     | Auto-sync on page load              |
+| 8.5.17 | Add card last4 to transaction metadata | ✅     | Store pm_xxxx last4                 |
+| 8.5.19 | Subscription State Matrix doc          | ✅     | docs/SUBSCRIPTION_STATE_MATRIX      |
+| 8.5.20 | Affiliate endpoints                    | ✅     | apply/stats/payout implemented      |
+| 8.5.26 | JobPickerModal component               | ✅     | Grid thumbnails, pagination, search |
+| 8.5.27 | /videos/create job selection           | ✅     | Upload File, From My Jobs           |
+| 8.5.28 | GCS path ownership validation          | ✅     | Backend validates user owns path    |
+| 8.5.29 | Test job chaining                      | ✅     | Build + deploy verified             |
+| 8.5.30 | Deploy video pipeline feature          | ✅     | nuumee-api-00113                    |
 
-### Performance (Priority 2)
+### Deferred to V2 (Post-Launch)
 
-| ID   | Task                              | Status | Agent/Tool              | Output              | Notes                                    |
-| ---- | --------------------------------- | ------ | ----------------------- | ------------------- | ---------------------------------------- |
-| 9.8  | Dynamic imports: Modals           | ⬜     | `performance-optimizer` | next/dynamic        | BuyCreditsModal, SubscriptionModal       |
-| 9.9  | Dynamic imports: Heavy components | ⬜     | `performance-optimizer` | next/dynamic        | Charts, job dialogs, editors (>50KB)     |
-| 9.10 | Bundle analysis                   | ⬜     | `performance-optimizer` | Report              | Target: -100-200KB initial load          |
-
-### Quality & Accessibility (Priority 3)
-
-| ID   | Task                              | Status | Agent/Tool                      | Output              | Notes                   |
-| ---- | --------------------------------- | ------ | ------------------------------- | ------------------- | ----------------------- |
-| 9.11 | Run accessibility-auditor         | ⬜     | `accessibility-auditor`         | Audit report        | Fix issues              |
-| 9.12 | Run responsive-design-validator   | ⬜     | `responsive-design-validator`   | Validation report   | All breakpoints         |
-| 9.13 | Run design-system-consistency     | ⬜     | `design-system-consistency`     | Consistency report  | No hardcoded values     |
-| 9.14 | Run error-boundary-loading-states | ⬜     | `error-boundary-loading-states` | Components          | Error handling          |
-
-### Launch
-
-| ID   | Task                              | Status | Agent/Tool                | Output              | Notes                   |
-| ---- | --------------------------------- | ------ | ------------------------- | ------------------- | ----------------------- |
-| 9.15 | Final deployment                  | ⬜     | `deployment-orchestrator` | Live site           |                         |
-| 9.16 | Full user journey test            | ⬜     | `deployment-validator`    | Test results        | End-to-end              |
-| 9.17 | Commit and push Phase 9           | ⬜     | Git                       | Commit hash         | "Phase 9: Launch ready" |
-
-**Phase 9 Completion Criteria:**
-
-- [ ] JSON-LD on all public pages (SEO score 95+)
-- [ ] sitemap.xml and robots.txt in place
-- [ ] Dynamic imports for components >50KB
-- [ ] Lighthouse performance +15-25 points
-- [ ] Accessibility audit passes
-- [ ] All breakpoints work
-- [ ] No console errors
-- [ ] Full user journey works
-- [ ] Committed to master
+| ID     | Task                             | Status | Notes                                  |
+| ------ | -------------------------------- | ------ | -------------------------------------- |
+| 8.5.21 | Affiliate click tracking         | 🔮     | ?a=CODE → localStorage → signup        |
+| 8.5.22 | Affiliate commission on purchase | 🔮     | 30% of first purchase                  |
+| 8.5.23 | Affiliate email templates        | 🔮     | approved, rejected, commission, payout |
+| 8.5.24 | Test affiliate flow              | 🔮     | After above complete                   |
+| 8.5.25 | Referral Activity UI             | 🔮     | Show signups, purchases, credits       |
+| 8.5.18 | Billing test suite               | 🔄     | Moved to Phase 11.5                    |
+| 8.5.19 | Remove Support attach file       | 🔄     | Use for early users feedback only      |
 
 ---
 
-## PHASE 10 — POST-PROCESSING (Video Extend & Upscale)
+## PHASE 10 — POST-PROCESSING ✅
 
-**Goal:** Enable Video Extender (+5 seconds) and Upscaler (to 4K) features
-**Status:** MVP DEPLOYED ✅
-**Detailed Plan:** [docs/plans/PHASE10_POST_PROCESSING.md](plans/PHASE10_POST_PROCESSING.md)
+**Status:** Complete (Extend + Upscale working)
 
-| ID    | Task                              | Status | Notes                                        |
-| ----- | --------------------------------- | ------ | -------------------------------------------- |
-| 10.1  | Fix pricing (per-second → fixed)  | ✅     | Extend: 5/10 credits, Upscale: 100% of base  |
-| 10.2  | Add source_job_id to models       | ✅     | CreateJobRequest + JobResponse               |
-| 10.3  | Add source_video_path to models   | ✅     | For tracking source video GCS path           |
-| 10.4  | Add extension_prompt to models    | ✅     | Optional prompt for extend jobs              |
-| 10.5  | Add validate_source_job()         | ✅     | Validates ownership + completion + output    |
-| 10.6  | Update create_job() for EXTEND    | ✅     | Handles job_type=extend via single endpoint  |
-| 10.7  | Update create_job() for UPSCALE   | ✅     | Handles job_type=upscale                     |
-| 10.8  | Update frontend types (api.ts)    | ✅     | JobResponse, CreateJobRequest updated        |
-| 10.9  | Disable "Upload File" button      | ✅     | Shows "Coming soon" tooltip                  |
-| 10.10 | Wire Generate buttons to API      | ✅     | handleExtendJob, handleUpscaleJob            |
-| 10.11 | Deploy backend (Cloud Run)        | ✅     | nuumee-api-00114-5n5                         |
-| 10.12 | Deploy frontend (Firebase)        | ✅     | https://nuumee.ai                            |
-| 10.13 | Verify pricing endpoints          | ✅     | extend/480p=5, extend/720p=10, upscale=5     |
-
-**Remaining (Deferred):**
-- Worker routing for EXTEND/UPSCALE job types (WaveSpeed methods exist)
-- Automated tests
-- Credit pre-check on component mount
-
-**Phase 10 Completion Criteria:**
-- [x] Pricing correct (extend fixed, upscale 100%)
-- [x] Backend handles EXTEND/UPSCALE via create_job()
-- [x] Frontend wired to API
-- [x] Deployed to production
-- [ ] Worker routes EXTEND/UPSCALE to WaveSpeed (deferred)
+| ID    | Task                             | Status | Notes                                       |
+| ----- | -------------------------------- | ------ | ------------------------------------------- |
+| 10.1  | Fix pricing (per-second → fixed) | ✅     | Extend: 5/10 credits, Upscale: 100% of base |
+| 10.2  | Add source_job_id to models      | ✅     | CreateJobRequest + JobResponse              |
+| 10.3  | Add source_video_path to models  | ✅     | For tracking source video GCS path          |
+| 10.4  | Add extension_prompt to models   | ✅     | Optional prompt for extend jobs             |
+| 10.5  | Add validate_source_job()        | ✅     | Validates ownership + completion + output   |
+| 10.6  | Update create_job() for EXTEND   | ✅     | Handles job_type=extend                     |
+| 10.7  | Update create_job() for UPSCALE  | ✅     | Handles job_type=upscale                    |
+| 10.8  | Update frontend types (api.ts)   | ✅     | JobResponse, CreateJobRequest updated       |
+| 10.9  | Disable "Upload File" button     | ✅     | Shows "Coming soon" tooltip                 |
+| 10.10 | Wire Generate buttons to API     | ✅     | handleExtendJob, handleUpscaleJob           |
+| 10.11 | Deploy backend (Cloud Run)       | ✅     | nuumee-api-00114-5n5                        |
+| 10.12 | Deploy frontend (Firebase)       | ✅     | https://nuumee.ai                           |
+| 10.13 | Verify pricing endpoints         | ✅     | extend/480p=5, extend/720p=10, upscale=5    |
 
 ---
 
-## ONGOING — MOCK UI REMOVAL
+## PHASE 9 — POLISH (Merged into Phase 11)
 
-**Goal:** Remove all mock/hardcoded UI and replace with real API data or empty states
-**Policy:**
+**Note:** SEO tasks moved to Phase 11.4. Performance optimization deferred to V1.1.
 
-- Production users see honest, real data (empty states when nothing exists)
-- Dev/demo pages can show full UI for stakeholder review (via `/dev/*` routes)
-- Pages only exposed to users when real data is available
+### Deferred to V1.1
 
-| Page                  | Status | Notes                                                      |
-| --------------------- | ------ | ---------------------------------------------------------- |
-| referral/page.tsx     | ✅     | Activity: empty state / "coming soon". Leaderboard: hidden |
-| affiliate/page.tsx    | ⬜     | Review for mock data in dashboard stats                    |
-| billing/page.tsx      | ⬜     | Review for mock transaction history                        |
-| jobs/page.tsx         | ✅     | Fetches real data from API                                 |
-| pricing/page.tsx      | ⬜     | Review credit packages (may need API fetch)                |
-| examples/page.tsx     | ⬜     | Review for hardcoded video examples                        |
-| testimonials/page.tsx | ⬜     | Review for hardcoded testimonials                          |
+| ID   | Task                              | Status | Notes                              |
+| ---- | --------------------------------- | ------ | ---------------------------------- |
+| 9.8  | Dynamic imports: Modals           | 🔮     | BuyCreditsModal, SubscriptionModal |
+| 9.9  | Dynamic imports: Heavy components | 🔮     | Charts, job dialogs (>50KB)        |
+| 9.10 | Bundle analysis                   | 🔮     | Target: -100-200KB initial load    |
+| 9.11 | Accessibility audit               | 🔮     | WCAG compliance                    |
+| 9.12 | Responsive design validation      | 🔮     | All breakpoints                    |
+| 9.13 | Design system consistency         | 🔮     | No hardcoded values                |
+| 9.14 | Error boundary components         | 🔮     | Error handling                     |
 
-**Rules:**
+---
 
-1. No hardcoded UI in page components. Fetching moco Mock Data from a database is ok, but hardcoded mock UI is not ok
-2. Always fetch from API or show empty state
-3. Use `/dev/*` routes for design review with mock data
-4. Flag mock data with `/* DEV_ONLY */` comment if temporarily needed
+## DEFERRED FEATURES (V2+)
+
+| Feature                   | Reason                         | Effort |
+| ------------------------- | ------------------------------ | ------ |
+| Affiliate tracking system | Nice-to-have, not blocking     | 6-8h   |
+| Referral Activity UI      | Nice-to-have                   | 2h     |
+| Early Subscriber badge    | Not critical for launch        | 1h     |
+| Performance optimization  | Site works, can optimize later | 4-6h   |
+| Accessibility audit       | Important but not blocking     | 3-4h   |
+| PayPal Payouts API        | For affiliate payouts          | 4-6h   |
 
 ---
 
@@ -281,56 +242,63 @@ See [JOB_PICKER_MODAL.md](./features/JOB_PICKER_MODAL.md) for full implementatio
 | 6 - Downloads          | 7       | 7         | ✅     |
 | 7 - Subscriptions      | 10      | 10        | ✅     |
 | 8 - Referral           | 13      | 13        | ✅     |
-| 8.5 - Feature Complete | 25      | 18        | 🔄     |
-| 9 - Polish             | 17      | 0         | ⬜     |
-| **TOTAL**              | **144** | **130**   | 🔄     |
+| 8.5 - Feature Complete | 25      | 21        | ✅     |
+| 10 - Post-Processing   | 13      | 13        | ✅     |
+| 11 - V1.0 Launch Prep  | 32      | 3         | 🔄     |
+| **TOTAL**              | **172** | **139**   | 🔄     |
 
 ---
 
 ## CURRENT STATE
 
-**Current Phase:** 8.5 (Feature Completion) - 72% Complete
-**Current Task:** Job Picker Modal (8.5.26-8.5.30) - Video pipeline chaining
-**Next Priority:** Job Picker Modal, then SEO/JSON-LD, then performance optimization
+**Current Phase:** 11 (V1.0 Launch Prep)
+**Current Task:** 11.2.1 - Support page: Fix attach file
 **Blockers:** None
-**Last Updated:** 2025-12-09 (added Job Picker Modal tasks 8.5.26-8.5.30)
+**Last Updated:** 2025-12-12
 
-### Recent Completions (Dec 2-8, 2025)
+### Just Completed (Dec 12)
 
-- ✅ Complete billing system with account management
-- ✅ Email notification system (Firebase Trigger Email + Gmail)
-- ✅ Event-driven notification service with Firestore templates
-- ✅ Referral system with credit tracking and rewards
-- ✅ Transaction history with real Stripe data
-- ✅ Data export feature (GET /auth/export)
-- ✅ Account deletion feature (DELETE /auth/account)
-- ✅ Billing page UX improvements
+- ✅ 11.1.1: Fixed Jobs page flickering - silent polling with `fetchJobs(false)`
+- ✅ 11.1.2: Verified Create page has no polling (only Jobs page needed fix)
+
+### Recent Completions (Dec 9-12, 2025)
+
+- ✅ Phase 10: Post-Processing (Extend + Upscale) fully working
+- ✅ Job Picker Modal for video chaining
+- ✅ Clean video URLs (/v/{shortId})
+- ✅ Try Example onboarding (3-step demo with bouncing arrows)
+- ✅ localStorage flag to hide demo after completion
+
+### Environment
 
 **Live Site:** https://nuumee.ai (wanapi-prod.web.app)
 **API URL:** https://nuumee-api-450296399943.us-west1.run.app
 **Worker URL:** https://nuumee-worker-450296399943.us-central1.run.app
-**Stripe Webhook:** we_1SYib475wY1iQccD8iUKNqOC (verified working)
-**Upload Endpoint:** POST /upload/signed-url (GCS signed URLs)
-**Jobs Endpoint:** POST /jobs (auto-enqueues), GET /jobs, GET /jobs/{id}, GET /jobs/{id}/output
-**Subscriptions Endpoint:** POST /subscriptions/create, POST /subscriptions/cancel, GET /subscriptions/current, GET /subscriptions/tiers
-**Referral Endpoint:** GET /referral/code, POST /referral/apply
-**Affiliate Endpoint:** POST /affiliate/apply, GET /affiliate/stats, POST /affiliate/payout
-**Cloud Tasks Queue:** nuumee-video-processing (5/sec, 3 retries)
-**Subscription Tiers:** Creator ($29/mo, 400 credits), Studio ($99/mo, 1600 credits)
+**Stripe Mode:** TEST (switch to LIVE in Phase 11.7)
+**Stripe Webhook:** we_1SYib475wY1iQccD8iUKNqOC (test mode)
 
 ---
 
 ## ORCHESTRATOR INSTRUCTIONS
 
-### To get next task:
+### Task Execution Pattern
 
-```
-1. Read TASK_TRACKER.md
-2. Find current phase (first phase with incomplete tasks)
-3. Find first task with status ⬜
-4. Check dependencies met
-5. Return task details
-```
+For each task in Phase 11:
+
+1. Read task requirements
+2. Create granular sub-tasks if complex (>2h effort)
+3. Execute with checkpoints
+4. Update status immediately on completion
+5. Commit progress
+
+### For Complex Tasks (Admin Panel, etc.)
+
+Use orchestration pattern:
+
+1. Create detailed plan with measurable sub-tasks
+2. Delegate to specialized agents where appropriate
+3. Checkpoint after each sub-task
+4. Resume capability if interrupted
 
 ### To update task:
 
@@ -340,14 +308,6 @@ See [JOB_PICKER_MODAL.md](./features/JOB_PICKER_MODAL.md) for full implementatio
 3. Update CURRENT STATE section
 4. Update SUMMARY counts
 5. Commit changes
-```
-
-### To check phase completion:
-
-```
-1. All tasks in phase have ✅ status
-2. All completion criteria checked
-3. Commit exists with phase message
 ```
 
 ---

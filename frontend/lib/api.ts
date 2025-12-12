@@ -797,18 +797,39 @@ export async function deleteAccount(request: DeleteAccountRequest = {}): Promise
 }
 
 // Support Tickets
+export interface Attachment {
+  filename: string;
+  content: string;  // Base64 encoded
+  content_type: string;
+}
+
 export interface SubmitTicketRequest {
   email: string;
   subject: string;
   category: string;
   job_id?: string;
   message: string;
+  attachments?: Attachment[];
 }
 
 export interface SubmitTicketResponse {
   success: boolean;
   message: string;
   ticket_id: string;
+}
+
+export async function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      // Remove data URL prefix (e.g., "data:image/png;base64,")
+      const base64 = result.split(',')[1];
+      resolve(base64);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 }
 
 export async function submitSupportTicket(request: SubmitTicketRequest): Promise<SubmitTicketResponse> {

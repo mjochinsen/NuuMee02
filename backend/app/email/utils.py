@@ -11,6 +11,8 @@ def queue_email(
     to_email: str,
     subject: str,
     html: str,
+    reply_to: str = None,
+    attachments: list = None,
 ):
     """
     Queue an email for Firebase Trigger Email extension.
@@ -22,6 +24,8 @@ def queue_email(
         to_email: Recipient email
         subject: Email subject
         html: HTML content
+        reply_to: Optional reply-to email address
+        attachments: Optional list of attachments [{filename, content, encoding}]
     """
     mail_data = {
         "to": to_email,
@@ -31,6 +35,14 @@ def queue_email(
         },
         "createdAt": firestore.SERVER_TIMESTAMP,
     }
+
+    # Add reply-to if specified
+    if reply_to:
+        mail_data["replyTo"] = reply_to
+
+    # Add attachments if specified
+    if attachments:
+        mail_data["message"]["attachments"] = attachments
 
     db.collection("mail").add(mail_data)
     logger.info(f"Queued email to {to_email}: {subject}")

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import {
   Search,
@@ -17,9 +17,11 @@ import {
   ExternalLink,
   CheckCircle2,
   Loader2,
+  X,
+  FileIcon,
 } from 'lucide-react';
 import { useAuth } from '@/components/AuthProvider';
-import { submitSupportTicket } from '@/lib/api';
+import { submitSupportTicket, fileToBase64, type Attachment } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -51,6 +53,13 @@ export default function SupportPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [ticketId, setTicketId] = useState<string | null>(null);
+
+  // Attachment state (simple: just file + base64)
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [attachments, setAttachments] = useState<Array<{ file: File; base64: string }>>([]);
+
+  const MAX_FILE_SIZE_KB = 500;  // 500KB limit
+  const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf', 'text/plain'];
 
   // Pre-fill email from auth
   useEffect(() => {
@@ -202,6 +211,40 @@ export default function SupportPage() {
     { title: 'Troubleshoot Common Issues', duration: '4:12' },
   ];
 
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setSubmitError(null);
+
+    for (const file of Array.from(files)) {
+      // Validate file size (500KB)
+      if (file.size > MAX_FILE_SIZE_KB * 1024) {
+        setSubmitError(`File "${file.name}" exceeds ${MAX_FILE_SIZE_KB}KB limit`);
+        continue;
+      }
+
+      // Validate file type
+      if (!ALLOWED_TYPES.includes(file.type)) {
+        setSubmitError(`File type not allowed. Use images, PDFs, or text files.`);
+        continue;
+      }
+
+      // Convert to base64
+      const base64 = await fileToBase64(file);
+      setAttachments(prev => [...prev, { file, base64 }]);
+    }
+
+    // Reset input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const removeAttachment = (index: number) => {
+    setAttachments(prev => prev.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitError(null);
@@ -220,12 +263,20 @@ export default function SupportPage() {
     setIsSubmitting(true);
 
     try {
+      // Build attachments array
+      const apiAttachments: Attachment[] = attachments.map(a => ({
+        filename: a.file.name,
+        content: a.base64,
+        content_type: a.file.type,
+      }));
+
       const response = await submitSupportTicket({
         email,
         subject,
         category,
         job_id: jobId || undefined,
         message,
+        attachments: apiAttachments.length > 0 ? apiAttachments : undefined,
       });
 
       setTicketId(response.ticket_id);
@@ -235,6 +286,7 @@ export default function SupportPage() {
       setCategory('');
       setJobId('');
       setMessage('');
+      setAttachments([]);
 
       // Hide success after 5 seconds
       setTimeout(() => {
@@ -525,11 +577,48 @@ export default function SupportPage() {
 
             <div className="space-y-2">
               <Label className="text-[#94A3B8]">Attachments (optional)</Label>
-              <Button type="button" variant="outline" className="border-[#334155] text-[#F1F5F9] hover:border-[#00F0D9] hover:text-[#00F0D9]">
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept="image/*,.pdf,.txt"
+                onChange={handleFileSelect}
+                className="hidden"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => fileInputRef.current?.click()}
+                className="border-[#334155] text-[#F1F5F9] hover:border-[#00F0D9] hover:text-[#00F0D9]"
+              >
                 <Paperclip className="w-4 h-4 mr-2" />
                 Attach Files
               </Button>
-              <p className="text-[#94A3B8] text-sm">Upload screenshots or files that may help us understand your issue</p>
+              <p className="text-[#94A3B8] text-sm">Max {MAX_FILE_SIZE_KB}KB per file. Images, PDFs, or text.</p>
+
+              {/* Attachment list */}
+              {attachments.length > 0 && (
+                <div className="space-y-2 mt-3">
+                  {attachments.map((attachment, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center gap-3 p-2 bg-[#1E293B] border border-[#334155] rounded-lg"
+                    >
+                      <FileIcon className="w-4 h-4 text-[#94A3B8]" />
+                      <span className="text-[#F1F5F9] text-sm flex-1 truncate">{attachment.file.name}</span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeAttachment(index)}
+                        className="text-[#94A3B8] hover:text-red-400 p-1 h-auto"
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {submitError && (

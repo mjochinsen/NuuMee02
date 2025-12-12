@@ -362,15 +362,18 @@ Defined in: `infra/firestore/firestore.indexes.json`
 
 ---
 
-## 13. Deployment Scripts
+## 13. Deployment Commands
 
-| Script | Purpose |
-|--------|---------|
-| `deploy-api.sh` | Deploy backend to Cloud Run |
-| `deploy-worker.sh` | Deploy worker to Cloud Run |
-| `deploy-frontend.sh` | Deploy frontend to Firebase Hosting |
-| `deploy-firestore.sh` | Deploy Firestore rules/indexes |
-| `test-deployment.sh` | Test deployed services |
+Use slash commands for deployment (NOT shell scripts):
+
+| Command | Purpose |
+|---------|---------|
+| `/deploy` | Deploy both backend and frontend |
+| `/deploy backend` | Deploy only FastAPI to Cloud Run |
+| `/deploy frontend` | Deploy only Next.js to Firebase Hosting |
+| `/deploy --skip-build` | Deploy frontend without rebuilding |
+
+**Old .sh scripts were removed.** Use `/deploy` instead.
 
 ---
 

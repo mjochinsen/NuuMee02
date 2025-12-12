@@ -748,10 +748,10 @@ export default function CreateVideoPage() {
               </div>
             )}
 
-            {/* Generate Button with bouncing arrow when ready */}
+            {/* Generate Button with bouncing arrow for demo onboarding only */}
             <div className="relative">
-              {/* Bouncing arrow for Generate button (show when canGenerate is true) */}
-              {canGenerate && !isGenerating && (
+              {/* Bouncing arrow for Generate button - only show during demo flow (before first demo completed) */}
+              {canGenerate && !isGenerating && !hasCompletedDemo && demoMode && (
                 <div className="absolute -top-12 left-1/2 -translate-x-1/2 animate-bounce z-10">
                   <div className="text-[#00F0D9] text-5xl font-bold drop-shadow-[0_0_15px_rgba(0,240,217,0.9)]">
                     ↓
