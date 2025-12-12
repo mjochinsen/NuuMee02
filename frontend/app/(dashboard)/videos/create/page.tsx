@@ -69,6 +69,8 @@ export default function CreateVideoPage() {
   const [loadingTestFiles, setLoadingTestFiles] = useState(false);
   // Demo mode: uses pre-uploaded demo files (free, instant result)
   const [demoMode, setDemoMode] = useState(false);
+  // Hide "Try Me" buttons after user completes their first demo
+  const [hasCompletedDemo, setHasCompletedDemo] = useState(true); // Default true to hide flash
   // Job picker state (for "From My Jobs" selection)
   const [jobPickerOpen, setJobPickerOpen] = useState(false);
   const [selectedJobForMotion, setSelectedJobForMotion] = useState<JobResponse | null>(null);
@@ -77,11 +79,15 @@ export default function CreateVideoPage() {
   const imageInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
 
-  // Check for test mode on mount (must run client-side after hydration)
+  // Check for test mode and demo completion on mount
   useEffect(() => {
     const isTest = checkTestMode();
     console.log('Test mode check:', isTest, 'URL:', window.location.search);
     setTestModeEnabled(isTest);
+
+    // Check if user has completed a demo before
+    const demoCompleted = localStorage.getItem('nuumee_demo_completed') === '1';
+    setHasCompletedDemo(demoCompleted);
   }, []);
 
   // Load test files from public directory
@@ -360,6 +366,12 @@ export default function CreateVideoPage() {
 
       console.log('Job created:', job);
 
+      // Mark demo as completed (hide "Try Me" buttons in future)
+      if (demoMode) {
+        localStorage.setItem('nuumee_demo_completed', '1');
+        setHasCompletedDemo(true);
+      }
+
       // Clear form after successful submission
       removeImage();
       removeVideo();
@@ -510,7 +522,7 @@ export default function CreateVideoPage() {
                     >
                       Choose File
                     </Button>
-                    {!referenceImagePreview && (
+                    {!referenceImagePreview && !hasCompletedDemo && (
                       <div className="mt-6 relative">
                         {/* Big bouncing arrow pointing down */}
                         <div className="absolute -top-12 left-1/2 -translate-x-1/2 animate-bounce">
@@ -626,7 +638,7 @@ export default function CreateVideoPage() {
                       </Button>
                     </div>
                     {/* Try Example button for Video (step 2) */}
-                    {!motionVideoPreview && !selectedJobForMotion && (
+                    {!motionVideoPreview && !selectedJobForMotion && !hasCompletedDemo && (
                       <div className="mt-6 relative">
                         {/* Big bouncing arrow pointing down */}
                         <div className="absolute -top-12 left-1/2 -translate-x-1/2 animate-bounce">
