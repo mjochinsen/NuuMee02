@@ -278,6 +278,67 @@ def refresh_font_list():
     return gr.Dropdown(choices=get_available_fonts())
 
 
+def export_current_settings(
+    font_name: str,
+    font_size: int,
+    primary_color: str,
+    outline: int,
+    shadow: int,
+    margin_v: int,
+    alignment: int,
+    bold: bool,
+    blur: float,
+    animation: str,
+) -> str:
+    """Export current settings as JSON and ASS format for copying."""
+    import json
+
+    # Get actual color code
+    color_code = COLOR_PRESETS.get(primary_color, "&H00FFFFFF")
+    bold_flag = 1 if bold else 0
+
+    # JSON format for production config
+    json_config = {
+        "name": "Custom Style",
+        "description": "Exported from preview tool",
+        "is_multi_style": False,
+        "ass_styles": [
+            f"Style: Default,{font_name},{font_size},{color_code},&H000000FF,&H00000000,&H80000000,{bold_flag},0,0,0,100,100,0,0,1,{outline},{shadow},{alignment},20,20,{margin_v},1"
+        ],
+        "style_names": ["Default"]
+    }
+
+    # Animation info
+    anim_name = ANIMATION_EFFECTS.get(animation, {}).get("name", "None")
+    anim_code = ANIMATION_EFFECTS.get(animation, {}).get("code", "")
+
+    output = f"""📋 CURRENT SETTINGS
+==================
+
+📝 Parameters:
+  Font: {font_name}
+  Size: {font_size}
+  Color: {primary_color} ({color_code})
+  Bold: {bold}
+  Outline: {outline}
+  Shadow: {shadow}
+  Alignment: {alignment}
+  Margin V: {margin_v}
+  Blur/Glow: {blur}
+  Animation: {anim_name}
+
+📄 ASS Style Line:
+Style: Default,{font_name},{font_size},{color_code},&H000000FF,&H00000000,&H80000000,{bold_flag},0,0,0,100,100,0,0,1,{outline},{shadow},{alignment},20,20,{margin_v},1
+
+🎬 Animation Code:
+{anim_code if anim_code else "(none)"}
+
+📦 JSON for subtitle-styles.json:
+{json.dumps(json_config, indent=2)}
+"""
+    return output
+
+
 # Build Gradio interface
 with gr.Blocks(title="NuuMee Subtitle Style Preview") as app:
     gr.Markdown("""
@@ -436,11 +497,17 @@ with gr.Blocks(title="NuuMee Subtitle Style Preview") as app:
                     label="Words/sec",
                 )
 
-            render_btn = gr.Button(
-                "🎬 Render Preview",
-                variant="primary",
-                size="lg",
-            )
+            with gr.Row():
+                render_btn = gr.Button(
+                    "🎬 Render Preview",
+                    variant="primary",
+                    size="lg",
+                )
+                export_btn = gr.Button(
+                    "📋 Export Settings",
+                    variant="secondary",
+                    size="lg",
+                )
 
         # Right column: Output
         with gr.Column(scale=1):
@@ -451,6 +518,13 @@ with gr.Blocks(title="NuuMee Subtitle Style Preview") as app:
             status_text = gr.Textbox(
                 label="Status",
                 interactive=False,
+            )
+
+            gr.Markdown("### 📋 Export Settings")
+            export_output = gr.Textbox(
+                label="Current Settings (select all & copy)",
+                lines=20,
+                interactive=True,
             )
 
             gr.Markdown("""
@@ -466,6 +540,7 @@ with gr.Blocks(title="NuuMee Subtitle Style Preview") as app:
             - Use short videos (5-10 sec) for faster iteration
             - TikTok style works well for vertical videos
             - Higher blur creates a glow effect
+            - Click "Export Settings" to copy your style
             """)
 
     # Event handlers
@@ -524,6 +599,23 @@ with gr.Blocks(title="NuuMee Subtitle Style Preview") as app:
             words_per_second_slider,
         ],
         outputs=[video_output, status_text],
+    )
+
+    export_btn.click(
+        fn=export_current_settings,
+        inputs=[
+            font_dropdown,
+            font_size_slider,
+            color_dropdown,
+            outline_slider,
+            shadow_slider,
+            margin_v_slider,
+            alignment_dropdown,
+            bold_checkbox,
+            blur_slider,
+            animation_dropdown,
+        ],
+        outputs=[export_output],
     )
 
 
