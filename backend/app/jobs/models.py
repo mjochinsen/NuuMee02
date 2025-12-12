@@ -20,6 +20,16 @@ class JobType(str, Enum):
     EXTEND = "extend"  # Wan 2.5 Video Extend
     UPSCALE = "upscale"  # Video Upscaler Pro
     FOLEY = "foley"  # Hunyuan Video Foley (add audio)
+    SUBTITLES = "subtitles"  # Auto-generated subtitles (FFmpeg worker)
+    WATERMARK = "watermark"  # Watermark overlay (FFmpeg worker)
+
+
+class SubtitleStyle(str, Enum):
+    """Available subtitle styles."""
+    RAINBOW = "rainbow"  # Multi-color cycling text
+    CLASSIC = "classic"  # White text with black outline
+    BOLD = "bold"  # Yellow text with thick outline
+    MINIMAL = "minimal"  # Small white text with subtle shadow
 
 
 class Resolution(str, Enum):
@@ -199,5 +209,63 @@ class JobOutputResponse(BaseModel):
                 "download_url": "https://storage.googleapis.com/nuumee-outputs/...",
                 "expires_in_seconds": 3600,
                 "filename": "job_abc123.mp4"
+            }
+        }
+
+
+class PostProcessType(str, Enum):
+    """Post-processing types for completed videos."""
+    SUBTITLES = "subtitles"
+    WATERMARK = "watermark"
+
+
+class PostProcessRequest(BaseModel):
+    """Request to add post-processing to a completed video."""
+    post_process_type: PostProcessType = Field(
+        ...,
+        description="Type of post-processing to apply"
+    )
+    subtitle_style: Optional[SubtitleStyle] = Field(
+        default=SubtitleStyle.CLASSIC,
+        description="Subtitle style (only for subtitles type)"
+    )
+    watermark_enabled: bool = Field(
+        default=False,
+        description="Enable watermark (only for watermark type)"
+    )
+
+    class Config:
+        json_schema_extra = {
+            "examples": [
+                {
+                    "title": "Add subtitles",
+                    "post_process_type": "subtitles",
+                    "subtitle_style": "rainbow"
+                },
+                {
+                    "title": "Add watermark",
+                    "post_process_type": "watermark",
+                    "watermark_enabled": True
+                }
+            ]
+        }
+
+
+class PostProcessResponse(BaseModel):
+    """Response for post-processing request."""
+    job_id: str = Field(..., description="New job ID for the post-processing task")
+    source_job_id: str = Field(..., description="Original job ID")
+    post_process_type: PostProcessType = Field(..., description="Type of post-processing")
+    status: JobStatus = Field(..., description="Job status")
+    credits_charged: float = Field(..., description="Credits charged (0 for free features)")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "job_id": "job_xyz789",
+                "source_job_id": "job_abc123",
+                "post_process_type": "subtitles",
+                "status": "queued",
+                "credits_charged": 0.0
             }
         }

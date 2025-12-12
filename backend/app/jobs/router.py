@@ -18,10 +18,14 @@ from .models import (
     Resolution,
     CreditCostResponse,
     JobOutputResponse,
+    PostProcessRequest,
+    PostProcessResponse,
+    PostProcessType,
+    SubtitleStyle,
 )
 from ..auth.firebase import get_firestore_client
 from ..middleware.auth import get_current_user_id
-from ..tasks.queue import enqueue_job
+from ..tasks.queue import enqueue_job, enqueue_ffmpeg_job
 
 logger = logging.getLogger(__name__)
 
@@ -966,3 +970,131 @@ async def get_job_output(
     except Exception as e:
         logger.error(f"Failed to generate download URL for job {job_id}: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to generate download URL: {str(e)}")
+
+
+@router.post("/{job_id}/post-process", response_model=PostProcessResponse)
+async def create_post_process_job(
+    job_id: str,
+    request: PostProcessRequest,
+    user_id: str = Depends(get_current_user_id),
+):
+    """
+    Create a post-processing job for a completed video.
+
+    This endpoint creates a new job that applies post-processing to an existing
+    completed video. Currently supports:
+    - **subtitles**: Auto-generate subtitles using Speech-to-Text
+    - **watermark**: Add NuuMee watermark overlay
+
+    **Requirements:**
+    - Source job must exist and belong to the user
+    - Source job must be completed with an output video
+
+    **Pricing:**
+    - Subtitles: FREE (0 credits)
+    - Watermark: FREE (0 credits)
+    """
+    db = get_firestore_client()
+
+    # Get and validate source job
+    source_job_ref = db.collection("jobs").document(job_id)
+    source_job_doc = source_job_ref.get()
+
+    if not source_job_doc.exists:
+        raise HTTPException(status_code=404, detail="Source job not found")
+
+    source_data = source_job_doc.to_dict()
+
+    # Verify ownership
+    if source_data.get("user_id") != user_id:
+        raise HTTPException(status_code=403, detail="Not authorized to process this job")
+
+    # Verify job is completed
+    if source_data.get("status") != JobStatus.COMPLETED.value:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Source job must be completed. Current status: {source_data.get('status')}"
+        )
+
+    # Verify output exists
+    input_video_path = source_data.get("output_video_path")
+    if not input_video_path:
+        raise HTTPException(status_code=400, detail="Source job has no output video")
+
+    # Generate new job ID
+    new_job_id = generate_job_id()
+    now = datetime.now(timezone.utc)
+
+    # Map post-process type to job type
+    job_type_map = {
+        PostProcessType.SUBTITLES: JobType.SUBTITLES,
+        PostProcessType.WATERMARK: JobType.WATERMARK,
+    }
+    new_job_type = job_type_map[request.post_process_type]
+
+    # Build options for FFmpeg worker
+    options = {}
+    if request.post_process_type == PostProcessType.SUBTITLES:
+        options["subtitle_style"] = request.subtitle_style.value if request.subtitle_style else "classic"
+    elif request.post_process_type == PostProcessType.WATERMARK:
+        options["watermark_path"] = "assets/watermark.png"
+        options["position"] = "bottom-right"
+        options["opacity"] = 0.7
+
+    # Post-processing is FREE (0 credits)
+    credits_to_charge = 0.0
+
+    # Create job document
+    job_data = {
+        "id": new_job_id,
+        "user_id": user_id,
+        "job_type": new_job_type.value,
+        "status": JobStatus.PENDING.value,
+        "source_job_id": job_id,
+        "input_video_path": input_video_path,
+        "options": options,
+        "resolution": source_data.get("resolution", "480p"),
+        "credits_charged": credits_to_charge,
+        "output_video_path": None,
+        "error_message": None,
+        "created_at": now,
+        "updated_at": now,
+        "completed_at": None,
+    }
+
+    try:
+        # Create job document
+        job_ref = db.collection("jobs").document(new_job_id)
+        job_ref.set(job_data)
+
+        # Determine output path
+        output_suffix = "subtitled" if request.post_process_type == PostProcessType.SUBTITLES else "watermarked"
+        output_path = f"processed/{new_job_id}/{output_suffix}.mp4"
+
+        # Enqueue to FFmpeg worker
+        task_name = enqueue_ffmpeg_job(
+            job_id=new_job_id,
+            job_type=request.post_process_type.value,
+            input_video_path=input_video_path,
+            output_path=output_path,
+            options=options
+        )
+        logger.info(f"Post-process job {new_job_id} enqueued: {task_name}")
+
+        # Update status to queued
+        job_ref.update({
+            "status": JobStatus.QUEUED.value,
+            "updated_at": datetime.now(timezone.utc),
+        })
+
+        return PostProcessResponse(
+            job_id=new_job_id,
+            source_job_id=job_id,
+            post_process_type=request.post_process_type,
+            status=JobStatus.QUEUED,
+            credits_charged=credits_to_charge
+        )
+
+    except Exception as e:
+        logger.error(f"Failed to create post-process job: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to create post-process job: {str(e)}")

@@ -95,23 +95,23 @@ Create a separate Cloud Run service (`nuumee-ffmpeg-worker`) for FFmpeg-based po
 
 | ID | Task | Status | Notes |
 |----|------|--------|-------|
-| G.1 | Upload watermark PNG to GCS | ⬜ | Needs asset |
+| G.1 | Upload watermark PNG to GCS | ✅ | gs://nuumee-assets/assets/watermark.png |
 | G.2 | Add `process_watermark_job()` to main.py | ✅ | |
 | G.3 | Implement FFmpeg overlay filter | ✅ | filter_complex |
 | G.4 | Configure position (bottom-right, 10% margin) | ✅ | 5% default |
 | G.5 | Configure opacity (70%) | ✅ | 0.7 default |
 | G.6 | **TEST:** End-to-end watermark job locally | ⬜ | Needs prod test |
 
-### PHASE H: Backend Integration (30 min)
+### PHASE H: Backend Integration (30 min) ✅
 
 | ID | Task | Status | Notes |
 |----|------|--------|-------|
-| H.1 | Add `subtitle_style` field to CreateJobRequest | ⬜ | |
-| H.2 | Add `watermark_enabled` field to CreateJobRequest | ⬜ | |
-| H.3 | Update job creation to route to FFmpeg queue | ⬜ | |
-| H.4 | Add pricing for subtitles (0 credits - free) | ⬜ | |
-| H.5 | Add pricing for watermark (0 credits - free) | ⬜ | |
-| H.6 | **TEST:** Create subtitle job via API | ⬜ | |
+| H.1 | Add `subtitle_style` field to CreateJobRequest | ✅ | SubtitleStyle enum |
+| H.2 | Add `watermark_enabled` field to CreateJobRequest | ✅ | PostProcessRequest |
+| H.3 | Update job creation to route to FFmpeg queue | ✅ | POST /{job_id}/post-process |
+| H.4 | Add pricing for subtitles (0 credits - free) | ✅ | FREE |
+| H.5 | Add pricing for watermark (0 credits - free) | ✅ | FREE |
+| H.6 | **TEST:** Create subtitle job via API | ⬜ | Needs deploy + test |
 
 ### PHASE I: Frontend UI (45 min)
 
@@ -232,30 +232,21 @@ If issues arise:
 
 ## Current Progress
 
-**Phase:** H (Backend Integration)
+**Phase:** I (Frontend UI)
 **Last Updated:** 2025-12-12
 **Blocker:** None
 
 ### Completed
 - Phase A: Infrastructure Setup ✅
-  - Docker build successful
-  - FFmpeg 7.1.3 with libass
-  - 20 fonts available
-  - Health endpoint working
 - Phase B: Cloud Tasks Queue ✅
-  - Queue: nuumee-ffmpeg-jobs in us-central1
-  - Backend routing: enqueue_ffmpeg_job() added
 - Phase C: FFmpeg Verification ✅
   - Cloud Run: https://nuumee-ffmpeg-worker-450296399943.us-central1.run.app
-  - FFmpeg 7.1.3, libass available, 20 fonts
 - Phase D: Google STT Integration ✅
-  - transcribe_audio_sync() for <60s
-  - transcribe_audio_async() for 60-120s
 - Phase E: ASS Subtitle Generator ✅
-  - 4 styles: rainbow, classic, bold, minimal
-  - MIN_WORD_DURATION = 0.2s
 - Phase F: Subtitle Job Handler ✅
-  - Full pipeline: download → extract audio → STT → ASS → burn → upload
 - Phase G: Watermark Handler ✅
-  - Configurable position, opacity, margin
-  - Needs watermark asset upload
+- Phase H: Backend Integration ✅
+  - POST /jobs/{job_id}/post-process endpoint
+  - PostProcessRequest, PostProcessResponse models
+  - SubtitleStyle, PostProcessType enums
+  - Free pricing for both features
