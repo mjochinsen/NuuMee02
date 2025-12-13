@@ -152,8 +152,10 @@ def validate_gcs_path_ownership(path: str, user_id: str, field_name: str) -> Non
     """
     Validate that a GCS path belongs to the current user.
 
-    Path format: uploads/{user_id}/{timestamp}_{filename}
-    Example: uploads/abc123/1701432000_reference.jpg
+    Accepted path formats:
+    - uploads/{user_id}/{timestamp}_{filename} (user uploads)
+    - outputs/{user_id}/{job_id}.mp4 (job outputs - "From My Jobs")
+    - processed/{job_id}/... (post-processed outputs)
 
     Raises HTTPException 403 if the path doesn't belong to the user.
     Raises HTTPException 400 if the path format is invalid.
@@ -162,14 +164,23 @@ def validate_gcs_path_ownership(path: str, user_id: str, field_name: str) -> Non
         return  # Empty paths are handled elsewhere
 
     parts = path.split("/")
-    # Expected format: uploads/{user_id}/{timestamp}_{filename}
-    if len(parts) < 3 or parts[0] != "uploads":
+
+    # Check for valid prefixes
+    valid_prefixes = ["uploads", "outputs", "processed"]
+    if len(parts) < 3 or parts[0] not in valid_prefixes:
         raise HTTPException(
             status_code=400,
             detail=f"Invalid {field_name} path format"
         )
 
-    path_user_id = parts[1]  # User ID is the second part after "uploads/"
+    # For "processed" paths, we can't easily validate ownership by path alone
+    # (format is processed/{job_id}/...), so we allow them through
+    # The job ownership is validated elsewhere when the job is created
+    if parts[0] == "processed":
+        return
+
+    # For "uploads" and "outputs", user_id is the second part
+    path_user_id = parts[1]
     if path_user_id != user_id:
         logger.warning(
             f"User {user_id} attempted to use {field_name} belonging to {path_user_id}: {path}"

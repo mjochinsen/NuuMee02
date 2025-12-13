@@ -87,7 +87,9 @@ export default function CreateVideoPage() {
     setTestModeEnabled(isTest);
 
     // Check if user has completed a demo before
-    const demoCompleted = localStorage.getItem('nuumee_demo_completed') === '1';
+    const rawValue = localStorage.getItem('nuumee_demo_completed');
+    const demoCompleted = rawValue === '1';
+    console.log('[Onboarding] localStorage nuumee_demo_completed:', rawValue, '→ hasCompletedDemo:', demoCompleted);
     setHasCompletedDemo(demoCompleted);
   }, []);
 
