@@ -70,7 +70,8 @@ export default function CreateVideoPage() {
   // Demo mode: uses pre-uploaded demo files (free, instant result)
   const [demoMode, setDemoMode] = useState(false);
   // Hide "Try Me" buttons after user completes their first demo
-  const [hasCompletedDemo, setHasCompletedDemo] = useState(true); // Default true to hide flash
+  // Use null as initial state to distinguish "not yet checked" from "checked and true/false"
+  const [hasCompletedDemo, setHasCompletedDemo] = useState<boolean | null>(null);
   // Job picker state (for "From My Jobs" selection)
   const [jobPickerOpen, setJobPickerOpen] = useState(false);
   const [selectedJobForMotion, setSelectedJobForMotion] = useState<JobResponse | null>(null);
@@ -522,7 +523,7 @@ export default function CreateVideoPage() {
                     >
                       Choose File
                     </Button>
-                    {!referenceImagePreview && !hasCompletedDemo && (
+                    {!referenceImagePreview && hasCompletedDemo === false && (
                       <div className="mt-6 relative">
                         {/* Big bouncing arrow pointing down */}
                         <div className="absolute -top-12 left-1/2 -translate-x-1/2 animate-bounce">
@@ -638,7 +639,7 @@ export default function CreateVideoPage() {
                       </Button>
                     </div>
                     {/* Try Example button for Video (step 2) */}
-                    {!motionVideoPreview && !selectedJobForMotion && !hasCompletedDemo && (
+                    {!motionVideoPreview && !selectedJobForMotion && hasCompletedDemo === false && (
                       <div className="mt-6 relative">
                         {/* Big bouncing arrow pointing down */}
                         <div className="absolute -top-12 left-1/2 -translate-x-1/2 animate-bounce">
@@ -751,7 +752,7 @@ export default function CreateVideoPage() {
             {/* Generate Button with bouncing arrow for demo onboarding only */}
             <div className="relative">
               {/* Bouncing arrow for Generate button - only show during demo flow (before first demo completed) */}
-              {canGenerate && !isGenerating && !hasCompletedDemo && demoMode && (
+              {canGenerate && !isGenerating && hasCompletedDemo === false && demoMode && (
                 <div className="absolute -top-12 left-1/2 -translate-x-1/2 animate-bounce z-10">
                   <div className="text-[#00F0D9] text-5xl font-bold drop-shadow-[0_0_15px_rgba(0,240,217,0.9)]">
                     ↓
