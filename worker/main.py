@@ -10,7 +10,9 @@ from datetime import datetime, timezone
 from typing import Optional
 
 from flask import Flask, request, jsonify
-from google.cloud import firestore, storage, secretmanager
+from google.cloud import firestore, storage, secretmanager, tasks_v2
+from google.protobuf import timestamp_pb2
+from datetime import timedelta
 from google.auth import default as auth_default
 from google.auth import impersonated_credentials
 import httpx
@@ -33,11 +35,21 @@ PROJECT_ID = os.environ.get("GCP_PROJECT", "wanapi-prod")
 IMAGE_BUCKET = os.environ.get("IMAGE_BUCKET", "nuumee-images")
 VIDEO_BUCKET = os.environ.get("VIDEO_BUCKET", "nuumee-videos")
 OUTPUT_BUCKET = os.environ.get("OUTPUT_BUCKET", "nuumee-outputs")
+ASSETS_BUCKET = os.environ.get("ASSETS_BUCKET", "nuumee-assets")
+
+# FFmpeg Worker Configuration for auto-watermarking free tier videos
+FFMPEG_LOCATION = os.environ.get("FFMPEG_TASKS_LOCATION", "us-central1")
+FFMPEG_QUEUE_NAME = os.environ.get("FFMPEG_TASKS_QUEUE", "nuumee-ffmpeg-jobs")
+FFMPEG_WORKER_URL = os.environ.get(
+    "FFMPEG_WORKER_URL",
+    "https://nuumee-ffmpeg-worker-450296399943.us-central1.run.app"
+)
 
 # Firestore client (initialized lazily)
 _db: Optional[firestore.Client] = None
 _storage_client: Optional[storage.Client] = None
 _wavespeed_client: Optional[WaveSpeedClient] = None
+_tasks_client: Optional[tasks_v2.CloudTasksClient] = None
 _signing_credentials = None
 _service_account_email: Optional[str] = None
 
@@ -83,6 +95,120 @@ def get_wavespeed() -> WaveSpeedClient:
         api_key = get_wavespeed_api_key()
         _wavespeed_client = WaveSpeedClient(api_key=api_key)
     return _wavespeed_client
+
+
+def get_tasks_client() -> tasks_v2.CloudTasksClient:
+    """Get Cloud Tasks client (lazy initialization)."""
+    global _tasks_client
+    if _tasks_client is None:
+        _tasks_client = tasks_v2.CloudTasksClient()
+    return _tasks_client
+
+
+def is_user_free_tier(user_id: str) -> bool:
+    """Check if user is on free tier (no subscription or 'free' tier).
+
+    Args:
+        user_id: User document ID
+
+    Returns:
+        True if user is on free tier, False otherwise
+    """
+    db = get_firestore()
+    user_ref = db.collection("users").document(user_id)
+    user_doc = user_ref.get()
+
+    if not user_doc.exists:
+        return True  # Assume free tier if user not found
+
+    user_data = user_doc.to_dict()
+    subscription_tier = user_data.get("subscription_tier", "free")
+
+    return subscription_tier == "free" or not subscription_tier
+
+
+def enqueue_free_tier_watermark(job_id: str, output_video_path: str, user_id: str) -> Optional[str]:
+    """Enqueue an FFmpeg watermark job for free tier users.
+
+    This automatically applies the NuuMee.AI watermark to all videos
+    created by free tier users.
+
+    Args:
+        job_id: Original job ID (we'll create a new job for watermarking)
+        output_video_path: GCS path to the completed video
+        user_id: User ID for the watermark job
+
+    Returns:
+        Task name if enqueued, None otherwise
+    """
+    try:
+        db = get_firestore()
+
+        # Create a new watermark job in Firestore
+        watermark_job_ref = db.collection("jobs").document()
+        watermark_job_id = watermark_job_ref.id
+
+        watermark_job_data = {
+            "id": watermark_job_id,
+            "user_id": user_id,
+            "job_type": "watermark",
+            "status": "pending",
+            "input_video_path": output_video_path,
+            "parent_job_id": job_id,  # Link to original job
+            "options": {
+                "watermark_path": "assets/nuumee-watermark.png",  # NuuMee watermark
+                "position": "bottom-right",
+                "opacity": 0.7,
+                "margin_percent": 5,
+                "is_free_tier_watermark": True,  # Flag for analytics
+            },
+            "credits_charged": 0,  # Free
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc),
+        }
+
+        watermark_job_ref.set(watermark_job_data)
+        logger.info(f"Created free tier watermark job {watermark_job_id} for job {job_id}")
+
+        # Enqueue to FFmpeg worker
+        client = get_tasks_client()
+        queue_path = client.queue_path(PROJECT_ID, FFMPEG_LOCATION, FFMPEG_QUEUE_NAME)
+
+        payload = {"job_id": watermark_job_id}
+
+        # Service account for OIDC authentication
+        service_account_email = os.environ.get(
+            "TASKS_SERVICE_ACCOUNT",
+            f"nuumee-worker@{PROJECT_ID}.iam.gserviceaccount.com"
+        )
+
+        task = {
+            "http_request": {
+                "http_method": tasks_v2.HttpMethod.POST,
+                "url": FFMPEG_WORKER_URL,
+                "headers": {"Content-Type": "application/json"},
+                "body": json.dumps(payload).encode(),
+                "oidc_token": {
+                    "service_account_email": service_account_email,
+                    "audience": FFMPEG_WORKER_URL,
+                },
+            }
+        }
+
+        # Small delay to ensure original job is fully written
+        schedule_time = datetime.utcnow() + timedelta(seconds=2)
+        timestamp = timestamp_pb2.Timestamp()
+        timestamp.FromDatetime(schedule_time)
+        task["schedule_time"] = timestamp
+
+        response = client.create_task(request={"parent": queue_path, "task": task})
+        logger.info(f"Enqueued free tier watermark task: {response.name}")
+
+        return response.name
+
+    except Exception as e:
+        logger.error(f"Failed to enqueue free tier watermark for job {job_id}: {e}")
+        return None
 
 
 def _get_service_account_email() -> str:
@@ -519,6 +645,11 @@ def process_job(job_id: str):
         # Update job as completed
         update_job_status(job_id, "completed", output_video_path=output_path)
         logger.info(f"Job {job_id} completed successfully")
+
+        # Auto-apply NuuMee watermark for free tier users
+        if is_user_free_tier(user_id):
+            logger.info(f"User {user_id} is on free tier, applying NuuMee watermark")
+            enqueue_free_tier_watermark(job_id, output_path, user_id)
 
     except WaveSpeedError as e:
         logger.error(f"WaveSpeed error for job {job_id}: {e}")

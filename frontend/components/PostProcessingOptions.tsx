@@ -18,7 +18,8 @@ import {
 import { JobPickerModal } from '@/components/JobPickerModal';
 import { JobResponse, createJob, createPostProcessJob, createWatermarkJob, ApiError, SubtitleStyle } from '@/lib/api';
 import { useRouter } from 'next/navigation';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Lock } from 'lucide-react';
+import { useAuth } from '@/components/AuthProvider';
 
 // Subtitle style definitions with image previews
 const SUBTITLE_STYLES = [
@@ -178,6 +179,10 @@ function VideoSourceSelector({
 
 export function PostProcessingOptions() {
   const router = useRouter();
+  const { profile } = useAuth();
+
+  // Check if user is on free tier (no subscription or 'free' tier)
+  const isFreeTier = !profile?.subscription_tier || profile.subscription_tier === 'free';
 
   const [videoExtenderEnabled, setVideoExtenderEnabled] = useState(false);
   const [upscalerEnabled, setUpscalerEnabled] = useState(false);
@@ -1039,19 +1044,31 @@ export function PostProcessingOptions() {
         </div>
 
         {/* F. Add Watermark */}
-        <div className="border border-[#334155] rounded-2xl p-6 bg-[#0F172A]">
+        <div className={`border rounded-2xl p-6 bg-[#0F172A] ${isFreeTier ? 'border-[#334155] opacity-60' : 'border-[#334155]'}`}>
           <div className="flex items-start gap-3">
-            <Checkbox
-              id="watermark"
-              checked={watermarkEnabled}
-              onCheckedChange={(checked) => setWatermarkEnabled(checked as boolean)}
-              className="mt-1 border-[#334155] data-[state=checked]:bg-[#00F0D9] data-[state=checked]:border-[#00F0D9]"
-            />
+            {isFreeTier ? (
+              /* Free tier - locked state */
+              <div className="mt-1 w-4 h-4 flex items-center justify-center">
+                <Lock className="w-4 h-4 text-[#64748B]" />
+              </div>
+            ) : (
+              <Checkbox
+                id="watermark"
+                checked={watermarkEnabled}
+                onCheckedChange={(checked) => setWatermarkEnabled(checked as boolean)}
+                className="mt-1 border-[#334155] data-[state=checked]:bg-[#00F0D9] data-[state=checked]:border-[#00F0D9]"
+              />
+            )}
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-3">
-                <label htmlFor="watermark" className="text-[#F1F5F9] cursor-pointer font-medium">
+                <label htmlFor="watermark" className={`font-medium ${isFreeTier ? 'text-[#64748B] cursor-not-allowed' : 'text-[#F1F5F9] cursor-pointer'}`}>
                   F. Add Watermark
                 </label>
+                {isFreeTier && (
+                  <span className="text-xs bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded">
+                    Upgrade to remove
+                  </span>
+                )}
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <button className="text-[#94A3B8] hover:text-[#00F0D9] transition-colors">
@@ -1060,34 +1077,71 @@ export function PostProcessingOptions() {
                   </TooltipTrigger>
                   <TooltipContent className="bg-[#1E293B] border border-[#334155] text-[#F1F5F9] max-w-sm p-4">
                     <div className="space-y-2">
-                      <p className="mb-2">Add your custom logo or text watermark to protect your content.</p>
-                      <div className="space-y-1">
-                        <p className="text-[#00F0D9]">Options:</p>
-                        <ul className="list-none text-sm text-[#94A3B8]">
-                          <li>Logo - Upload PNG with transparency</li>
-                          <li>Text - Add custom text overlay</li>
-                          <li>Position - Place anywhere on video</li>
-                          <li>Opacity - Adjust transparency (10-100%)</li>
-                        </ul>
-                      </div>
-                      <div className="mt-2 space-y-1">
-                        <p className="text-sm text-[#00F0D9]">Best practices:</p>
-                        <ul className="list-disc list-inside text-sm text-[#94A3B8]">
-                          <li>Recommended size: ~100x50 pixels</li>
-                          <li>Use PNG with transparent background</li>
-                          <li>Place in corners to avoid key content</li>
-                          <li>Use 30-50% opacity for subtle branding</li>
-                        </ul>
-                      </div>
-                      <div className="text-sm text-[#94A3B8] mt-2">
-                        <p className="text-amber-400">Free plan includes default NuuMee.AI watermark</p>
-                        <p>Custom watermarks available on Creator & Studio plans</p>
-                      </div>
+                      {isFreeTier ? (
+                        <>
+                          <p className="mb-2 text-amber-400">Free plan videos include NuuMee.AI watermark</p>
+                          <p className="text-sm text-[#94A3B8]">Upgrade to Creator or Studio plan to:</p>
+                          <ul className="list-disc list-inside text-sm text-[#94A3B8]">
+                            <li>Remove NuuMee watermark completely</li>
+                            <li>Add your own custom logo watermark</li>
+                            <li>Control position and opacity</li>
+                          </ul>
+                        </>
+                      ) : (
+                        <>
+                          <p className="mb-2">Add your custom logo or text watermark to protect your content.</p>
+                          <div className="space-y-1">
+                            <p className="text-[#00F0D9]">Options:</p>
+                            <ul className="list-none text-sm text-[#94A3B8]">
+                              <li>Logo - Upload PNG with transparency</li>
+                              <li>Text - Add custom text overlay</li>
+                              <li>Position - Place anywhere on video</li>
+                              <li>Opacity - Adjust transparency (10-100%)</li>
+                            </ul>
+                          </div>
+                          <div className="mt-2 space-y-1">
+                            <p className="text-sm text-[#00F0D9]">Best practices:</p>
+                            <ul className="list-disc list-inside text-sm text-[#94A3B8]">
+                              <li>Recommended size: ~100x50 pixels</li>
+                              <li>Use PNG with transparent background</li>
+                              <li>Place in corners to avoid key content</li>
+                              <li>Use 30-50% opacity for subtle branding</li>
+                            </ul>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </TooltipContent>
                 </Tooltip>
               </div>
-              {watermarkEnabled && (
+              {isFreeTier ? (
+                /* Free tier - show info about automatic watermark */
+                <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-4">
+                  <div className="flex items-center gap-3">
+                    <img
+                      src="/images/nuumee-watermark-preview.png"
+                      alt="NuuMee.AI watermark"
+                      className="h-8 w-auto opacity-70"
+                      onError={(e) => {
+                        // Fallback if image doesn't exist
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
+                    <div>
+                      <p className="text-amber-400 text-sm font-medium">NuuMee.AI watermark will be added</p>
+                      <p className="text-[#94A3B8] text-xs">All Free plan videos include our watermark (bottom-right, 70% opacity)</p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-3 border-amber-500/50 text-amber-400 hover:bg-amber-500/10"
+                    onClick={() => router.push('/pricing')}
+                  >
+                    Upgrade to Remove Watermark
+                  </Button>
+                </div>
+              ) : watermarkEnabled && (
                 <div className="space-y-3">
                   <VideoSourceSelector {...createSelectorProps('watermark', 'Select video for watermark')} />
 
