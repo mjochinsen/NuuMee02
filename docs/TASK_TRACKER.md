@@ -59,7 +59,7 @@
 | 11.2.5 | Try Example onboarding feature      | ✅     | -      | 3-step demo with localStorage, Dec 12 2025    |
 | 11.2.6 | Inline watermark for free tier      | ✅     | 1h     | Single job, watermark before completion Dec 13 |
 | 11.2.7 | Auto-refill UI toast feedback       | ✅     | 15m    | Success/error toasts on save, Dec 13           |
-| 11.2.8 | Auto-refill trigger implementation  | 🟡     | 1h     | Worker charges Stripe when balance low         |
+| 11.2.8 | Auto-refill trigger implementation  | ✅     | 1h     | Worker charges Stripe when balance low, Dec 13 |
 
 ### 11.3 Admin Panel (Priority 2 - Operations Critical)
 
