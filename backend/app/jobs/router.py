@@ -156,6 +156,7 @@ def validate_gcs_path_ownership(path: str, user_id: str, field_name: str) -> Non
     - uploads/{user_id}/{timestamp}_{filename} (user uploads)
     - outputs/{user_id}/{job_id}.mp4 (job outputs - "From My Jobs")
     - processed/{job_id}/... (post-processed outputs)
+    - demo/... (demo assets - no ownership check)
 
     Raises HTTPException 403 if the path doesn't belong to the user.
     Raises HTTPException 400 if the path format is invalid.
@@ -166,17 +167,18 @@ def validate_gcs_path_ownership(path: str, user_id: str, field_name: str) -> Non
     parts = path.split("/")
 
     # Check for valid prefixes
-    valid_prefixes = ["uploads", "outputs", "processed"]
-    if len(parts) < 3 or parts[0] not in valid_prefixes:
+    valid_prefixes = ["uploads", "outputs", "processed", "demo"]
+    if len(parts) < 2 or parts[0] not in valid_prefixes:
         raise HTTPException(
             status_code=400,
             detail=f"Invalid {field_name} path format"
         )
 
-    # For "processed" paths, we can't easily validate ownership by path alone
-    # (format is processed/{job_id}/...), so we allow them through
-    # The job ownership is validated elsewhere when the job is created
-    if parts[0] == "processed":
+    # For "processed" and "demo" paths, we can't easily validate ownership by path alone
+    # "processed" format is processed/{job_id}/...
+    # "demo" format is demo/... (shared demo assets)
+    # Job ownership is validated elsewhere when the job is created
+    if parts[0] in ("processed", "demo"):
         return
 
     # For "uploads" and "outputs", user_id is the second part

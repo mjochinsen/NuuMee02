@@ -236,7 +236,7 @@ export function SuccessModal({
 
           {/* Actions */}
           <div className="space-y-3">
-            <Link href="/jobs/create" className="block">
+            <Link href="/videos/create" className="block">
               <Button className="w-full bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] hover:opacity-90 text-white py-6">
                 Start Creating Videos
                 <ArrowRight className="w-5 h-5 ml-2" />

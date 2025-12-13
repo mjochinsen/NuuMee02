@@ -57,13 +57,23 @@ def enqueue_job(job_id: str, delay_seconds: int = 0) -> str:
     # Build the task payload
     payload = {"job_id": job_id}
 
-    # Build the task
+    # Service account for OIDC authentication to Cloud Run
+    service_account_email = os.environ.get(
+        "TASKS_SERVICE_ACCOUNT",
+        f"nuumee-api@{PROJECT_ID}.iam.gserviceaccount.com"
+    )
+
+    # Build the task with OIDC token for authenticated Cloud Run
     task = {
         "http_request": {
             "http_method": tasks_v2.HttpMethod.POST,
             "url": WORKER_URL,
             "headers": {"Content-Type": "application/json"},
             "body": json.dumps(payload).encode(),
+            "oidc_token": {
+                "service_account_email": service_account_email,
+                "audience": WORKER_URL,
+            },
         }
     }
 

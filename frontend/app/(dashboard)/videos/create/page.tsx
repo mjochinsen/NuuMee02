@@ -27,9 +27,9 @@ const checkTestMode = (): boolean => {
 // These are full GCS URIs that backend uses to detect demo mode
 const DEMO_IMAGE_PATH = 'gs://nuumee-images/demo/REF.jpeg';
 const DEMO_VIDEO_PATH = 'gs://nuumee-videos/demo/SRC.mp4';
-// Public URLs for preview display
-const DEMO_IMAGE_PREVIEW_URL = 'https://storage.googleapis.com/nuumee-images/demo/REF.jpeg';
-const DEMO_VIDEO_PREVIEW_URL = 'https://storage.googleapis.com/nuumee-videos/demo/SRC.mp4';
+// Public URLs for preview display (v=2 for cache busting after asset update)
+const DEMO_IMAGE_PREVIEW_URL = 'https://storage.googleapis.com/nuumee-images/demo/REF.jpeg?v=2';
+const DEMO_VIDEO_PREVIEW_URL = 'https://storage.googleapis.com/nuumee-videos/demo/SRC.mp4?v=2';
 
 type ViewMode = 'form' | 'json';
 type UploadStatus = 'idle' | 'uploading' | 'success' | 'error';

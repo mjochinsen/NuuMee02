@@ -6,6 +6,8 @@ It runs as a Cloud Run service that handles HTTP requests from Cloud Tasks.
 import os
 import logging
 import json
+import subprocess
+import tempfile
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -127,88 +129,86 @@ def is_user_free_tier(user_id: str) -> bool:
     return subscription_tier == "free" or not subscription_tier
 
 
-def enqueue_free_tier_watermark(job_id: str, output_video_path: str, user_id: str) -> Optional[str]:
-    """Enqueue an FFmpeg watermark job for free tier users.
+def apply_free_tier_watermark(job_id: str, output_video_path: str) -> str:
+    """Apply NuuMee watermark inline for free tier users.
 
-    This automatically applies the NuuMee.AI watermark to all videos
-    created by free tier users.
+    Downloads the video from GCS, applies watermark via FFmpeg, and uploads
+    the watermarked video back to GCS, replacing the original.
 
     Args:
-        job_id: Original job ID (we'll create a new job for watermarking)
-        output_video_path: GCS path to the completed video
-        user_id: User ID for the watermark job
+        job_id: Job document ID
+        output_video_path: GCS path to the completed video (e.g., outputs/user_id/job_id.mp4)
 
     Returns:
-        Task name if enqueued, None otherwise
+        GCS path to the watermarked video (same as input path)
+
+    Raises:
+        Exception: If watermarking fails
     """
-    try:
-        db = get_firestore()
+    logger.info(f"Applying free tier watermark to {output_video_path}")
 
-        # Create a new watermark job in Firestore
-        watermark_job_ref = db.collection("jobs").document()
-        watermark_job_id = watermark_job_ref.id
+    # Watermark configuration (same as FFmpeg worker)
+    watermark_gcs_path = "assets/nuumee-watermark.png"
+    position = "bottom-right"
+    opacity = 0.7
+    margin_percent = 5
 
-        watermark_job_data = {
-            "id": watermark_job_id,
-            "user_id": user_id,
-            "job_type": "watermark",
-            "status": "pending",
-            "input_video_path": output_video_path,
-            "parent_job_id": job_id,  # Link to original job
-            "options": {
-                "watermark_path": "assets/nuumee-watermark.png",  # NuuMee watermark
-                "position": "bottom-right",
-                "opacity": 0.7,
-                "margin_percent": 5,
-                "is_free_tier_watermark": True,  # Flag for analytics
-            },
-            "credits_charged": 0,  # Free
-            "created_at": datetime.now(timezone.utc),
-            "updated_at": datetime.now(timezone.utc),
+    storage_client = get_storage()
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        # Step 1: Download the video from OUTPUT_BUCKET
+        local_video = os.path.join(tmpdir, "input.mp4")
+        bucket = storage_client.bucket(OUTPUT_BUCKET)
+        blob = bucket.blob(output_video_path)
+        blob.download_to_filename(local_video)
+        logger.info(f"Downloaded video to {local_video}")
+
+        # Step 2: Download watermark from ASSETS_BUCKET
+        local_watermark = os.path.join(tmpdir, "watermark.png")
+        assets_bucket = storage_client.bucket(ASSETS_BUCKET)
+        watermark_blob = assets_bucket.blob(watermark_gcs_path)
+        watermark_blob.download_to_filename(local_watermark)
+        logger.info(f"Downloaded watermark to {local_watermark}")
+
+        # Step 3: Build FFmpeg overlay filter
+        margin = f"(W*{margin_percent}/100)"
+        positions = {
+            "bottom-right": f"W-w-{margin}:H-h-{margin}",
+            "bottom-left": f"{margin}:H-h-{margin}",
+            "top-right": f"W-w-{margin}:{margin}",
+            "top-left": f"{margin}:{margin}",
         }
+        overlay_pos = positions.get(position, positions["bottom-right"])
 
-        watermark_job_ref.set(watermark_job_data)
-        logger.info(f"Created free tier watermark job {watermark_job_id} for job {job_id}")
-
-        # Enqueue to FFmpeg worker
-        client = get_tasks_client()
-        queue_path = client.queue_path(PROJECT_ID, FFMPEG_LOCATION, FFMPEG_QUEUE_NAME)
-
-        payload = {"job_id": watermark_job_id}
-
-        # Service account for OIDC authentication
-        service_account_email = os.environ.get(
-            "TASKS_SERVICE_ACCOUNT",
-            f"nuumee-worker@{PROJECT_ID}.iam.gserviceaccount.com"
+        # Filter preserves original PNG transparency and applies additional opacity
+        filter_complex = (
+            f"[1:v]format=rgba,"
+            f"geq=r='r(X,Y)':g='g(X,Y)':b='b(X,Y)':a='{opacity}*alpha(X,Y)'"
+            f"[watermark];"
+            f"[0:v][watermark]overlay={overlay_pos}:format=auto,format=yuv420p"
         )
 
-        task = {
-            "http_request": {
-                "http_method": tasks_v2.HttpMethod.POST,
-                "url": FFMPEG_WORKER_URL,
-                "headers": {"Content-Type": "application/json"},
-                "body": json.dumps(payload).encode(),
-                "oidc_token": {
-                    "service_account_email": service_account_email,
-                    "audience": FFMPEG_WORKER_URL,
-                },
-            }
-        }
+        # Step 4: Apply watermark with FFmpeg
+        local_output = os.path.join(tmpdir, "output.mp4")
+        ffmpeg_cmd = [
+            "ffmpeg",
+            "-i", local_video,
+            "-i", local_watermark,
+            "-filter_complex", filter_complex,
+            "-c:v", "libx264", "-crf", "18",
+            "-c:a", "copy",
+            local_output, "-y"
+        ]
+        logger.info(f"Running FFmpeg watermark: opacity={opacity}, position={position}")
+        result = subprocess.run(ffmpeg_cmd, capture_output=True, text=True)
+        if result.returncode != 0:
+            raise RuntimeError(f"Watermark FFmpeg failed: {result.stderr}")
 
-        # Small delay to ensure original job is fully written
-        schedule_time = datetime.utcnow() + timedelta(seconds=2)
-        timestamp = timestamp_pb2.Timestamp()
-        timestamp.FromDatetime(schedule_time)
-        task["schedule_time"] = timestamp
+        # Step 5: Upload watermarked video back to same path (overwrite original)
+        blob.upload_from_filename(local_output, content_type="video/mp4")
+        logger.info(f"Uploaded watermarked video to {output_video_path}")
 
-        response = client.create_task(request={"parent": queue_path, "task": task})
-        logger.info(f"Enqueued free tier watermark task: {response.name}")
-
-        return response.name
-
-    except Exception as e:
-        logger.error(f"Failed to enqueue free tier watermark for job {job_id}: {e}")
-        return None
+    return output_video_path
 
 
 def _get_service_account_email() -> str:
@@ -420,7 +420,10 @@ def process_animate_job(job_data: dict) -> str:
     video_path = job_data["motion_video_path"]
 
     image_url = generate_signed_url(IMAGE_BUCKET, image_path)
-    video_url = generate_signed_url(VIDEO_BUCKET, video_path)
+    # Motion video may come from uploads (VIDEO_BUCKET) or job outputs (OUTPUT_BUCKET)
+    # Paths starting with "outputs/" or "demo/" are in OUTPUT_BUCKET
+    video_bucket = OUTPUT_BUCKET if video_path.startswith(("outputs/", "demo/")) else VIDEO_BUCKET
+    video_url = generate_signed_url(video_bucket, video_path)
 
     logger.info(f"Processing animate job {job_id}: resolution={resolution}")
 
@@ -639,17 +642,19 @@ def process_job(job_id: str):
         if not handler:
             raise ValueError(f"Unsupported job type: {job_type}")
 
-        # Process job
+        # Process job (WaveSpeed generation)
         output_path = handler(job_data)
 
-        # Update job as completed
+        # Auto-apply NuuMee watermark inline for free tier users
+        # This happens BEFORE marking completed, so user only sees final watermarked video
+        if is_user_free_tier(user_id):
+            logger.info(f"User {user_id} is on free tier, applying watermark inline")
+            update_job_status(job_id, "watermarking")
+            output_path = apply_free_tier_watermark(job_id, output_path)
+
+        # Update job as completed (with watermarked output if free tier)
         update_job_status(job_id, "completed", output_video_path=output_path)
         logger.info(f"Job {job_id} completed successfully")
-
-        # Auto-apply NuuMee watermark for free tier users
-        if is_user_free_tier(user_id):
-            logger.info(f"User {user_id} is on free tier, applying NuuMee watermark")
-            enqueue_free_tier_watermark(job_id, output_path, user_id)
 
     except WaveSpeedError as e:
         logger.error(f"WaveSpeed error for job {job_id}: {e}")

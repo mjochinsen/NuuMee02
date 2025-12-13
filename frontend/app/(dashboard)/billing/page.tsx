@@ -791,7 +791,18 @@ export default function BillingPage() {
 
           <div className="flex items-center gap-3 pt-2">
             <Button
-              onClick={handleSaveAutoRefill}
+              onClick={async () => {
+                try {
+                  await handleSaveAutoRefill();
+                  toast.success('Auto-refill settings saved successfully');
+                } catch (err) {
+                  if (err instanceof ApiError) {
+                    toast.error(err.message);
+                  } else {
+                    toast.error('Failed to save auto-refill settings');
+                  }
+                }
+              }}
               disabled={autoRefillSaving || autoRefillLoading}
               className="bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] hover:opacity-90 text-white"
             >

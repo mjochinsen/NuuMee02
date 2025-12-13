@@ -16,8 +16,8 @@
 
 | Symbol | Meaning        |
 | ------ | -------------- |
-| ⬜     | Not started    |
-| 🔄     | In progress    |
+| 🟥     | Not started    |
+| 🟡     | In progress    |
 | ✅     | Complete       |
 | 🔮     | Deferred (V2+) |
 
@@ -50,13 +50,16 @@
 
 ### 11.2 Missing Features (Priority 1 - Launch Blockers)
 
-| ID     | Task                               | Status | Effort | Notes                                      |
-| ------ | ---------------------------------- | ------ | ------ | ------------------------------------------ |
-| 11.2.1 | Support page: Fix attach file      | ✅     | 30m    | Inline base64 (500KB), Dec 12 2025         |
-| 11.2.2 | Support page: CC support@nuumee.ai | ✅     | 30m    | Reply-to header, Dec 12 2025               |
-| 11.2.3 | Post-Processing E: Auto Subtitles  | ✅     | 3-4h   | FFmpeg worker + Google STT + ASS, Dec 13   |
-| 11.2.4 | Post-Processing F: Add Watermark   | ✅     | 1-2h   | Custom upload + position + opacity, Dec 13 |
-| 11.2.5 | Try Example onboarding feature     | ✅     | -      | 3-step demo with localStorage, Dec 12 2025 |
+| ID     | Task                                | Status | Effort | Notes                                          |
+| ------ | ----------------------------------- | ------ | ------ | ---------------------------------------------- |
+| 11.2.1 | Support page: Fix attach file       | ✅     | 30m    | Inline base64 (500KB), Dec 12 2025             |
+| 11.2.2 | Support page: CC support@nuumee.ai  | ✅     | 30m    | Reply-to header, Dec 12 2025                   |
+| 11.2.3 | Post-Processing E: Auto Subtitles   | ✅     | 3-4h   | FFmpeg worker + Google STT + ASS, Dec 13       |
+| 11.2.4 | Post-Processing F: Add Watermark    | ✅     | 1-2h   | Custom upload + position + opacity, Dec 13     |
+| 11.2.5 | Try Example onboarding feature      | ✅     | -      | 3-step demo with localStorage, Dec 12 2025    |
+| 11.2.6 | Inline watermark for free tier      | ✅     | 1h     | Single job, watermark before completion Dec 13 |
+| 11.2.7 | Auto-refill UI toast feedback       | ✅     | 15m    | Success/error toasts on save, Dec 13           |
+| 11.2.8 | Auto-refill trigger implementation  | 🟡     | 1h     | Worker charges Stripe when balance low         |
 
 ### 11.3 Admin Panel (Priority 2 - Operations Critical)
 
@@ -65,54 +68,55 @@
 
 | ID     | Task                      | Status | Effort | Notes                                       |
 | ------ | ------------------------- | ------ | ------ | ------------------------------------------- |
-| 11.3.1 | Admin layout + auth guard | ⬜     | 1h     | Password protection, admin-only access      |
-| 11.3.2 | Users page                | ⬜     | 2h     | Search, view credits/plan/jobs, add credits |
-| 11.3.3 | Jobs page                 | ⬜     | 1.5h   | Queued/running/failed/completed, errors     |
-| 11.3.4 | Payments page             | ⬜     | 1.5h   | Revenue, subscribers, failed payments       |
-| 11.3.5 | System Health page        | ⬜     | 1h     | Worker status, API health, GCP costs        |
-| 11.3.6 | Promo Codes page          | ⬜     | 1h     | Generate invite codes, track usage          |
+| 11.3.1 | Admin layout + auth guard | 🟥     | 1h     | Password protection, admin-only access      |
+| 11.3.2 | Users page                | 🟥     | 2h     | Search, view credits/plan/jobs, add credits |
+| 11.3.3 | Jobs page                 | 🟥     | 1.5h   | Queued/running/failed/completed, errors     |
+| 11.3.4 | Payments page             | 🟥     | 1.5h   | Revenue, subscribers, failed payments       |
+| 11.3.5 | System Health page        | 🟥     | 1h     | Worker status, API health, GCP costs        |
+| 11.3.6 | Promo Codes page          | 🟥     | 1h     | Generate invite codes, track usage          |
 
 ### 11.4 SEO (Priority 3 - Marketing Ready)
 
 | ID     | Task               | Status | Effort | Notes                         |
 | ------ | ------------------ | ------ | ------ | ----------------------------- |
-| 11.4.1 | JSON-LD: Homepage  | ⬜     | 30m    | Organization + WebPage schema |
-| 11.4.2 | JSON-LD: Pricing   | ⬜     | 30m    | Product schema                |
-| 11.4.3 | JSON-LD: Examples  | ⬜     | 30m    | ItemList schema               |
-| 11.4.4 | JSON-LD: Support   | ⬜     | 30m    | FAQPage schema                |
-| 11.4.5 | Create sitemap.xml | ⬜     | 30m    | All public pages              |
-| 11.4.6 | Create robots.txt  | ⬜     | 15m    | Proper crawl directives       |
-| 11.4.7 | Meta tags audit    | ⬜     | 1h     | title, description, og:image  |
+| 11.4.1 | JSON-LD: Homepage  | 🟥     | 30m    | Organization + WebPage schema |
+| 11.4.2 | JSON-LD: Pricing   | 🟥     | 30m    | Product schema                |
+| 11.4.3 | JSON-LD: Examples  | 🟥     | 30m    | ItemList schema               |
+| 11.4.4 | JSON-LD: Support   | 🟥     | 30m    | FAQPage schema                |
+| 11.4.5 | Create sitemap.xml | 🟥     | 30m    | All public pages              |
+| 11.4.6 | Create robots.txt  | 🟥     | 15m    | Proper crawl directives       |
+| 11.4.7 | Meta tags audit    | 🟥     | 1h     | title, description, og:image  |
 
 ### 11.5 E2E Billing Tests (Priority 4 - Safety Net)
 
 | ID     | Task                               | Status | Effort | Notes                  |
 | ------ | ---------------------------------- | ------ | ------ | ---------------------- |
-| 11.5.1 | Test: Signup → Purchase → Generate | ⬜     | 1h     | Happy path end-to-end  |
-| 11.5.2 | Test: Subscribe → Cancel → Resub   | ⬜     | 1h     | Subscription lifecycle |
-| 11.5.3 | Test: Webhook failure recovery     | ⬜     | 1h     | Payment resilience     |
-| 11.5.4 | Test: Credit deduction accuracy    | ⬜     | 1h     | Verify amounts match   |
+| 11.5.1 | Test: Signup → Purchase → Generate | 🟥     | 1h     | Happy path end-to-end  |
+| 11.5.2 | Test: Subscribe → Cancel → Resub   | 🟥     | 1h     | Subscription lifecycle |
+| 11.5.3 | Test: Webhook failure recovery     | 🟥     | 1h     | Payment resilience     |
+| 11.5.4 | Test: Credit deduction accuracy    | 🟥     | 1h     | Verify amounts match   |
 
 ### 11.6 Database Cleanup (Priority 5 - Fresh Start)
 
 | ID     | Task                               | Status | Effort | Notes                            |
 | ------ | ---------------------------------- | ------ | ------ | -------------------------------- |
-| 11.6.1 | Create cleanup script              | ⬜     | 1h     | Delete test users, jobs, txns    |
-| 11.6.2 | Backup current data (just in case) | ⬜     | 30m    | Firestore export                 |
-| 11.6.3 | Run cleanup, verify via admin      | ⬜     | 30m    | Use admin panel to confirm clean |
+| 11.6.1 | Create cleanup script              | 🟥     | 1h     | Delete test users, jobs, txns    |
+| 11.6.2 | Backup current data (just in case) | 🟥     | 30m    | Firestore export                 |
+| 11.6.3 | Run cleanup, verify via admin      | 🟥     | 30m    | Use admin panel to confirm clean |
+| 11.6.4 | Clean up GCS, buckets              | 🟥     | 30m    |                                  |
 
 ### 11.7 Stripe LIVE Mode (Priority 6 - LAST STEP)
 
 | ID     | Task                                   | Status | Effort | Notes                              |
 | ------ | -------------------------------------- | ------ | ------ | ---------------------------------- |
-| 11.7.1 | Complete Stripe business verification  | ⬜     | 30m    | Bank, identity, address            |
-| 11.7.2 | Recreate products/prices in LIVE       | ⬜     | 1h     | Creator, Studio, credit packs      |
-| 11.7.3 | Update price IDs in env/code           | ⬜     | 30m    | Store in env, not hardcoded        |
-| 11.7.4 | Create LIVE webhook endpoint           | ⬜     | 30m    | New signing secret                 |
-| 11.7.5 | Update all API keys (backend+frontend) | ⬜     | 30m    | STRIPE_SECRET_KEY, PUBLISHABLE_KEY |
-| 11.7.6 | Test real payment end-to-end           | ⬜     | 30m    | Real card, small amount            |
-| 11.7.7 | Verify statement descriptor            | ⬜     | 15m    | Shows "NUUMEE" not "UNKNOWN"       |
-| 11.7.8 | Deploy final production build          | ⬜     | 30m    | Backend + Frontend                 |
+| 11.7.1 | Complete Stripe business verification  | 🟥     | 30m    | Bank, identity, address            |
+| 11.7.2 | Recreate products/prices in LIVE       | 🟥     | 1h     | Creator, Studio, credit packs      |
+| 11.7.3 | Update price IDs in env/code           | 🟥     | 30m    | Store in env, not hardcoded        |
+| 11.7.4 | Create LIVE webhook endpoint           | 🟥     | 30m    | New signing secret                 |
+| 11.7.5 | Update all API keys (backend+frontend) | 🟥     | 30m    | STRIPE_SECRET_KEY, PUBLISHABLE_KEY |
+| 11.7.6 | Test real payment end-to-end           | 🟥     | 30m    | Real card, small amount            |
+| 11.7.7 | Verify statement descriptor            | 🟥     | 15m    | Shows "NUUMEE" not "UNKNOWN"       |
+| 11.7.8 | Deploy final production build          | 🟥     | 30m    | Backend + Frontend                 |
 
 **Phase 11 Completion Criteria:**
 
@@ -171,8 +175,8 @@
 | 8.5.23 | Affiliate email templates        | 🔮     | approved, rejected, commission, payout |
 | 8.5.24 | Test affiliate flow              | 🔮     | After above complete                   |
 | 8.5.25 | Referral Activity UI             | 🔮     | Show signups, purchases, credits       |
-| 8.5.18 | Billing test suite               | 🔄     | Moved to Phase 11.5                    |
-| 8.5.19 | Remove Support attach file       | 🔄     | Use for early users feedback only      |
+| 8.5.18 | Billing test suite               | 🟡     | Moved to Phase 11.5                    |
+| 8.5.19 | Remove Support attach file       | 🟡     | Use for early users feedback only      |
 
 ---
 
@@ -213,6 +217,7 @@
 | 9.12 | Responsive design validation      | 🔮     | All breakpoints                    |
 | 9.13 | Design system consistency         | 🔮     | No hardcoded values                |
 | 9.14 | Error boundary components         | 🔮     | Error handling                     |
+| 9.15 | Become a Founding Member          | 🔮     | deferred                           |
 
 ---
 
@@ -244,8 +249,8 @@
 | 8 - Referral           | 13      | 13        | ✅     |
 | 8.5 - Feature Complete | 25      | 21        | ✅     |
 | 10 - Post-Processing   | 13      | 13        | ✅     |
-| 11 - V1.0 Launch Prep  | 32      | 5         | 🔄     |
-| **TOTAL**              | **172** | **139**   | 🔄     |
+| 11 - V1.0 Launch Prep  | 35      | 8         | 🟡     |
+| **TOTAL**              | **175** | **144**   | 🟡     |
 
 ---
 
@@ -258,8 +263,12 @@
 
 ### Just Completed (Dec 13)
 
-- ✅ 11.2.3: Auto Subtitles - FFmpeg worker + Google STT + ASS styles
-- ✅ 11.2.4: Add Watermark - Custom image upload + position + opacity
+- ✅ 11.2.6: Inline watermark for free tier - single job flow, watermark applied before completion
+- ✅ 11.2.7: Auto-refill UI toast feedback - success/error messages on save
+- ✅ Fixed worker OIDC auth and IAM permissions for Cloud Tasks
+- ✅ Fixed payment success redirect URLs (/jobs/create → /videos/create)
+- ✅ Deleted obsolete /jobs/create page
+- ✅ Worker now includes FFmpeg for inline watermarking
 
 ### Recent Completions (Dec 9-13, 2025)
 
@@ -271,6 +280,7 @@
 - ✅ Job Picker Modal for video chaining
 - ✅ Clean video URLs (/v/{shortId})
 - ✅ Try Example onboarding (3-step demo with bouncing arrows)
+- ✅ Free tier watermark now inline (single job, no separate watermark job)
 
 ### Environment
 
@@ -307,7 +317,7 @@ Use orchestration pattern:
 ### To update task:
 
 ```
-1. Change status symbol (⬜ → 🔄 → ✅)
+1. Change status symbol (🟥 → 🟡 → ✅)
 2. Add notes if needed
 3. Update CURRENT STATE section
 4. Update SUMMARY counts
