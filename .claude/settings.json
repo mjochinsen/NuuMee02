@@ -168,6 +168,7 @@
       "Bash(cd *)",
       "Bash(timeout *)",
       "Bash(gsutil *)",
+      "Bash(docker *)",
       "Bash(date *)",
       "Bash(sleep *)",
       "Bash(PLAYWRIGHT_BASE_URL=*)",

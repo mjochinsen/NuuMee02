@@ -22,12 +22,13 @@ _min_word_duration: float = 0.2
 
 # Fallback styles if GCS config fails to load
 FALLBACK_STYLES = {
-    "classic": {
-        "name": "Classic White",
-        "description": "White text with black outline",
+    "simple": {
+        "name": "Simple",
+        "description": "Clean white text with subtle glow",
         "is_multi_style": False,
+        "animation": "fade",
         "ass_styles": [
-            "Style: Default,DejaVu Sans,24,&H00FFFFFF,&H000000FF,&H00000000,&H80000000,0,0,0,0,100,100,0,0,1,2,1,2,20,20,40,1"
+            "Style: Default,Arial,72,&H00FFFFFF,&H000000FF,&H00000000,&H80000000,0,0,0,0,100,100,0,0,1,2,1,2,20,20,160,1"
         ],
         "style_names": ["Default"],
     },
@@ -99,13 +100,13 @@ def to_ass_time(seconds: float) -> str:
     return f"{hours}:{minutes:02d}:{secs:02d}.{centiseconds:02d}"
 
 
-def generate_ass(words: List[Dict], style_id: str = "classic", title: str = "NuuMee Subtitles") -> str:
+def generate_ass(words: List[Dict], style_id: str = "simple", title: str = "NuuMee Subtitles") -> str:
     """
     Generate ASS subtitle content from word timestamps.
 
     Args:
         words: List of {"word": str, "start_time": str, "end_time": str}
-        style_id: Style identifier (rainbow, classic, bold, minimal, large)
+        style_id: Style identifier (simple, rainbow_bounce, bold_shine)
         title: Title for the subtitle file
 
     Returns:
@@ -114,7 +115,7 @@ def generate_ass(words: List[Dict], style_id: str = "classic", title: str = "Nuu
     styles = load_styles_from_gcs()
     min_duration = get_min_word_duration()
 
-    style = styles.get(style_id, styles.get("classic", FALLBACK_STYLES["classic"]))
+    style = styles.get(style_id, styles.get("simple", FALLBACK_STYLES["simple"]))
     is_multi_style = style.get("is_multi_style", False)
     style_names = style.get("style_names", ["Default"])
 

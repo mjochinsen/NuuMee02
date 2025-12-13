@@ -54,8 +54,8 @@
 | ------ | ---------------------------------- | ------ | ------ | ------------------------------------------ |
 | 11.2.1 | Support page: Fix attach file      | ✅     | 30m    | Inline base64 (500KB), Dec 12 2025         |
 | 11.2.2 | Support page: CC support@nuumee.ai | ✅     | 30m    | Reply-to header, Dec 12 2025               |
-| 11.2.3 | Post-Processing E: Auto Subtitles  | ⬜     | 3-4h   | Port n8n + Google STT + ASS code           |
-| 11.2.4 | Post-Processing F: Add Watermark   | ⬜     | 1-2h   | FFmpeg overlay, user-provided or NuuMee    |
+| 11.2.3 | Post-Processing E: Auto Subtitles  | ✅     | 3-4h   | FFmpeg worker + Google STT + ASS, Dec 13   |
+| 11.2.4 | Post-Processing F: Add Watermark   | ✅     | 1-2h   | Custom upload + position + opacity, Dec 13 |
 | 11.2.5 | Try Example onboarding feature     | ✅     | -      | 3-step demo with localStorage, Dec 12 2025 |
 
 ### 11.3 Admin Panel (Priority 2 - Operations Critical)
@@ -116,10 +116,10 @@
 
 **Phase 11 Completion Criteria:**
 
-- [ ] No flickering on job status pages
-- [ ] Support attach file works (max 10MB)
-- [ ] Auto Subtitles (E) working
-- [ ] Add Watermark (F) working
+- [x] No flickering on job status pages
+- [x] Support attach file works (max 10MB)
+- [x] Auto Subtitles (E) working
+- [x] Add Watermark (F) working
 - [ ] Admin panel operational (6 pages)
 - [ ] SEO: sitemap, robots, JSON-LD on all public pages
 - [ ] E2E billing tests pass
@@ -244,7 +244,7 @@
 | 8 - Referral           | 13      | 13        | ✅     |
 | 8.5 - Feature Complete | 25      | 21        | ✅     |
 | 10 - Post-Processing   | 13      | 13        | ✅     |
-| 11 - V1.0 Launch Prep  | 32      | 3         | 🔄     |
+| 11 - V1.0 Launch Prep  | 32      | 5         | 🔄     |
 | **TOTAL**              | **172** | **139**   | 🔄     |
 
 ---
@@ -252,28 +252,32 @@
 ## CURRENT STATE
 
 **Current Phase:** 11 (V1.0 Launch Prep)
-**Current Task:** 11.2.1 - Support page: Fix attach file
+**Current Task:** 11.3 - Admin Panel
 **Blockers:** None
-**Last Updated:** 2025-12-12
+**Last Updated:** 2025-12-13
 
-### Just Completed (Dec 12)
+### Just Completed (Dec 13)
 
-- ✅ 11.1.1: Fixed Jobs page flickering - silent polling with `fetchJobs(false)`
-- ✅ 11.1.2: Verified Create page has no polling (only Jobs page needed fix)
+- ✅ 11.2.3: Auto Subtitles - FFmpeg worker + Google STT + ASS styles
+- ✅ 11.2.4: Add Watermark - Custom image upload + position + opacity
 
-### Recent Completions (Dec 9-12, 2025)
+### Recent Completions (Dec 9-13, 2025)
 
+- ✅ FFmpeg Worker deployed (nuumee-ffmpeg-worker)
+- ✅ 3 subtitle styles: Simple, Rainbow+Bounce, Bold Shine
+- ✅ Script upload for improved STT accuracy
+- ✅ Watermark with custom image, position, opacity
 - ✅ Phase 10: Post-Processing (Extend + Upscale) fully working
 - ✅ Job Picker Modal for video chaining
 - ✅ Clean video URLs (/v/{shortId})
 - ✅ Try Example onboarding (3-step demo with bouncing arrows)
-- ✅ localStorage flag to hide demo after completion
 
 ### Environment
 
 **Live Site:** https://nuumee.ai (wanapi-prod.web.app)
-**API URL:** https://nuumee-api-450296399943.us-west1.run.app
+**API URL:** https://nuumee-api-450296399943.us-central1.run.app
 **Worker URL:** https://nuumee-worker-450296399943.us-central1.run.app
+**FFmpeg Worker:** https://nuumee-ffmpeg-worker-450296399943.us-central1.run.app
 **Stripe Mode:** TEST (switch to LIVE in Phase 11.7)
 **Stripe Webhook:** we_1SYib475wY1iQccD8iUKNqOC (test mode)
 

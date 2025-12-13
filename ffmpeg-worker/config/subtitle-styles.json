@@ -1,72 +1,49 @@
 {
-  "_version": "1.0",
-  "_description": "NuuMee Subtitle Style Configuration - Edit this file to change subtitle appearance without redeploying",
+  "_version": "2.0",
+  "_description": "NuuMee Subtitle Style Configuration - 3 curated styles for production",
   "_documentation": {
     "ASS_format": "Name,Fontname,Fontsize,PrimaryColour,SecondaryColour,OutlineColour,BackColour,Bold,Italic,Underline,StrikeOut,ScaleX,ScaleY,Spacing,Angle,BorderStyle,Outline,Shadow,Alignment,MarginL,MarginR,MarginV,Encoding",
     "colors": "ASS uses BGR format: &HAABBGGRR (AA=alpha, BB=blue, GG=green, RR=red). 00=opaque, FF=transparent",
-    "common_colors": {
-      "white": "&H00FFFFFF",
-      "yellow": "&H0000FFFF",
-      "orange": "&H000080FF",
-      "red": "&H000000FF",
-      "green": "&H0000FF00",
-      "blue": "&H00FF0000",
-      "black": "&H00000000",
-      "semi_transparent_black": "&H80000000"
-    },
-    "alignment": "1=bottom-left, 2=bottom-center, 3=bottom-right, 4=mid-left, 5=mid-center, 6=mid-right, 7=top-left, 8=top-center, 9=top-right",
-    "fontsize": "Relative to 1080p resolution. 18-24 is typical for subtitles"
+    "animations": {
+      "fade": "{\\fad(200,0)}",
+      "pop": "{\\t(0,150,\\fscx130\\fscy130)\\t(150,300,\\fscx100\\fscy100)}"
+    }
   },
 
-  "default_style": "classic",
+  "default_style": "simple",
   "min_word_duration": 0.2,
 
   "styles": {
-    "rainbow": {
-      "name": "Rainbow",
-      "description": "Multi-color cycling text",
-      "is_multi_style": true,
+    "simple": {
+      "name": "Simple",
+      "description": "Clean white text with subtle glow - professional look",
+      "is_multi_style": false,
+      "animation": "fade",
       "ass_styles": [
-        "Style: Rainbow1,DejaVu Sans,22,&H000080FF,&H000000FF,&H00000000,&H80000000,1,0,0,0,100,100,0,0,1,3,2,2,20,20,80,1",
-        "Style: Rainbow2,DejaVu Sans,22,&H0000FF80,&H000000FF,&H00000000,&H80000000,1,0,0,0,100,100,0,0,1,3,2,2,20,20,80,1",
-        "Style: Rainbow3,DejaVu Sans,22,&H0080FF00,&H000000FF,&H00000000,&H80000000,1,0,0,0,100,100,0,0,1,3,2,2,20,20,80,1",
-        "Style: Rainbow4,DejaVu Sans,22,&H00FF8000,&H000000FF,&H00000000,&H80000000,1,0,0,0,100,100,0,0,1,3,2,2,20,20,80,1"
+        "Style: Default,Arial,72,&H00FFFFFF,&H000000FF,&H00000000,&H80000000,0,0,0,0,100,100,0,0,1,2,1,2,20,20,160,1"
+      ],
+      "style_names": ["Default"]
+    },
+    "rainbow_bounce": {
+      "name": "Rainbow + Bounce",
+      "description": "Colorful cycling text with pop animation - fun and energetic",
+      "is_multi_style": true,
+      "animation": "pop",
+      "ass_styles": [
+        "Style: Rainbow1,Arial,72,&H000080FF,&H000000FF,&H00000000,&H80000000,1,0,0,0,100,100,0,0,1,3,2,2,20,20,160,1",
+        "Style: Rainbow2,Arial,72,&H0000FF80,&H000000FF,&H00000000,&H80000000,1,0,0,0,100,100,0,0,1,3,2,2,20,20,160,1",
+        "Style: Rainbow3,Arial,72,&H0080FF00,&H000000FF,&H00000000,&H80000000,1,0,0,0,100,100,0,0,1,3,2,2,20,20,160,1",
+        "Style: Rainbow4,Arial,72,&H00FF8000,&H000000FF,&H00000000,&H80000000,1,0,0,0,100,100,0,0,1,3,2,2,20,20,160,1"
       ],
       "style_names": ["Rainbow1", "Rainbow2", "Rainbow3", "Rainbow4"]
     },
-    "classic": {
-      "name": "Classic White",
-      "description": "White text with black outline - clean and readable",
+    "bold_shine": {
+      "name": "Bold Shine",
+      "description": "Yellow text with glow effect - high visibility",
       "is_multi_style": false,
+      "animation": "fade",
       "ass_styles": [
-        "Style: Default,DejaVu Sans,24,&H00FFFFFF,&H000000FF,&H00000000,&H80000000,0,0,0,0,100,100,0,0,1,2,1,2,20,20,40,1"
-      ],
-      "style_names": ["Default"]
-    },
-    "bold": {
-      "name": "Bold Yellow",
-      "description": "Yellow text with thick outline - high visibility",
-      "is_multi_style": false,
-      "ass_styles": [
-        "Style: Default,DejaVu Sans,26,&H0000FFFF,&H000000FF,&H00000000,&H80000000,1,0,0,0,100,100,0,0,1,3,2,2,20,20,40,1"
-      ],
-      "style_names": ["Default"]
-    },
-    "minimal": {
-      "name": "Minimal",
-      "description": "Small white text with subtle shadow - unobtrusive",
-      "is_multi_style": false,
-      "ass_styles": [
-        "Style: Default,DejaVu Sans,18,&H00FFFFFF,&H000000FF,&H00000000,&H40000000,0,0,0,0,100,100,0,0,1,1,1,2,20,20,30,1"
-      ],
-      "style_names": ["Default"]
-    },
-    "large": {
-      "name": "Large",
-      "description": "Extra large white text for mobile viewing",
-      "is_multi_style": false,
-      "ass_styles": [
-        "Style: Default,DejaVu Sans,32,&H00FFFFFF,&H000000FF,&H00000000,&H80000000,1,0,0,0,100,100,0,0,1,3,2,2,20,20,50,1"
+        "Style: Default,Verdana,72,&H0000FFFF,&H000000FF,&H00000000,&H80000000,1,0,0,0,100,100,0,0,1,1,3,2,20,20,160,1"
       ],
       "style_names": ["Default"]
     }

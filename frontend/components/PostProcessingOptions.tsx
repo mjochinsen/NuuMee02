@@ -16,7 +16,7 @@ import {
   type ResultStatus,
 } from '@/components/post-processing';
 import { JobPickerModal } from '@/components/JobPickerModal';
-import { JobResponse, createJob, createPostProcessJob, ApiError, SubtitleStyle } from '@/lib/api';
+import { JobResponse, createJob, createPostProcessJob, createWatermarkJob, ApiError, SubtitleStyle } from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 
@@ -196,7 +196,13 @@ export function PostProcessingOptions() {
   const [audioOption, setAudioOption] = useState('mix');
   // const [formatOption, setFormatOption] = useState('crop'); // Hidden for now
   const [subtitleStyle, setSubtitleStyle] = useState<SubtitleStyle>('simple');
+  const [scriptContent, setScriptContent] = useState<string | null>(null);
+  const [scriptFileName, setScriptFileName] = useState<string | null>(null);
   const [watermarkType, setWatermarkType] = useState('logo');
+  const [watermarkImage, setWatermarkImage] = useState<File | null>(null);
+  const [watermarkImagePreview, setWatermarkImagePreview] = useState<string | null>(null);
+  const [watermarkPosition, setWatermarkPosition] = useState('bottom-right');
+  const [watermarkOpacity, setWatermarkOpacity] = useState('70');
   const [styleDropdownOpen, setStyleDropdownOpen] = useState(false);
   const [volume, setVolume] = useState([30]);
   const [fadeIn, setFadeIn] = useState('0');
@@ -370,6 +376,7 @@ export function PostProcessingOptions() {
       await createPostProcessJob(source.job.id, {
         post_process_type: 'subtitles',
         subtitle_style: subtitleStyle,
+        ...(scriptContent && { script_content: scriptContent }),
       });
 
       // Success - navigate to jobs page
@@ -385,7 +392,7 @@ export function PostProcessingOptions() {
     } finally {
       setSubtitlesLoading(false);
     }
-  }, [videoSources.subtitles, subtitleStyle, router]);
+  }, [videoSources.subtitles, subtitleStyle, scriptContent, router]);
 
   // Handle watermark job creation
   const handleWatermarkJob = useCallback(async () => {
@@ -395,15 +402,22 @@ export function PostProcessingOptions() {
       return;
     }
 
+    if (watermarkType === 'logo' && !watermarkImage) {
+      setApiError('Please upload a watermark image');
+      return;
+    }
+
     setWatermarkLoading(true);
     setApiError(null);
     setWatermarkStatus('processing');
 
     try {
-      await createPostProcessJob(source.job.id, {
-        post_process_type: 'watermark',
-        watermark_enabled: true,
-      });
+      await createWatermarkJob(
+        source.job.id,
+        watermarkImage,
+        watermarkPosition,
+        parseInt(watermarkOpacity) / 100  // Convert percentage to decimal
+      );
 
       // Success - navigate to jobs page
       router.push('/jobs');
@@ -418,7 +432,7 @@ export function PostProcessingOptions() {
     } finally {
       setWatermarkLoading(false);
     }
-  }, [videoSources.watermark, router]);
+  }, [videoSources.watermark, watermarkType, watermarkImage, watermarkPosition, watermarkOpacity, router]);
 
   // Helper to create props for VideoSourceSelector
   const createSelectorProps = useCallback((sectionId: SectionId, label: string): VideoSourceSelectorProps => ({
@@ -908,11 +922,49 @@ export function PostProcessingOptions() {
                       </Tooltip>
                     </div>
                     <div className="flex gap-2">
-                      <Input type="file" accept=".txt" className="bg-[#1E293B] border-[#334155] text-[#F1F5F9]" />
-                      <Button variant="outline" size="icon" className="border-[#334155] text-[#94A3B8] hover:border-[#00F0D9] hover:text-[#00F0D9] shrink-0">
-                        <FileText className="w-4 h-4" />
-                      </Button>
+                      <Input
+                        type="file"
+                        accept=".txt"
+                        className="bg-[#1E293B] border-[#334155] text-[#F1F5F9]"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            if (file.size > 5 * 1024 * 1024) {
+                              setApiError('Script file must be under 5MB');
+                              return;
+                            }
+                            try {
+                              const content = await file.text();
+                              setScriptContent(content);
+                              setScriptFileName(file.name);
+                              setApiError(null);
+                            } catch {
+                              setApiError('Failed to read script file');
+                            }
+                          }
+                        }}
+                      />
+                      {scriptFileName && (
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="border-red-500 text-red-400 hover:bg-red-500/20 shrink-0"
+                          onClick={() => {
+                            setScriptContent(null);
+                            setScriptFileName(null);
+                          }}
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      )}
                     </div>
+                    {scriptFileName && (
+                      <div className="flex items-center gap-2 text-sm text-green-400">
+                        <FileText className="w-4 h-4" />
+                        <span>{scriptFileName}</span>
+                        <span className="text-[#94A3B8]">({Math.round((scriptContent?.length || 0) / 1024)}KB)</span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Style Selector - Image-based previews */}
@@ -1021,9 +1073,10 @@ export function PostProcessingOptions() {
                       <div className="mt-2 space-y-1">
                         <p className="text-sm text-[#00F0D9]">Best practices:</p>
                         <ul className="list-disc list-inside text-sm text-[#94A3B8]">
+                          <li>Recommended size: ~100x50 pixels</li>
+                          <li>Use PNG with transparent background</li>
                           <li>Place in corners to avoid key content</li>
                           <li>Use 30-50% opacity for subtle branding</li>
-                          <li>Keep size small (10-15% of frame)</li>
                         </ul>
                       </div>
                       <div className="text-sm text-[#94A3B8] mt-2">
@@ -1037,27 +1090,58 @@ export function PostProcessingOptions() {
               {watermarkEnabled && (
                 <div className="space-y-3">
                   <VideoSourceSelector {...createSelectorProps('watermark', 'Select video for watermark')} />
-                  <RadioGroup value={watermarkType} onValueChange={setWatermarkType}>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="logo" id="logo" className="border-[#334155] text-[#00F0D9]" />
-                      <label htmlFor="logo" className="text-[#94A3B8] cursor-pointer">Upload Logo</label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="text" id="text" className="border-[#334155] text-[#00F0D9]" />
-                      <label htmlFor="text" className="text-[#94A3B8] cursor-pointer">Add Text Overlay</label>
-                    </div>
-                  </RadioGroup>
 
-                  {watermarkType === 'logo' ? (
-                    <Input type="file" accept="image/png" className="bg-[#1E293B] border-[#334155] text-[#F1F5F9]" />
-                  ) : (
-                    <Input placeholder="Enter watermark text..." className="bg-[#1E293B] border-[#334155] text-[#F1F5F9] placeholder:text-[#94A3B8]" />
-                  )}
+                  {/* Watermark Image Upload */}
+                  <div className="flex flex-col gap-2">
+                    <label className="text-[#94A3B8] text-sm">Upload Watermark Image (PNG with transparency recommended)</label>
+                    <div className="flex gap-2">
+                      <Input
+                        type="file"
+                        accept="image/png,image/jpeg,image/jpg,image/webp"
+                        className="bg-[#1E293B] border-[#334155] text-[#F1F5F9]"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            if (file.size > 5 * 1024 * 1024) {
+                              setApiError('Watermark image must be under 5MB');
+                              return;
+                            }
+                            setWatermarkImage(file);
+                            setWatermarkImagePreview(URL.createObjectURL(file));
+                            setApiError(null);
+                          }
+                        }}
+                      />
+                      {watermarkImage && (
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="border-red-500 text-red-400 hover:bg-red-500/20 shrink-0"
+                          onClick={() => {
+                            setWatermarkImage(null);
+                            setWatermarkImagePreview(null);
+                          }}
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
+                    {watermarkImagePreview && (
+                      <div className="flex items-center gap-3 p-2 bg-[#0F172A] rounded-lg">
+                        <img
+                          src={watermarkImagePreview}
+                          alt="Watermark preview"
+                          className="h-12 w-auto object-contain bg-[#1E293B] rounded"
+                        />
+                        <span className="text-sm text-green-400">{watermarkImage?.name}</span>
+                      </div>
+                    )}
+                  </div>
 
                   <div className="grid grid-cols-2 gap-2">
                     <div>
                       <label className="text-[#94A3B8] text-sm mb-2 block">Position</label>
-                      <Select defaultValue="bottom-right">
+                      <Select value={watermarkPosition} onValueChange={setWatermarkPosition}>
                         <SelectTrigger className="bg-[#1E293B] border-[#334155] text-[#F1F5F9]">
                           <SelectValue />
                         </SelectTrigger>
@@ -1071,7 +1155,7 @@ export function PostProcessingOptions() {
                     </div>
                     <div>
                       <label className="text-[#94A3B8] text-sm mb-2 block">Opacity</label>
-                      <Select defaultValue="50">
+                      <Select value={watermarkOpacity} onValueChange={setWatermarkOpacity}>
                         <SelectTrigger className="bg-[#1E293B] border-[#334155] text-[#F1F5F9]">
                           <SelectValue />
                         </SelectTrigger>

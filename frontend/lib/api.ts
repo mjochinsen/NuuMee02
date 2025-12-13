@@ -339,7 +339,10 @@ export async function getJobOutput(jobId: string): Promise<JobOutputResponse> {
 export interface PostProcessRequest {
   post_process_type: PostProcessType;
   subtitle_style?: SubtitleStyle;
+  script_content?: string;  // Optional script for improved STT accuracy
   watermark_enabled?: boolean;
+  watermark_position?: string;  // bottom-right, bottom-left, top-right, top-left
+  watermark_opacity?: number;   // 0.0 - 1.0
 }
 
 export interface PostProcessResponse {
@@ -358,6 +361,41 @@ export async function createPostProcessJob(
     method: 'POST',
     body: JSON.stringify(request),
   });
+}
+
+// Watermark job with custom image upload
+export async function createWatermarkJob(
+  sourceJobId: string,
+  watermarkImage: File | null,
+  position: string = 'bottom-right',
+  opacity: number = 0.7
+): Promise<PostProcessResponse> {
+  const token = await getIdToken();
+  if (!token) {
+    throw new ApiError('Not authenticated', 401);
+  }
+
+  const formData = new FormData();
+  formData.append('position', position);
+  formData.append('opacity', opacity.toString());
+  if (watermarkImage) {
+    formData.append('watermark_image', watermarkImage);
+  }
+
+  const response = await fetch(`${API_URL}/jobs/${sourceJobId}/watermark`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new ApiError(errorData.detail || 'Failed to create watermark job', response.status);
+  }
+
+  return response.json();
 }
 
 // Job thumbnails (signed URLs for input and output files)

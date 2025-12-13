@@ -126,7 +126,7 @@ export default function JobsPage() {
   const [previewMedia, setPreviewMedia] = useState<{ type: 'image' | 'video'; url: string; label: string } | null>(null);
   const [copiedJobId, setCopiedJobId] = useState<string | null>(null);
   const [timerTick, setTimerTick] = useState(0); // Forces re-render for elapsed time display
-  const jobsPerPage = 25;
+  const jobsPerPage = 10; // Reduced from 25 to prevent too many videos loading
 
   // Fetch jobs from API
   // showLoading: when false, silently updates without showing loading spinner (for polling)
@@ -256,10 +256,16 @@ export default function JobsPage() {
   };
 
   // Fetch thumbnails for visible jobs
+  // Also re-fetch when a job becomes completed (to get output_video_url)
   useEffect(() => {
     const fetchThumbnails = async () => {
       for (const job of jobs) {
-        if (!thumbnails[job.id] && !loadingThumbnails.has(job.id)) {
+        const existingThumb = thumbnails[job.id];
+        // Fetch if: no thumbnail yet, OR job is completed but we don't have output_video_url
+        const needsFetch = !existingThumb ||
+          (job.status === 'completed' && job.outputVideoPath && !existingThumb.output_video_url);
+
+        if (needsFetch && !loadingThumbnails.has(job.id)) {
           setLoadingThumbnails(prev => new Set(prev).add(job.id));
           try {
             const thumb = await getJobThumbnails(job.id);
@@ -603,6 +609,7 @@ export default function JobsPage() {
                       Support
                     </Button>
                   </Link>
+                  {/* Delete button removed for failed jobs - we investigate all failures during early access */}
                 </>
               )}
 

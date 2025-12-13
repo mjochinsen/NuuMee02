@@ -5,7 +5,7 @@ import secrets
 import logging
 from datetime import datetime, timezone
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, File, UploadFile, Form
 from google.cloud import firestore
 
 from google.cloud import storage
@@ -1035,7 +1035,9 @@ async def create_post_process_job(
     # Build options for FFmpeg worker
     options = {}
     if request.post_process_type == PostProcessType.SUBTITLES:
-        options["subtitle_style"] = request.subtitle_style.value if request.subtitle_style else "classic"
+        options["subtitle_style"] = request.subtitle_style.value if request.subtitle_style else "simple"
+        if request.script_content:
+            options["script_content"] = request.script_content
     elif request.post_process_type == PostProcessType.WATERMARK:
         options["watermark_path"] = "assets/watermark.png"
         options["position"] = "bottom-right"
@@ -1098,3 +1100,157 @@ async def create_post_process_job(
     except Exception as e:
         logger.error(f"Failed to create post-process job: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to create post-process job: {str(e)}")
+
+
+@router.post("/{job_id}/watermark", response_model=PostProcessResponse)
+async def create_watermark_job(
+    job_id: str,
+    position: str = Form(default="bottom-right"),
+    opacity: str = Form(default="0.7"),
+    watermark_image: Optional[UploadFile] = File(default=None),
+    user_id: str = Depends(get_current_user_id),
+):
+    """
+    Create a watermark job with custom image upload.
+
+    This endpoint accepts multipart form data for uploading a custom watermark image.
+    The watermark is applied at the specified position with the given opacity.
+
+    Args:
+        job_id: Source job ID (must be a completed video job)
+        position: Watermark position (bottom-right, bottom-left, top-right, top-left)
+        opacity: Watermark opacity as decimal string (0.0 - 1.0)
+        watermark_image: PNG/JPEG image file for watermark (optional - uses default if not provided)
+    """
+    db = get_firestore_client()
+
+    # Validate source job
+    job_ref = db.collection("jobs").document(job_id)
+    job_doc = job_ref.get()
+
+    if not job_doc.exists:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    source_data = job_doc.to_dict()
+
+    if source_data.get("user_id") != user_id:
+        raise HTTPException(status_code=403, detail="Not authorized to access this job")
+
+    if source_data.get("status") != JobStatus.COMPLETED.value:
+        raise HTTPException(status_code=400, detail="Source job must be completed")
+
+    # Get output video path from source job
+    input_video_path = source_data.get("output_video_path")
+    if not input_video_path:
+        raise HTTPException(status_code=400, detail="Source job has no output video")
+
+    # Create new job ID
+    new_job_id = str(uuid.uuid4())
+    now = datetime.now(timezone.utc)
+
+    # Parse opacity
+    try:
+        opacity_float = float(opacity)
+        opacity_float = max(0.0, min(1.0, opacity_float))  # Clamp to 0-1
+    except ValueError:
+        opacity_float = 0.7
+
+    # Validate position
+    valid_positions = ["bottom-right", "bottom-left", "top-right", "top-left"]
+    if position not in valid_positions:
+        position = "bottom-right"
+
+    # Handle watermark image upload
+    watermark_gcs_path = "assets/watermark.png"  # Default
+    if watermark_image:
+        try:
+            # Read file content
+            content = await watermark_image.read()
+
+            # Validate file size (5MB max)
+            if len(content) > 5 * 1024 * 1024:
+                raise HTTPException(status_code=400, detail="Watermark image must be under 5MB")
+
+            # Upload to GCS
+            storage_client = storage.Client()
+            bucket = storage_client.bucket("nuumee-assets")
+
+            # Store per-job watermark
+            watermark_gcs_path = f"watermarks/{new_job_id}/watermark.png"
+            blob = bucket.blob(watermark_gcs_path)
+
+            # Determine content type
+            content_type = watermark_image.content_type or "image/png"
+            blob.upload_from_string(content, content_type=content_type)
+
+            logger.info(f"Uploaded custom watermark to gs://nuumee-assets/{watermark_gcs_path}")
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Failed to upload watermark: {e}")
+            raise HTTPException(status_code=500, detail="Failed to upload watermark image")
+
+    # Build options for FFmpeg worker
+    options = {
+        "watermark_path": watermark_gcs_path,
+        "position": position,
+        "opacity": opacity_float,
+    }
+
+    # Watermark is FREE
+    credits_to_charge = 0.0
+
+    # Create job document
+    job_data = {
+        "id": new_job_id,
+        "user_id": user_id,
+        "job_type": JobType.WATERMARK.value,
+        "status": JobStatus.PENDING.value,
+        "source_job_id": job_id,
+        "input_video_path": input_video_path,
+        "options": options,
+        "resolution": source_data.get("resolution", "480p"),
+        "credits_charged": credits_to_charge,
+        "output_video_path": None,
+        "error_message": None,
+        "created_at": now,
+        "updated_at": now,
+        "completed_at": None,
+    }
+
+    try:
+        # Create job document
+        job_ref = db.collection("jobs").document(new_job_id)
+        job_ref.set(job_data)
+
+        # Output path
+        output_path = f"processed/{new_job_id}/watermarked.mp4"
+
+        # Enqueue to FFmpeg worker
+        task_name = enqueue_ffmpeg_job(
+            job_id=new_job_id,
+            job_type="watermark",
+            input_video_path=input_video_path,
+            output_path=output_path,
+            options=options
+        )
+        logger.info(f"Watermark job {new_job_id} enqueued: {task_name}")
+
+        # Update status to queued
+        job_ref.update({
+            "status": JobStatus.QUEUED.value,
+            "updated_at": datetime.now(timezone.utc),
+        })
+
+        return PostProcessResponse(
+            job_id=new_job_id,
+            source_job_id=job_id,
+            post_process_type=PostProcessType.WATERMARK,
+            status=JobStatus.QUEUED,
+            credits_charged=credits_to_charge
+        )
+
+    except Exception as e:
+        logger.error(f"Failed to create watermark job: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to create watermark job: {str(e)}")

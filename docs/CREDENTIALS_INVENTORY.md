@@ -58,6 +58,16 @@
 | Service Name | `nuumee-worker` |
 | Service Account | `nuumee-worker@wanapi-prod.iam.gserviceaccount.com` (assumed) |
 
+### Cloud Run FFmpeg Worker Service
+| Item | Value |
+|------|-------|
+| Service Name | `nuumee-ffmpeg-worker` |
+| Service URL | `https://nuumee-ffmpeg-worker-450296399943.us-central1.run.app` |
+| Memory | `2Gi` |
+| Timeout | `600` seconds (10 min) |
+| Purpose | Subtitle generation (Google STT + ASS) and watermark overlay |
+| Cloud Tasks Queue | `nuumee-ffmpeg-jobs` |
+
 ### Cloud Run Configuration
 | Setting | Value |
 |---------|-------|

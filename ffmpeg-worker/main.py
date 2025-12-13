@@ -214,11 +214,13 @@ def process_subtitles_job(job_data: dict) -> str:
     import subprocess
     from stt import transcribe_audio_sync, transcribe_audio_async
     from subtitles import generate_ass
+    from stt_correction import correct_stt_with_script
 
     job_id = job_data["id"]
     input_video_path = job_data.get("input_video_path")
     options = job_data.get("options", {})
-    subtitle_style = options.get("subtitle_style", "classic")
+    subtitle_style = options.get("subtitle_style", "simple")
+    script_content = options.get("script_content")  # Optional original script
 
     if not input_video_path:
         raise ValueError("No input_video_path provided")
@@ -269,6 +271,12 @@ def process_subtitles_job(job_data: dict) -> str:
 
         logger.info(f"Transcribed {len(words)} words")
 
+        # Step 3b: Apply script correction if provided
+        if script_content:
+            logger.info("Applying script-based STT correction")
+            words = correct_stt_with_script(words, script_content)
+            logger.info(f"After correction: {len(words)} words")
+
         # Step 4: Generate ASS subtitle file
         ass_content = generate_ass(words, style_id=subtitle_style)
         local_ass = os.path.join(tmpdir, "subtitles.ass")
@@ -302,7 +310,7 @@ def process_watermark_job(job_data: dict) -> str:
     Steps:
     1. Download source video from GCS
     2. Download watermark image from GCS
-    3. Overlay watermark (FFmpeg)
+    3. Overlay watermark (FFmpeg) - preserving original size and transparency
     4. Upload result to GCS
 
     Args:
@@ -348,10 +356,15 @@ def process_watermark_job(job_data: dict) -> str:
         }
         overlay_pos = positions.get(position, positions["bottom-right"])
 
-        # Build filter with opacity
-        # format=rgba converts to RGBA, colorchannelmixer adjusts alpha
+        # Build filter that preserves original PNG transparency and applies additional opacity
+        # 1. format=rgba ensures we work in RGBA colorspace (preserves PNG alpha)
+        # 2. geq filter multiplies the existing alpha channel by opacity factor
+        #    This preserves transparent pixels while reducing overall opacity
+        # 3. Overlay with format=auto preserves the alpha blending
         filter_complex = (
-            f"[1:v]format=rgba,colorchannelmixer=aa={opacity}[watermark];"
+            f"[1:v]format=rgba,"
+            f"geq=r='r(X,Y)':g='g(X,Y)':b='b(X,Y)':a='{opacity}*alpha(X,Y)'"
+            f"[watermark];"
             f"[0:v][watermark]overlay={overlay_pos}:format=auto,format=yuv420p"
         )
 
@@ -366,7 +379,7 @@ def process_watermark_job(job_data: dict) -> str:
             "-c:a", "copy",
             local_output, "-y"
         ]
-        logger.info(f"Applying watermark: ffmpeg -i video -i watermark -filter_complex ...")
+        logger.info(f"Applying watermark with opacity={opacity}, position={position}")
         result = subprocess.run(overlay_cmd, capture_output=True, text=True)
         if result.returncode != 0:
             raise RuntimeError(f"Watermark overlay failed: {result.stderr}")

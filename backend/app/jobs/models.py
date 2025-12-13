@@ -26,10 +26,9 @@ class JobType(str, Enum):
 
 class SubtitleStyle(str, Enum):
     """Available subtitle styles."""
-    RAINBOW = "rainbow"  # Multi-color cycling text
-    CLASSIC = "classic"  # White text with black outline
-    BOLD = "bold"  # Yellow text with thick outline
-    MINIMAL = "minimal"  # Small white text with subtle shadow
+    SIMPLE = "simple"  # Clean white text with subtle glow
+    RAINBOW_BOUNCE = "rainbow_bounce"  # Colorful cycling with pop animation
+    BOLD_SHINE = "bold_shine"  # Yellow text with glow effect
 
 
 class Resolution(str, Enum):
@@ -226,8 +225,12 @@ class PostProcessRequest(BaseModel):
         description="Type of post-processing to apply"
     )
     subtitle_style: Optional[SubtitleStyle] = Field(
-        default=SubtitleStyle.CLASSIC,
+        default=SubtitleStyle.SIMPLE,
         description="Subtitle style (only for subtitles type)"
+    )
+    script_content: Optional[str] = Field(
+        default=None,
+        description="Original script text to improve STT accuracy (only for subtitles type)"
     )
     watermark_enabled: bool = Field(
         default=False,
