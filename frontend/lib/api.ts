@@ -224,8 +224,10 @@ export async function uploadToGCS(
 
 // Jobs endpoints
 export type JobStatus = 'pending' | 'queued' | 'processing' | 'completed' | 'failed';
-export type JobType = 'animate' | 'extend' | 'upscale' | 'foley';
+export type JobType = 'animate' | 'extend' | 'upscale' | 'foley' | 'subtitles' | 'watermark';
 export type Resolution = '480p' | '720p';
+export type SubtitleStyle = 'simple' | 'rainbow_bounce' | 'bold_shine';
+export type PostProcessType = 'subtitles' | 'watermark';
 
 export interface CreateJobRequest {
   job_type?: JobType;
@@ -331,6 +333,31 @@ export interface JobOutputResponse {
 
 export async function getJobOutput(jobId: string): Promise<JobOutputResponse> {
   return apiRequest<JobOutputResponse>(`/jobs/${jobId}/output`);
+}
+
+// Post-processing endpoints
+export interface PostProcessRequest {
+  post_process_type: PostProcessType;
+  subtitle_style?: SubtitleStyle;
+  watermark_enabled?: boolean;
+}
+
+export interface PostProcessResponse {
+  job_id: string;
+  source_job_id: string;
+  post_process_type: PostProcessType;
+  status: JobStatus;
+  credits_charged: number;
+}
+
+export async function createPostProcessJob(
+  sourceJobId: string,
+  request: PostProcessRequest
+): Promise<PostProcessResponse> {
+  return apiRequest<PostProcessResponse>(`/jobs/${sourceJobId}/post-process`, {
+    method: 'POST',
+    body: JSON.stringify(request),
+  });
 }
 
 // Job thumbnails (signed URLs for input and output files)

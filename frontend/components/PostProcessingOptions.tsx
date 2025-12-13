@@ -16,9 +16,31 @@ import {
   type ResultStatus,
 } from '@/components/post-processing';
 import { JobPickerModal } from '@/components/JobPickerModal';
-import { JobResponse, createJob, ApiError } from '@/lib/api';
+import { JobResponse, createJob, createPostProcessJob, ApiError, SubtitleStyle } from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
+
+// Subtitle style definitions with image previews
+const SUBTITLE_STYLES = [
+  {
+    id: 'simple' as SubtitleStyle,
+    name: 'Simple',
+    description: 'Clean white text with subtle glow',
+    image: '/images/subtitle-styles/simple.jpg',
+  },
+  {
+    id: 'rainbow_bounce' as SubtitleStyle,
+    name: 'Rainbow + Bounce',
+    description: 'Colorful cycling with pop animation',
+    image: '/images/subtitle-styles/rainbow_bounce.jpg',
+  },
+  {
+    id: 'bold_shine' as SubtitleStyle,
+    name: 'Bold Shine',
+    description: 'Yellow text with glow effect',
+    image: '/images/subtitle-styles/bold_shine.jpg',
+  },
+];
 
 // Type for section-specific video source
 type SectionId = 'extender' | 'upscaler' | 'sound' | 'subtitles' | 'watermark';
@@ -167,11 +189,13 @@ export function PostProcessingOptions() {
   // Loading states for API calls
   const [extenderLoading, setExtenderLoading] = useState(false);
   const [upscalerLoading, setUpscalerLoading] = useState(false);
+  const [subtitlesLoading, setSubtitlesLoading] = useState(false);
+  const [watermarkLoading, setWatermarkLoading] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
 
   const [audioOption, setAudioOption] = useState('mix');
   // const [formatOption, setFormatOption] = useState('crop'); // Hidden for now
-  const [subtitleStyle, setSubtitleStyle] = useState('bold-modern');
+  const [subtitleStyle, setSubtitleStyle] = useState<SubtitleStyle>('simple');
   const [watermarkType, setWatermarkType] = useState('logo');
   const [styleDropdownOpen, setStyleDropdownOpen] = useState(false);
   const [volume, setVolume] = useState([30]);
@@ -329,6 +353,72 @@ export function PostProcessingOptions() {
       setUpscalerLoading(false);
     }
   }, [videoSources.upscaler, router]);
+
+  // Handle subtitles job creation
+  const handleSubtitlesJob = useCallback(async () => {
+    const source = videoSources.subtitles;
+    if (source.type !== 'job' || !source.job) {
+      setApiError('Please select a video from your jobs');
+      return;
+    }
+
+    setSubtitlesLoading(true);
+    setApiError(null);
+    setSubtitlesStatus('processing');
+
+    try {
+      await createPostProcessJob(source.job.id, {
+        post_process_type: 'subtitles',
+        subtitle_style: subtitleStyle,
+      });
+
+      // Success - navigate to jobs page
+      router.push('/jobs');
+    } catch (error) {
+      console.error('Failed to create subtitles job:', error);
+      setSubtitlesStatus('failed');
+      if (error instanceof ApiError) {
+        setApiError(error.message);
+      } else {
+        setApiError('Failed to create subtitles job. Please try again.');
+      }
+    } finally {
+      setSubtitlesLoading(false);
+    }
+  }, [videoSources.subtitles, subtitleStyle, router]);
+
+  // Handle watermark job creation
+  const handleWatermarkJob = useCallback(async () => {
+    const source = videoSources.watermark;
+    if (source.type !== 'job' || !source.job) {
+      setApiError('Please select a video from your jobs');
+      return;
+    }
+
+    setWatermarkLoading(true);
+    setApiError(null);
+    setWatermarkStatus('processing');
+
+    try {
+      await createPostProcessJob(source.job.id, {
+        post_process_type: 'watermark',
+        watermark_enabled: true,
+      });
+
+      // Success - navigate to jobs page
+      router.push('/jobs');
+    } catch (error) {
+      console.error('Failed to create watermark job:', error);
+      setWatermarkStatus('failed');
+      if (error instanceof ApiError) {
+        setApiError(error.message);
+      } else {
+        setApiError('Failed to create watermark job. Please try again.');
+      }
+    } finally {
+      setWatermarkLoading(false);
+    }
+  }, [videoSources.watermark, router]);
 
   // Helper to create props for VideoSourceSelector
   const createSelectorProps = useCallback((sectionId: SectionId, label: string): VideoSourceSelectorProps => ({
@@ -825,92 +915,69 @@ export function PostProcessingOptions() {
                     </div>
                   </div>
 
-                  {/* Style Selector */}
+                  {/* Style Selector - Image-based previews */}
                   <div className="flex flex-col gap-2">
                     <label className="text-[#94A3B8] text-sm">Style</label>
                     <div className="relative">
                       <button
                         onClick={() => setStyleDropdownOpen(!styleDropdownOpen)}
-                        className="w-full bg-[#1E293B] border border-[#334155] rounded-lg p-3 hover:border-[#00F0D9] transition-colors flex items-center justify-between"
+                        className="w-full bg-[#1E293B] border border-[#334155] rounded-lg p-2 hover:border-[#00F0D9] transition-colors flex items-center justify-between"
                       >
-                        <div className="flex-1 bg-[#0F172A] p-2 rounded flex items-center justify-center">
-                          {subtitleStyle === 'bold-modern' && <span className="text-white font-bold" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.9)' }}>HELLO WORLD</span>}
-                          {subtitleStyle === 'classic' && <div className="bg-yellow-400 px-3 py-1 rounded"><span className="text-black">Hello World</span></div>}
-                          {subtitleStyle === 'minimal' && <span className="text-white">Hello World</span>}
-                          {subtitleStyle === 'boxed' && <div className="bg-black/70 px-4 py-1.5 rounded-lg"><span className="text-white">Hello World</span></div>}
-                          {subtitleStyle === 'outlined' && <span className="text-white font-bold" style={{ textShadow: '3px 3px 0 #000, -1.5px -1.5px 0 #000, 1.5px -1.5px 0 #000, -1.5px 1.5px 0 #000, 1.5px 1.5px 0 #000' }}>HELLO WORLD</span>}
+                        <div className="flex items-center gap-3 flex-1">
+                          <img
+                            src={SUBTITLE_STYLES.find(s => s.id === subtitleStyle)?.image}
+                            alt={SUBTITLE_STYLES.find(s => s.id === subtitleStyle)?.name}
+                            className="h-10 w-auto rounded"
+                          />
+                          <div className="text-left">
+                            <p className="text-white text-sm font-medium">{SUBTITLE_STYLES.find(s => s.id === subtitleStyle)?.name}</p>
+                            <p className="text-[#94A3B8] text-xs">{SUBTITLE_STYLES.find(s => s.id === subtitleStyle)?.description}</p>
+                          </div>
                         </div>
-                        <ChevronDown className={`w-4 h-4 text-[#94A3B8] ml-2 ${styleDropdownOpen ? 'rotate-180' : ''}`} />
+                        <ChevronDown className={`w-4 h-4 text-[#94A3B8] ml-2 transition-transform ${styleDropdownOpen ? 'rotate-180' : ''}`} />
                       </button>
 
                       {styleDropdownOpen && (
-                        <div className="absolute z-10 w-full mt-1 bg-[#1E293B] border border-[#334155] rounded-lg shadow-lg">
-                          {/* Bold Modern */}
-                          <button
-                            onClick={() => { setSubtitleStyle('bold-modern'); setStyleDropdownOpen(false); }}
-                            className="w-full p-3 hover:bg-[#334155] flex items-center justify-between border-b border-[#334155]"
-                          >
-                            <div className="flex-1 bg-[#0F172A] p-2 rounded flex items-center justify-center">
-                              <span className="text-white font-bold" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.9)' }}>HELLO WORLD</span>
-                            </div>
-                            {subtitleStyle === 'bold-modern' && <Check className="w-4 h-4 text-[#00F0D9] ml-2" />}
-                          </button>
-
-                          {/* Classic */}
-                          <button
-                            onClick={() => { setSubtitleStyle('classic'); setStyleDropdownOpen(false); }}
-                            className="w-full p-3 hover:bg-[#334155] flex items-center justify-between border-b border-[#334155]"
-                          >
-                            <div className="flex-1 bg-[#0F172A] p-2 rounded flex items-center justify-center">
-                              <div className="bg-yellow-400 px-3 py-1 rounded"><span className="text-black">Hello World</span></div>
-                            </div>
-                            {subtitleStyle === 'classic' && <Check className="w-4 h-4 text-[#00F0D9] ml-2" />}
-                          </button>
-
-                          {/* Minimal */}
-                          <button
-                            onClick={() => { setSubtitleStyle('minimal'); setStyleDropdownOpen(false); }}
-                            className="w-full p-3 hover:bg-[#334155] flex items-center justify-between border-b border-[#334155]"
-                          >
-                            <div className="flex-1 bg-[#0F172A] p-2 rounded flex items-center justify-center">
-                              <span className="text-white">Hello World</span>
-                            </div>
-                            {subtitleStyle === 'minimal' && <Check className="w-4 h-4 text-[#00F0D9] ml-2" />}
-                          </button>
-
-                          {/* Boxed */}
-                          <button
-                            onClick={() => { setSubtitleStyle('boxed'); setStyleDropdownOpen(false); }}
-                            className="w-full p-3 hover:bg-[#334155] flex items-center justify-between border-b border-[#334155]"
-                          >
-                            <div className="flex-1 bg-[#0F172A] p-2 rounded flex items-center justify-center">
-                              <div className="bg-black/70 px-4 py-1.5 rounded-lg"><span className="text-white">Hello World</span></div>
-                            </div>
-                            {subtitleStyle === 'boxed' && <Check className="w-4 h-4 text-[#00F0D9] ml-2" />}
-                          </button>
-
-                          {/* Outlined */}
-                          <button
-                            onClick={() => { setSubtitleStyle('outlined'); setStyleDropdownOpen(false); }}
-                            className="w-full p-3 hover:bg-[#334155] flex items-center justify-between"
-                          >
-                            <div className="flex-1 bg-[#0F172A] p-2 rounded flex items-center justify-center">
-                              <span className="text-white font-bold" style={{ textShadow: '3px 3px 0 #000, -1.5px -1.5px 0 #000, 1.5px -1.5px 0 #000, -1.5px 1.5px 0 #000, 1.5px 1.5px 0 #000' }}>HELLO WORLD</span>
-                            </div>
-                            {subtitleStyle === 'outlined' && <Check className="w-4 h-4 text-[#00F0D9] ml-2" />}
-                          </button>
+                        <div className="absolute z-10 w-full mt-1 bg-[#1E293B] border border-[#334155] rounded-lg shadow-lg overflow-hidden">
+                          {SUBTITLE_STYLES.map((style, index) => (
+                            <button
+                              key={style.id}
+                              onClick={() => { setSubtitleStyle(style.id); setStyleDropdownOpen(false); }}
+                              className={`w-full p-3 hover:bg-[#334155] flex items-center justify-between ${index < SUBTITLE_STYLES.length - 1 ? 'border-b border-[#334155]' : ''}`}
+                            >
+                              <div className="flex items-center gap-3 flex-1">
+                                <img
+                                  src={style.image}
+                                  alt={style.name}
+                                  className="h-12 w-auto rounded"
+                                />
+                                <div className="text-left">
+                                  <p className="text-white text-sm font-medium">{style.name}</p>
+                                  <p className="text-[#94A3B8] text-xs">{style.description}</p>
+                                </div>
+                              </div>
+                              {subtitleStyle === style.id && <Check className="w-4 h-4 text-[#00F0D9] ml-2" />}
+                            </button>
+                          ))}
                         </div>
                       )}
                     </div>
                   </div>
 
+                  {apiError && subtitlesStatus === 'failed' && (
+                    <p className="text-red-400 text-sm">{apiError}</p>
+                  )}
                   <Button
                     className="w-full bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] hover:opacity-90 text-white"
-                    onClick={() => setSubtitlesStatus('processing')}
-                    disabled={!videoSources.subtitles.type}
+                    onClick={handleSubtitlesJob}
+                    disabled={!videoSources.subtitles.type || subtitlesLoading}
                   >
-                    <Type className="w-4 h-4 mr-2" />
-                    Generate (0 credits)
+                    {subtitlesLoading ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Type className="w-4 h-4 mr-2" />
+                    )}
+                    {subtitlesLoading ? 'Creating job...' : 'Generate (0 credits)'}
                   </Button>
                   <ResultSection status={subtitlesStatus} />
                 </div>
@@ -1018,13 +1085,20 @@ export function PostProcessingOptions() {
                     </div>
                   </div>
 
+                  {apiError && watermarkStatus === 'failed' && (
+                    <p className="text-red-400 text-sm">{apiError}</p>
+                  )}
                   <Button
                     className="w-full bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] hover:opacity-90 text-white"
-                    onClick={() => setWatermarkStatus('processing')}
-                    disabled={!videoSources.watermark.type}
+                    onClick={handleWatermarkJob}
+                    disabled={!videoSources.watermark.type || watermarkLoading}
                   >
-                    <Droplet className="w-4 h-4 mr-2" />
-                    Generate (0 credits)
+                    {watermarkLoading ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Droplet className="w-4 h-4 mr-2" />
+                    )}
+                    {watermarkLoading ? 'Creating job...' : 'Generate (0 credits)'}
                   </Button>
                   <ResultSection status={watermarkStatus} />
                 </div>
