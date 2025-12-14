@@ -76,13 +76,13 @@
 | 11.3.5 | System Health page        | 🔮     | 1h     | Deferred - not critical for launch          |
 | 11.3.6 | Promo Codes page          | ✅     | 1h     | Create/delete codes, track usage            |
 
-### 11.3b Promo Code Redemption (NEW - User-facing)
+### 11.3b Promo Code Redemption (User-facing) ✅
 
-| ID      | Task                           | Status | Effort | Notes                                  |
-| ------- | ------------------------------ | ------ | ------ | -------------------------------------- |
-| 11.3b.1 | Add promo input to signup flow | 🟥     | 1h     | Optional field during registration     |
-| 11.3b.2 | Add promo redemption in app    | 🟥     | 1h     | Account/Billing page "Redeem Code"     |
-| 11.3b.3 | Backend: POST /promo/redeem    | 🟥     | 1h     | Validate code, add credits, track use  |
+| ID      | Task                           | Status | Effort | Notes                                      |
+| ------- | ------------------------------ | ------ | ------ | ------------------------------------------ |
+| 11.3b.1 | Add promo input to signup flow | 🔮     | 1h     | Deferred - billing page approach preferred |
+| 11.3b.2 | Add promo redemption in app    | ✅     | 1h     | Billing page "Redeem Code" section         |
+| 11.3b.3 | Backend: POST /promo/redeem    | ✅     | 1h     | Validates code, adds credits_balance       |
 
 ### 11.4 SEO (Priority 3 - Marketing Ready)
 
@@ -133,7 +133,7 @@
 - [x] Support attach file works (max 10MB)
 - [x] Auto Subtitles (E) working
 - [x] Add Watermark (F) working
-- [x] Admin panel operational (5 pages + promo redemption pending)
+- [x] Admin panel operational (5 pages + promo redemption)
 - [ ] SEO: sitemap, robots, JSON-LD on all public pages
 - [ ] E2E billing tests pass
 - [ ] Database clean of test data
@@ -260,23 +260,28 @@
 | 8 - Referral           | 13      | 13        | ✅     |
 | 8.5 - Feature Complete | 25      | 21        | ✅     |
 | 10 - Post-Processing   | 13      | 13        | ✅     |
-| 11 - V1.0 Launch Prep  | 38      | 13        | 🟡     |
-| **TOTAL**              | **178** | **149**   | 🟡     |
+| 11 - V1.0 Launch Prep  | 38      | 15        | 🟡     |
+| **TOTAL**              | **178** | **151**   | 🟡     |
 
 ---
 
 ## CURRENT STATE
 
 **Current Phase:** 11 (V1.0 Launch Prep)
-**Current Task:** 11.3b - Promo Redemption OR 11.4 - SEO
+**Current Task:** 11.4 - SEO
 **Blockers:** None
 **Last Updated:** 2025-12-14
 
 ### Just Completed (Dec 14)
 
+- ✅ 11.3b.2-3: Promo Code Redemption (billing page + backend endpoint)
+- ✅ Fixed credits_balance vs credits field bug (promo credits now visible)
+- ✅ Fixed admin UserTier enum (added creator/starter tiers)
+- ✅ Added .dockerignore to prevent stale pycache in Docker builds
+- ✅ Removed "Worth: $X.XX" from billing page (cleaner UX)
 - ✅ 11.3.1-11.3.6: Admin Panel complete (Dashboard, Users, Jobs, Payments, Promos)
 - ✅ Admin password protection with ADMIN_PASSWORD env var
-- ✅ Backend deployed with admin routes (nuumee-api-00135)
+- ✅ Backend deployed with admin routes (nuumee-api-00140)
 - ✅ Frontend deployed to nuumee.ai/admin555
 
 ### Completed (Dec 13)
