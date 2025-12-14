@@ -37,10 +37,20 @@ def redeem_promo_code(db: firestore.Client, user_id: str, code: str) -> Tuple[in
     # Normalize code to uppercase
     code = code.strip().upper()
 
+    # First, find the promo document by code field (outside transaction)
+    # Admin creates promos with auto-generated IDs and stores code as a field
+    promo_query = db.collection("promo_codes").where("code", "==", code).limit(1)
+    promo_docs = list(promo_query.stream())
+
+    if not promo_docs:
+        logger.warning(f"Promo code not found: {code}")
+        raise PromoRedemptionError("Invalid or expired promo code")
+
+    promo_ref = promo_docs[0].reference
+
     @firestore.transactional
     def redeem_in_transaction(transaction: firestore.Transaction) -> Tuple[int, int]:
-        # Get promo code document
-        promo_ref = db.collection("promo_codes").document(code)
+        # Get promo code document (re-read in transaction for consistency)
         promo_doc = promo_ref.get(transaction=transaction)
 
         if not promo_doc.exists:
