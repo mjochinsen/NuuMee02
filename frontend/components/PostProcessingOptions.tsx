@@ -186,7 +186,7 @@ export function PostProcessingOptions() {
 
   const [videoExtenderEnabled, setVideoExtenderEnabled] = useState(false);
   const [upscalerEnabled, setUpscalerEnabled] = useState(false);
-  const [soundEnabled, setSoundEnabled] = useState(false);
+  // const [soundEnabled, setSoundEnabled] = useState(false); // Deferred to V2
   // const [formatEnabled, setFormatEnabled] = useState(false); // Hidden for now
   const [subtitlesEnabled, setSubtitlesEnabled] = useState(false);
   const [watermarkEnabled, setWatermarkEnabled] = useState(false);
@@ -198,7 +198,7 @@ export function PostProcessingOptions() {
   const [watermarkLoading, setWatermarkLoading] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
 
-  const [audioOption, setAudioOption] = useState('mix');
+  // const [audioOption, setAudioOption] = useState('mix'); // Deferred to V2
   // const [formatOption, setFormatOption] = useState('crop'); // Hidden for now
   const [subtitleStyle, setSubtitleStyle] = useState<SubtitleStyle>('simple');
   const [scriptContent, setScriptContent] = useState<string | null>(null);
@@ -209,14 +209,15 @@ export function PostProcessingOptions() {
   const [watermarkPosition, setWatermarkPosition] = useState('bottom-right');
   const [watermarkOpacity, setWatermarkOpacity] = useState('70');
   const [styleDropdownOpen, setStyleDropdownOpen] = useState(false);
-  const [volume, setVolume] = useState([30]);
-  const [fadeIn, setFadeIn] = useState('0');
-  const [fadeOut, setFadeOut] = useState('0');
-  const [startTime, setStartTime] = useState('0');
+  // Sound controls - Deferred to V2
+  // const [volume, setVolume] = useState([30]);
+  // const [fadeIn, setFadeIn] = useState('0');
+  // const [fadeOut, setFadeOut] = useState('0');
+  // const [startTime, setStartTime] = useState('0');
 
   const [extenderStatus, setExtenderStatus] = useState<ResultStatus>('awaiting');
   const [upscalerStatus, setUpscalerStatus] = useState<ResultStatus>('awaiting');
-  const [soundStatus, setSoundStatus] = useState<ResultStatus>('awaiting');
+  // const [soundStatus, setSoundStatus] = useState<ResultStatus>('awaiting'); // Deferred to V2
   // const [formatStatus, setFormatStatus] = useState<ResultStatus>('awaiting'); // Hidden for now
   const [subtitlesStatus, setSubtitlesStatus] = useState<ResultStatus>('awaiting');
   const [watermarkStatus, setWatermarkStatus] = useState<ResultStatus>('awaiting');
@@ -453,7 +454,7 @@ export function PostProcessingOptions() {
   return (
     <TooltipProvider>
       <div className="space-y-4">
-        {/* A. Video Extender */}
+        {/* Video Extender */}
         <div className="border border-[#334155] rounded-2xl p-6 bg-[#0F172A]">
           <div className="flex items-start gap-3 mb-4">
             <Checkbox
@@ -465,7 +466,7 @@ export function PostProcessingOptions() {
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-3">
                 <label htmlFor="video-extender" className="text-[#F1F5F9] cursor-pointer font-medium">
-                  A. Video Extender
+                  Video Extender
                 </label>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -535,7 +536,7 @@ export function PostProcessingOptions() {
           </div>
         </div>
 
-        {/* B. Video Upscaler */}
+        {/* Video Upscaler */}
         <div className="border border-[#334155] rounded-2xl p-6 bg-[#0F172A]">
           <div className="flex items-start gap-3">
             <Checkbox
@@ -547,7 +548,7 @@ export function PostProcessingOptions() {
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-3">
                 <label htmlFor="upscaler" className="text-[#F1F5F9] cursor-pointer font-medium">
-                  B. Video Upscaler (1080p)
+                  Video Upscaler (1080p)
                 </label>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -611,225 +612,11 @@ export function PostProcessingOptions() {
           </div>
         </div>
 
-        {/* C. Add Sound */}
-        <div className="border border-[#334155] rounded-2xl p-6 bg-[#0F172A]">
-          <div className="flex items-start gap-3">
-            <Checkbox
-              id="sound"
-              checked={soundEnabled}
-              onCheckedChange={(checked) => setSoundEnabled(checked as boolean)}
-              className="mt-1 border-[#334155] data-[state=checked]:bg-[#00F0D9] data-[state=checked]:border-[#00F0D9]"
-            />
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-3">
-                <label htmlFor="sound" className="text-[#F1F5F9] cursor-pointer font-medium">
-                  C. Add Sound
-                </label>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button className="text-[#94A3B8] hover:text-[#00F0D9] transition-colors">
-                      <Info className="w-4 h-4" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent className="bg-[#1E293B] border border-[#334155] text-[#F1F5F9] max-w-sm p-4">
-                    <div className="space-y-2">
-                      <p className="mb-2">Add, mix, or replace audio in your video.</p>
-                      <div className="space-y-1">
-                        <p className="text-[#00F0D9]">Options:</p>
-                        <ul className="list-none text-sm text-[#94A3B8]">
-                          <li>Mix Background Music - Add music with volume control</li>
-                          <li>Replace Audio - Swap video audio completely</li>
-                          <li>AI Sound Generation - Generate realistic sound effects (Foley)</li>
-                        </ul>
-                      </div>
-                      <div className="mt-2 space-y-1">
-                        <p className="text-sm text-[#00F0D9]">Tips:</p>
-                        <ul className="list-disc list-inside text-sm text-[#94A3B8]">
-                          <li>Keep background music at 20-40% volume</li>
-                          <li>Use fade in/out for smooth transitions</li>
-                          <li>Match audio length to video duration</li>
-                        </ul>
-                      </div>
-                      <div className="text-sm text-[#94A3B8] mt-2">
-                        <p>Supported: MP3, WAV, AAC</p>
-                        <p>Max size: 20MB</p>
-                      </div>
-                    </div>
-                  </TooltipContent>
-                </Tooltip>
-                <button className="flex items-center gap-1 text-[#00F0D9] hover:text-[#00F0D9]/80 transition-colors text-sm">
-                  <LinkIcon className="w-3 h-3" />
-                  <span>Example</span>
-                </button>
-              </div>
-              {soundEnabled && (
-                <div className="space-y-4">
-                  <VideoSourceSelector {...createSelectorProps('sound', 'Select video to add sound')} />
-                  <RadioGroup value={audioOption} onValueChange={setAudioOption}>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="mix" id="mix" className="border-[#334155] text-[#00F0D9]" />
-                      <label htmlFor="mix" className="text-[#94A3B8] cursor-pointer">Mix Background Music</label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="replace" id="replace" className="border-[#334155] text-[#00F0D9]" />
-                      <label htmlFor="replace" className="text-[#94A3B8] cursor-pointer">Replace Audio</label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="ai" id="ai" className="border-[#334155] text-[#00F0D9]" />
-                      <label htmlFor="ai" className="text-[#94A3B8] cursor-pointer">AI Sound Generation</label>
-                    </div>
-                  </RadioGroup>
-
-                  {/* Mix Background Music Controls */}
-                  {audioOption === 'mix' && (
-                    <AudioMixControls
-                      volume={volume}
-                      onVolumeChange={setVolume}
-                      fadeIn={fadeIn}
-                      onFadeInChange={setFadeIn}
-                      fadeOut={fadeOut}
-                      onFadeOutChange={setFadeOut}
-                      startTime={startTime}
-                      onStartTimeChange={setStartTime}
-                    />
-                  )}
-
-                  {/* Replace Audio Controls */}
-                  {audioOption === 'replace' && (
-                    <div className="p-4 border border-[#334155] rounded-lg bg-[#1E293B]">
-                      <div className="flex flex-col gap-2">
-                        <div className="flex items-center gap-2">
-                          <Label className="text-[#94A3B8] text-sm">Audio File</Label>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <button className="text-[#94A3B8] hover:text-[#00F0D9] transition-colors">
-                                <Info className="w-4 h-4" />
-                              </button>
-                            </TooltipTrigger>
-                            <TooltipContent className="bg-[#1E293B] border border-[#334155] text-[#F1F5F9] max-w-md p-4">
-                              <div className="space-y-2">
-                                <p className="mb-2">Completely replace the video's audio track</p>
-                                <div className="space-y-1">
-                                  <p className="text-[#00F0D9]">What it does:</p>
-                                  <ul className="list-disc list-inside text-sm text-[#94A3B8]">
-                                    <li>Removes original video audio entirely</li>
-                                    <li>Replaces with your uploaded audio file</li>
-                                    <li>Perfect sync from start to end</li>
-                                  </ul>
-                                </div>
-                                <div className="mt-2 space-y-1">
-                                  <p className="text-sm text-[#00F0D9]">Use cases:</p>
-                                  <ul className="list-disc list-inside text-sm text-[#94A3B8]">
-                                    <li>Add voiceover narration</li>
-                                    <li>Replace with different language audio</li>
-                                    <li>Use studio-quality audio recording</li>
-                                    <li>Add music-only tracks</li>
-                                  </ul>
-                                </div>
-                                <div className="mt-2 space-y-1">
-                                  <p className="text-amber-400 text-sm">Important:</p>
-                                  <ul className="list-disc list-inside text-sm text-[#94A3B8]">
-                                    <li>Original audio will be deleted</li>
-                                    <li>Audio length should match video duration</li>
-                                    <li>Mismatched length will be trimmed or looped</li>
-                                  </ul>
-                                </div>
-                                <div className="text-sm text-[#94A3B8] mt-2 space-y-1">
-                                  <p>Accepted: MP3, WAV, AAC, M4A</p>
-                                  <p>Max size: 20MB</p>
-                                  <p>Max duration: 120 seconds</p>
-                                </div>
-                              </div>
-                            </TooltipContent>
-                          </Tooltip>
-                        </div>
-                        <div className="flex gap-2">
-                          <Input type="file" accept=".mp3,.wav,.aac,.m4a" className="bg-[#0F172A] border-[#334155] text-[#F1F5F9]" />
-                          <Button variant="outline" size="icon" className="border-[#334155] text-[#94A3B8] hover:border-[#00F0D9] hover:text-[#00F0D9] shrink-0">
-                            <Upload className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* AI Sound Generation Controls */}
-                  {audioOption === 'ai' && (
-                    <div className="p-4 border border-[#334155] rounded-lg bg-[#1E293B]">
-                      <div className="flex flex-col gap-2">
-                        <div className="flex items-center gap-2">
-                          <Label className="text-[#94A3B8] text-sm">Sound Description</Label>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <button className="text-[#94A3B8] hover:text-[#00F0D9] transition-colors">
-                                <Info className="w-4 h-4" />
-                              </button>
-                            </TooltipTrigger>
-                            <TooltipContent className="bg-[#1E293B] border border-[#334155] text-[#F1F5F9] max-w-md p-4">
-                              <div className="space-y-2">
-                                <p className="mb-2">Describe sounds you want AI to generate for your video</p>
-                                <div className="space-y-1">
-                                  <p className="text-[#00F0D9]">What it does:</p>
-                                  <ul className="list-disc list-inside text-sm text-[#94A3B8]">
-                                    <li>Analyzes your video content</li>
-                                    <li>Generates realistic sound effects (Foley)</li>
-                                    <li>Syncs audio to motion and actions</li>
-                                    <li>Creates ambient soundscapes</li>
-                                  </ul>
-                                </div>
-                                <div className="mt-2 space-y-1">
-                                  <p className="text-sm text-[#00F0D9]">Example prompts:</p>
-                                  <ul className="list-disc list-inside text-sm text-[#94A3B8]">
-                                    <li>"Footsteps on wooden floor, door opening"</li>
-                                    <li>"Ocean waves, seagulls, gentle wind"</li>
-                                    <li>"City traffic, car horns, people talking"</li>
-                                    <li>"Rain on window, thunder in distance"</li>
-                                  </ul>
-                                </div>
-                                <div className="mt-2 space-y-1">
-                                  <p className="text-sm text-[#00F0D9]">Tips for best results:</p>
-                                  <ul className="list-disc list-inside text-sm text-[#94A3B8]">
-                                    <li>Be specific about sounds and their timing</li>
-                                    <li>Mention intensity (soft, loud, gentle, harsh)</li>
-                                    <li>Describe environment/context</li>
-                                    <li>List multiple sounds separated by commas</li>
-                                  </ul>
-                                </div>
-                                <div className="text-sm text-[#94A3B8] mt-2 space-y-1">
-                                  <p>Supports: English and Chinese prompts</p>
-                                  <p>Max length: 500 characters</p>
-                                </div>
-                              </div>
-                            </TooltipContent>
-                          </Tooltip>
-                        </div>
-                        <Textarea
-                          placeholder="Describe the sounds you want to generate..."
-                          className="bg-[#0F172A] border-[#334155] text-[#F1F5F9] placeholder:text-[#94A3B8] focus:border-[#00F0D9] min-h-[100px]"
-                          maxLength={500}
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  <Button
-                    className="w-full bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] hover:opacity-90 text-white"
-                    onClick={() => setSoundStatus('processing')}
-                    disabled={!videoSources.sound.type}
-                  >
-                    <Volume2 className="w-4 h-4 mr-2" />
-                    Generate (0 credits)
-                  </Button>
-                  <ResultSection status={soundStatus} />
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+        {/* C. Add Sound - Deferred to V2 */}
 
         {/* D. Change Format to 16:9 - Hidden for now, may implement in future */}
 
-        {/* E. Auto Subtitles */}
+        {/* Auto Subtitles */}
         <div className="border border-[#334155] rounded-2xl p-6 bg-[#0F172A]">
           <div className="flex items-start gap-3">
             <Checkbox
@@ -841,7 +628,7 @@ export function PostProcessingOptions() {
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-3">
                 <label htmlFor="subtitles" className="text-[#F1F5F9] cursor-pointer font-medium">
-                  E. Auto Subtitles
+                  Auto Subtitles
                 </label>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -1043,7 +830,7 @@ export function PostProcessingOptions() {
           </div>
         </div>
 
-        {/* F. Add Watermark */}
+        {/* Add Watermark */}
         <div className={`border rounded-2xl p-6 bg-[#0F172A] ${isFreeTier ? 'border-[#334155] opacity-60' : 'border-[#334155]'}`}>
           <div className="flex items-start gap-3">
             {isFreeTier ? (
@@ -1062,7 +849,7 @@ export function PostProcessingOptions() {
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-3">
                 <label htmlFor="watermark" className={`font-medium ${isFreeTier ? 'text-[#64748B] cursor-not-allowed' : 'text-[#F1F5F9] cursor-pointer'}`}>
-                  F. Add Watermark
+                  Add Watermark
                 </label>
                 {isFreeTier && (
                   <span className="text-xs bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded">

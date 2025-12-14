@@ -22,7 +22,7 @@ export function Navbar() {
             <Link href="/" className="text-[#94A3B8] hover:text-[#00F0D9] transition-colors">
               Home
             </Link>
-            <Link href="/create" className="text-[#94A3B8] hover:text-[#00F0D9] transition-colors">
+            <Link href={user ? "/create" : "/login"} className="text-[#94A3B8] hover:text-[#00F0D9] transition-colors">
               Create Videos
             </Link>
             <Link href="/price" className="text-[#94A3B8] hover:text-[#00F0D9] transition-colors">

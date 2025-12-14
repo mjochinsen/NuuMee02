@@ -679,40 +679,6 @@ export default function BillingPage() {
             </div>
           )}
 
-          {/* Founding Member */}
-          <div className="border border-amber-500/30 rounded-xl p-6 bg-gradient-to-br from-amber-500/5 to-transparent">
-            <div className="flex items-center gap-2 mb-2">
-              <Crown className="w-5 h-5 text-amber-500" />
-              <h3 className="text-[#F1F5F9]">Become a Founding Member 🏆</h3>
-            </div>
-            <p className="text-[#94A3B8] text-sm mb-4">
-              20% lifetime discount • Only 23 spots left!
-            </p>
-            <Button
-              onClick={() => {
-                setSelectedSubscriptionPlan({
-                  id: 'creator',
-                  name: 'Creator',
-                  price: 29,
-                  credits: 400,
-                  icon: '🏆',
-                  features: [
-                    '400 credits per month',
-                    'No watermarks',
-                    'Up to 1080p resolution',
-                    'Priority support',
-                    'All post-processing tools',
-                    'API access',
-                  ],
-                });
-                setSubscriptionModalType('founding');
-                setIsSubscriptionModalOpen(true);
-              }}
-              className="bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:opacity-90 text-white"
-            >
-              Claim Your Spot
-            </Button>
-          </div>
         </div>
 
         {/* Enterprise Option */}
@@ -724,11 +690,16 @@ export default function BillingPage() {
               <p className="text-[#94A3B8] text-sm">
                 Custom pricing • Unlimited credits • Dedicated support • SLA
               </p>
+              <p className="text-[#94A3B8] text-sm mt-1">
+                Contact us at <a href="mailto:sales@nuumee.ai" className="text-[#00F0D9] hover:underline">sales@nuumee.ai</a>
+              </p>
             </div>
           </div>
-          <Button variant="outline" className="border-[#334155] text-[#F1F5F9] hover:border-[#00F0D9] hover:text-[#00F0D9]">
-            Contact Sales
-          </Button>
+          <a href="mailto:sales@nuumee.ai">
+            <Button variant="outline" className="border-[#334155] text-[#F1F5F9] hover:border-[#00F0D9] hover:text-[#00F0D9]">
+              Contact Sales
+            </Button>
+          </a>
         </div>
       </div>
 
@@ -759,7 +730,11 @@ export default function BillingPage() {
                     min={5}
                     max={100}
                     value={autoRefillThreshold}
-                    onChange={(e) => setAutoRefillThreshold(Number(e.target.value))}
+                    onChange={(e) => {
+                      const val = Number(e.target.value);
+                      // Clamp value between 5 and 100
+                      setAutoRefillThreshold(Math.max(5, Math.min(100, val || 5)));
+                    }}
                     className="w-24 bg-[#1E293B] border-[#334155] text-[#F1F5F9]"
                   />
                   <span className="text-[#94A3B8]">credits</span>

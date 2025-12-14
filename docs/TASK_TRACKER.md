@@ -206,18 +206,17 @@
 
 **Note:** SEO tasks moved to Phase 11.4. Performance optimization deferred to V1.1.
 
-### Deferred to V1.1
+### Deferred to V2
 
-| ID   | Task                              | Status | Notes                              |
-| ---- | --------------------------------- | ------ | ---------------------------------- |
-| 9.8  | Dynamic imports: Modals           | 🔮     | BuyCreditsModal, SubscriptionModal |
-| 9.9  | Dynamic imports: Heavy components | 🔮     | Charts, job dialogs (>50KB)        |
-| 9.10 | Bundle analysis                   | 🔮     | Target: -100-200KB initial load    |
-| 9.11 | Accessibility audit               | 🔮     | WCAG compliance                    |
-| 9.12 | Responsive design validation      | 🔮     | All breakpoints                    |
-| 9.13 | Design system consistency         | 🔮     | No hardcoded values                |
-| 9.14 | Error boundary components         | 🔮     | Error handling                     |
-| 9.15 | Become a Founding Member          | 🔮     | deferred                           |
+| ID   | Task                              | Status | Notes                                     |
+| ---- | --------------------------------- | ------ | ----------------------------------------- |
+| 9.8  | Dynamic imports: Modals           | 🔮     | BuyCreditsModal, SubscriptionModal        |
+| 9.9  | Dynamic imports: Heavy components | 🔮     | Charts, job dialogs (>50KB)               |
+| 9.10 | Bundle analysis                   | 🔮     | Target: -100-200KB initial load           |
+| 9.11 | Accessibility audit               | 🔮     | WCAG compliance                           |
+| 9.12 | Responsive design validation      | 🔮     | All breakpoints                           |
+| 9.13 | Design system consistency         | 🔮     | No hardcoded values                       |
+| 9.14 | Error boundary components         | 🔮     | Error handling                            |
 
 ---
 
@@ -225,6 +224,8 @@
 
 | Feature                   | Reason                         | Effort |
 | ------------------------- | ------------------------------ | ------ |
+| Founding Member program   | Deferred, not blocking launch  | 2-4h   |
+| Add Sound (C)             | Post-processing audio feature  | 4-6h   |
 | Affiliate tracking system | Nice-to-have, not blocking     | 6-8h   |
 | Referral Activity UI      | Nice-to-have                   | 2h     |
 | Early Subscriber badge    | Not critical for launch        | 1h     |

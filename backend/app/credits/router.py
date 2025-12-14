@@ -257,6 +257,7 @@ async def update_auto_refill_settings(
     settings: AutoRefillSettings,
     user_id: str = Depends(get_current_user_id)
 ):
+    print(f"[AUTO-REFILL] Received settings: enabled={settings.enabled}, threshold={settings.threshold}, package_id={settings.package_id}")
     """
     Update the user's auto-refill settings.
 
