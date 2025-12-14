@@ -2,6 +2,7 @@
 
 import { ChevronDown, Zap, Plus, User, CreditCard, Key, Briefcase, HelpCircle, Settings, LogOut, Gift } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import {
   DropdownMenu,
@@ -28,10 +29,14 @@ export function Header() {
         {/* Left Side - Logo and Nav */}
         <div className="flex items-center gap-8">
           <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#00F0D9] to-[#3B1FE2] flex items-center justify-center">
-              <span className="text-white font-bold">N</span>
-            </div>
-            <span className="text-[#F1F5F9] font-semibold">NuuMee.AI</span>
+            <Image
+              src="/logo.svg"
+              alt="NuuMee.AI"
+              width={40}
+              height={32}
+              className="h-8 w-auto"
+              priority
+            />
           </Link>
 
           <nav className="hidden md:flex items-center gap-6">

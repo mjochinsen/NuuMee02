@@ -1,5 +1,16 @@
+import { Metadata } from 'next';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
+
+// Auth pages should not be indexed
+export const metadata: Metadata = {
+  title: 'Sign In',
+  description: 'Sign in to your NuuMee account to create AI videos.',
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
 
 export default function AuthLayout({
   children,
