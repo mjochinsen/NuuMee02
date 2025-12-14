@@ -50,30 +50,39 @@
 
 ### 11.2 Missing Features (Priority 1 - Launch Blockers)
 
-| ID     | Task                                | Status | Effort | Notes                                          |
-| ------ | ----------------------------------- | ------ | ------ | ---------------------------------------------- |
-| 11.2.1 | Support page: Fix attach file       | ✅     | 30m    | Inline base64 (500KB), Dec 12 2025             |
-| 11.2.2 | Support page: CC support@nuumee.ai  | ✅     | 30m    | Reply-to header, Dec 12 2025                   |
-| 11.2.3 | Post-Processing E: Auto Subtitles   | ✅     | 3-4h   | FFmpeg worker + Google STT + ASS, Dec 13       |
-| 11.2.4 | Post-Processing F: Add Watermark    | ✅     | 1-2h   | Custom upload + position + opacity, Dec 13     |
-| 11.2.5 | Try Example onboarding feature      | ✅     | -      | 3-step demo with localStorage, Dec 12 2025    |
-| 11.2.6 | Inline watermark for free tier      | ✅     | 1h     | Single job, watermark before completion Dec 13 |
-| 11.2.7 | Auto-refill UI toast feedback       | ✅     | 15m    | Success/error toasts on save, Dec 13           |
-| 11.2.8 | Auto-refill trigger implementation  | ✅     | 1h     | Worker charges Stripe when balance low, Dec 13 |
+| ID     | Task                               | Status | Effort | Notes                                          |
+| ------ | ---------------------------------- | ------ | ------ | ---------------------------------------------- |
+| 11.2.1 | Support page: Fix attach file      | ✅     | 30m    | Inline base64 (500KB), Dec 12 2025             |
+| 11.2.2 | Support page: CC support@nuumee.ai | ✅     | 30m    | Reply-to header, Dec 12 2025                   |
+| 11.2.3 | Post-Processing E: Auto Subtitles  | ✅     | 3-4h   | FFmpeg worker + Google STT + ASS, Dec 13       |
+| 11.2.4 | Post-Processing F: Add Watermark   | ✅     | 1-2h   | Custom upload + position + opacity, Dec 13     |
+| 11.2.5 | Try Example onboarding feature     | ✅     | -      | 3-step demo with localStorage, Dec 12 2025     |
+| 11.2.6 | Inline watermark for free tier     | ✅     | 1h     | Single job, watermark before completion Dec 13 |
+| 11.2.7 | Auto-refill UI toast feedback      | ✅     | 15m    | Success/error toasts on save, Dec 13           |
+| 11.2.8 | Auto-refill trigger implementation | ✅     | 1h     | Worker charges Stripe when balance low, Dec 13 |
 
-### 11.3 Admin Panel (Priority 2 - Operations Critical)
+### 11.3 Admin Panel (Priority 2 - Operations Critical) ✅
 
 **Location:** `/admin555/*` (Next.js pages, password protected)
 **Approach:** Next.js pages consistent with app
+**Completed:** Dec 14, 2025
 
 | ID     | Task                      | Status | Effort | Notes                                       |
 | ------ | ------------------------- | ------ | ------ | ------------------------------------------- |
-| 11.3.1 | Admin layout + auth guard | 🟥     | 1h     | Password protection, admin-only access      |
-| 11.3.2 | Users page                | 🟥     | 2h     | Search, view credits/plan/jobs, add credits |
-| 11.3.3 | Jobs page                 | 🟥     | 1.5h   | Queued/running/failed/completed, errors     |
-| 11.3.4 | Payments page             | 🟥     | 1.5h   | Revenue, subscribers, failed payments       |
-| 11.3.5 | System Health page        | 🟥     | 1h     | Worker status, API health, GCP costs        |
-| 11.3.6 | Promo Codes page          | 🟥     | 1h     | Generate invite codes, track usage          |
+| 11.3.1 | Admin layout + auth guard | ✅     | 1h     | Password protection, ADMIN_PASSWORD env var |
+| 11.3.2 | Users page                | ✅     | 2h     | Search, view credits/plan/jobs, add credits |
+| 11.3.3 | Jobs page                 | ✅     | 1.5h   | Status tabs, URL params, retry, details     |
+| 11.3.4 | Payments page             | ✅     | 1.5h   | MRR, revenue, subscribers, transactions     |
+| 11.3.5 | System Health page        | 🔮     | 1h     | Deferred - not critical for launch          |
+| 11.3.6 | Promo Codes page          | ✅     | 1h     | Create/delete codes, track usage            |
+
+### 11.3b Promo Code Redemption (NEW - User-facing)
+
+| ID      | Task                           | Status | Effort | Notes                                  |
+| ------- | ------------------------------ | ------ | ------ | -------------------------------------- |
+| 11.3b.1 | Add promo input to signup flow | 🟥     | 1h     | Optional field during registration     |
+| 11.3b.2 | Add promo redemption in app    | 🟥     | 1h     | Account/Billing page "Redeem Code"     |
+| 11.3b.3 | Backend: POST /promo/redeem    | 🟥     | 1h     | Validate code, add credits, track use  |
 
 ### 11.4 SEO (Priority 3 - Marketing Ready)
 
@@ -124,7 +133,7 @@
 - [x] Support attach file works (max 10MB)
 - [x] Auto Subtitles (E) working
 - [x] Add Watermark (F) working
-- [ ] Admin panel operational (6 pages)
+- [x] Admin panel operational (5 pages + promo redemption pending)
 - [ ] SEO: sitemap, robots, JSON-LD on all public pages
 - [ ] E2E billing tests pass
 - [ ] Database clean of test data
@@ -177,6 +186,7 @@
 | 8.5.25 | Referral Activity UI             | 🔮     | Show signups, purchases, credits       |
 | 8.5.18 | Billing test suite               | 🟡     | Moved to Phase 11.5                    |
 | 8.5.19 | Remove Support attach file       | 🟡     | Use for early users feedback only      |
+| 8.5.20 | Add Sound to page /videos/create | 🟡     |                                        |
 
 ---
 
@@ -208,15 +218,15 @@
 
 ### Deferred to V2
 
-| ID   | Task                              | Status | Notes                                     |
-| ---- | --------------------------------- | ------ | ----------------------------------------- |
-| 9.8  | Dynamic imports: Modals           | 🔮     | BuyCreditsModal, SubscriptionModal        |
-| 9.9  | Dynamic imports: Heavy components | 🔮     | Charts, job dialogs (>50KB)               |
-| 9.10 | Bundle analysis                   | 🔮     | Target: -100-200KB initial load           |
-| 9.11 | Accessibility audit               | 🔮     | WCAG compliance                           |
-| 9.12 | Responsive design validation      | 🔮     | All breakpoints                           |
-| 9.13 | Design system consistency         | 🔮     | No hardcoded values                       |
-| 9.14 | Error boundary components         | 🔮     | Error handling                            |
+| ID   | Task                              | Status | Notes                              |
+| ---- | --------------------------------- | ------ | ---------------------------------- |
+| 9.8  | Dynamic imports: Modals           | 🔮     | BuyCreditsModal, SubscriptionModal |
+| 9.9  | Dynamic imports: Heavy components | 🔮     | Charts, job dialogs (>50KB)        |
+| 9.10 | Bundle analysis                   | 🔮     | Target: -100-200KB initial load    |
+| 9.11 | Accessibility audit               | 🔮     | WCAG compliance                    |
+| 9.12 | Responsive design validation      | 🔮     | All breakpoints                    |
+| 9.13 | Design system consistency         | 🔮     | No hardcoded values                |
+| 9.14 | Error boundary components         | 🔮     | Error handling                     |
 
 ---
 
@@ -250,19 +260,26 @@
 | 8 - Referral           | 13      | 13        | ✅     |
 | 8.5 - Feature Complete | 25      | 21        | ✅     |
 | 10 - Post-Processing   | 13      | 13        | ✅     |
-| 11 - V1.0 Launch Prep  | 35      | 8         | 🟡     |
-| **TOTAL**              | **175** | **144**   | 🟡     |
+| 11 - V1.0 Launch Prep  | 38      | 13        | 🟡     |
+| **TOTAL**              | **178** | **149**   | 🟡     |
 
 ---
 
 ## CURRENT STATE
 
 **Current Phase:** 11 (V1.0 Launch Prep)
-**Current Task:** 11.3 - Admin Panel
+**Current Task:** 11.3b - Promo Redemption OR 11.4 - SEO
 **Blockers:** None
-**Last Updated:** 2025-12-13
+**Last Updated:** 2025-12-14
 
-### Just Completed (Dec 13)
+### Just Completed (Dec 14)
+
+- ✅ 11.3.1-11.3.6: Admin Panel complete (Dashboard, Users, Jobs, Payments, Promos)
+- ✅ Admin password protection with ADMIN_PASSWORD env var
+- ✅ Backend deployed with admin routes (nuumee-api-00135)
+- ✅ Frontend deployed to nuumee.ai/admin555
+
+### Completed (Dec 13)
 
 - ✅ 11.2.6: Inline watermark for free tier - single job flow, watermark applied before completion
 - ✅ 11.2.7: Auto-refill UI toast feedback - success/error messages on save
