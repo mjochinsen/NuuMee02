@@ -903,3 +903,18 @@ export async function submitSupportTicket(request: SubmitTicketRequest): Promise
     body: JSON.stringify(request),
   });
 }
+
+// Promo Code Redemption
+export interface RedeemPromoResponse {
+  success: boolean;
+  credits_added: number;
+  new_balance: number;
+  message: string;
+}
+
+export async function redeemPromoCode(code: string): Promise<RedeemPromoResponse> {
+  return apiRequest<RedeemPromoResponse>('/promo/redeem', {
+    method: 'POST',
+    body: JSON.stringify({ code }),
+  });
+}

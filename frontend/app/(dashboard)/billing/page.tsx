@@ -34,7 +34,7 @@ import { createCheckoutSession, ApiError, createCustomerPortalSession, syncBilli
 import { BuyCreditsModal } from '@/components/BuyCreditsModal';
 import { SubscriptionModal } from '@/components/SubscriptionModal';
 import { useTransactions, useAutoRefill } from './hooks';
-import { BalanceCard, ActivePlanCard, TransactionHistorySection } from './components';
+import { BalanceCard, ActivePlanCard, TransactionHistorySection, PromoRedemption } from './components';
 
 interface CreditPackage {
   id: string;
@@ -449,14 +449,23 @@ export default function BillingPage() {
 
       {/* Balance and Plan Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        <BalanceCard
-          credits={credits}
-          creditValue={creditValue}
-          onBuyCredits={() => {
-            setSelectedPackage(creditPackages[1]);
-            setIsBuyModalOpen(true);
-          }}
-        />
+        <div className="space-y-4">
+          <BalanceCard
+            credits={credits}
+            creditValue={creditValue}
+            onBuyCredits={() => {
+              setSelectedPackage(creditPackages[1]);
+              setIsBuyModalOpen(true);
+            }}
+          />
+          <PromoRedemption
+            onSuccess={() => {
+              if (refreshProfile) {
+                refreshProfile();
+              }
+            }}
+          />
+        </div>
         <ActivePlanCard
           currentPlan={currentPlan}
           nextBillingDate={nextBillingDate}

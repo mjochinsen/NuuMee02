@@ -9,3 +9,5 @@ export type { PaymentMethodsSectionProps } from './PaymentMethodsSection';
 
 export { TransactionHistorySection } from './TransactionHistorySection';
 export type { TransactionHistorySectionProps } from './TransactionHistorySection';
+
+export { PromoRedemption } from './PromoRedemption';

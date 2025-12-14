@@ -11,9 +11,9 @@
 
 | Phase | Description | Status | Tasks |
 |-------|-------------|--------|-------|
-| 1 | Backend API | 🟥 Not Started | 4 |
-| 2 | Frontend UI | 🟥 Not Started | 4 |
-| 3 | Integration & Deploy | 🟥 Not Started | 3 |
+| 1 | Backend API | 🟩 Complete | 4 |
+| 2 | Frontend UI | 🟩 Complete | 4 |
+| 3 | Integration & Deploy | 🟩 Complete | 3 |
 
 **Legend:** 🟥 Not Started | 🟨 In Progress | 🟩 Complete
 
@@ -23,16 +23,16 @@
 
 | ID | Task | Status | Notes |
 |----|------|--------|-------|
-| 1.1 | Create `backend/app/promo/` module structure | 🟥 | __init__, router, schemas, service |
-| 1.2 | Implement Pydantic schemas | 🟥 | RedeemRequest, RedeemResponse |
-| 1.3 | Implement redemption service with transaction | 🟥 | Atomic Firestore update |
-| 1.4 | Register router in main.py | 🟥 | /api/v1/promo prefix |
+| 1.1 | Create `backend/app/promo/` module structure | 🟩 | __init__, router, schemas, service |
+| 1.2 | Implement Pydantic schemas | 🟩 | RedeemRequest, RedeemResponse |
+| 1.3 | Implement redemption service with transaction | 🟩 | Atomic Firestore update |
+| 1.4 | Register router in main.py | 🟩 | /api/v1/promo prefix |
 
 ### Acceptance Criteria
-- [ ] POST /api/v1/promo/redeem accepts code and returns credits_added
-- [ ] Validates all 6 rules (auth, exists, active, not expired, uses left, not redeemed)
-- [ ] Uses Firestore transaction for atomic updates
-- [ ] Returns generic error for all failure cases
+- [x] POST /api/v1/promo/redeem accepts code and returns credits_added
+- [x] Validates all 6 rules (auth, exists, active, not expired, uses left, not redeemed)
+- [x] Uses Firestore transaction for atomic updates
+- [x] Returns generic error for all failure cases
 
 ---
 
@@ -40,18 +40,18 @@
 
 | ID | Task | Status | Notes |
 |----|------|--------|-------|
-| 2.1 | Add `redeemPromo()` to api.ts | 🟥 | POST to /promo/redeem |
-| 2.2 | Create PromoRedemption component | 🟥 | Input + button + inline messages |
-| 2.3 | Add to billing page | 🟥 | Below subscription section |
-| 2.4 | Handle loading/success/error states | 🟥 | Inline feedback |
+| 2.1 | Add `redeemPromo()` to api.ts | 🟩 | POST to /promo/redeem |
+| 2.2 | Create PromoRedemption component | 🟩 | Input + button + inline messages |
+| 2.3 | Add to billing page | 🟩 | Below BalanceCard |
+| 2.4 | Handle loading/success/error states | 🟩 | Inline feedback |
 
 ### Acceptance Criteria
-- [ ] Input field with "Redeem" button
-- [ ] Button disabled when input empty or loading
-- [ ] Success: Shows green message with credits added
-- [ ] Error: Shows red message "Invalid or expired promo code"
-- [ ] Clears input on success
-- [ ] Updates credit balance display
+- [x] Input field with "Redeem" button
+- [x] Button disabled when input empty or loading
+- [x] Success: Shows green message with credits added
+- [x] Error: Shows red message with error
+- [x] Clears input on success
+- [x] Updates credit balance display (refreshProfile)
 
 ---
 
@@ -59,9 +59,9 @@
 
 | ID | Task | Status | Notes |
 |----|------|--------|-------|
-| 3.1 | TypeScript type check | 🟥 | pnpm tsc --noEmit |
-| 3.2 | Deploy backend | 🟥 | gcloud run deploy |
-| 3.3 | Deploy frontend | 🟥 | firebase deploy |
+| 3.1 | TypeScript type check | 🟩 | pnpm tsc --noEmit |
+| 3.2 | Deploy backend | 🟩 | nuumee-api-00137-skd |
+| 3.3 | Deploy frontend | 🟩 | wanapi-prod.web.app |
 
 ### Acceptance Criteria
 - [ ] Can redeem test promo code on production

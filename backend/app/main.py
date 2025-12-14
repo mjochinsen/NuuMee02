@@ -21,6 +21,7 @@ from .billing.router import router as billing_router
 from .public.router import router as public_router
 from .support.router import router as support_router
 from .admin.router import router as admin_router
+from .promo.router import router as promo_router
 
 app = FastAPI(
     title="NuuMee API",
@@ -66,6 +67,7 @@ app.include_router(transactions_router, prefix="/api/v1")
 app.include_router(billing_router, prefix="/api/v1")
 app.include_router(support_router, prefix="/api/v1")
 app.include_router(admin_router, prefix="/api/v1")
+app.include_router(promo_router, prefix="/api/v1")
 
 # Public routes (no /api/v1 prefix for clean short URLs)
 app.include_router(public_router)
