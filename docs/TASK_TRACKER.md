@@ -84,17 +84,20 @@
 | 11.3b.2 | Add promo redemption in app    | ✅     | 1h     | Billing page "Redeem Code" section         |
 | 11.3b.3 | Backend: POST /promo/redeem    | ✅     | 1h     | Validates code, adds credits_balance       |
 
-### 11.4 SEO (Priority 3 - Marketing Ready)
+### 11.4 SEO (Priority 3 - Marketing Ready) ✅ COMPLETE
 
-| ID     | Task               | Status | Effort | Notes                         |
-| ------ | ------------------ | ------ | ------ | ----------------------------- |
-| 11.4.1 | JSON-LD: Homepage  | 🟥     | 30m    | Organization + WebPage schema |
-| 11.4.2 | JSON-LD: Pricing   | 🟥     | 30m    | Product schema                |
-| 11.4.3 | JSON-LD: Examples  | 🟥     | 30m    | ItemList schema               |
-| 11.4.4 | JSON-LD: Support   | 🟥     | 30m    | FAQPage schema                |
-| 11.4.5 | Create sitemap.xml | 🟥     | 30m    | All public pages              |
-| 11.4.6 | Create robots.txt  | 🟥     | 15m    | Proper crawl directives       |
-| 11.4.7 | Meta tags audit    | 🟥     | 1h     | title, description, og:image  |
+| ID     | Task                    | Status | Effort | Notes                                    |
+| ------ | ----------------------- | ------ | ------ | ---------------------------------------- |
+| 11.4.0 | Logo & Favicon          | ✅     | 15m    | NuuMeeLogoWithoutPNG.svg, favicon, icons |
+| 11.4.1 | Sitemap + Robots        | ✅     | 30m    | sitemap.ts, robots.ts (static export)    |
+| 11.4.2 | OG Image                | ✅     | 10m    | og/default.png (1200x630)                |
+| 11.4.3 | Root Metadata           | ✅     | 10m    | metadataBase, og, twitter, JSON-LD       |
+| 11.4.4 | SEO Utility             | ✅     | 15m    | lib/seo.ts with generateSEO helper       |
+| 11.4.5 | High-Priority Pages     | ✅     | 60m    | Home, Pricing, Documentation metadata    |
+| 11.4.6 | Remaining Pages         | ✅     | 30m    | Auth pages with noIndex                  |
+| 11.4.7 | Verification            | ✅     | 15m    | Lighthouse SEO: 100                      |
+
+**Plan:** [SEO_IMPLEMENTATION_PLAN.md](plans/SEO_IMPLEMENTATION_PLAN.md)
 
 ### 11.5 E2E Billing Tests (Priority 4 - Safety Net)
 
@@ -260,20 +263,25 @@
 | 8 - Referral           | 13      | 13        | ✅     |
 | 8.5 - Feature Complete | 25      | 21        | ✅     |
 | 10 - Post-Processing   | 13      | 13        | ✅     |
-| 11 - V1.0 Launch Prep  | 38      | 15        | 🟡     |
-| **TOTAL**              | **178** | **151**   | 🟡     |
+| 11 - V1.0 Launch Prep  | 39      | 23        | 🟡     |
+| **TOTAL**              | **179** | **159**   | 🟡     |
 
 ---
 
 ## CURRENT STATE
 
 **Current Phase:** 11 (V1.0 Launch Prep)
-**Current Task:** 11.4 - SEO
+**Current Task:** 11.5 E2E Tests / 11.7 Stripe Go-Live
 **Blockers:** None
 **Last Updated:** 2025-12-14
 
 ### Just Completed (Dec 14)
 
+- ✅ 11.4 SEO Complete (Lighthouse SEO: 100)
+  - sitemap.ts, robots.ts, lib/seo.ts
+  - New logo (NuuMeeLogoWithoutPNG.svg), favicon, og:image
+  - JSON-LD Organization + WebSite schemas
+  - Page metadata for marketing, pricing, docs, auth pages
 - ✅ 11.3b.2-3: Promo Code Redemption (billing page + backend endpoint)
 - ✅ Fixed credits_balance vs credits field bug (promo credits now visible)
 - ✅ Fixed admin UserTier enum (added creator/starter tiers)
