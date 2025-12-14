@@ -2,8 +2,37 @@
 
 **Created:** 2025-12-14
 **Design Doc:** [DESIGN_DECISIONS.md](./DESIGN_DECISIONS.md)
+**API Contract:** [ADMIN_API_SCHEMA.yaml](./ADMIN_API_SCHEMA.yaml)
 **Location:** `/admin555/*`
 **Estimated Total:** 8-10 hours
+
+---
+
+## Orchestration Strategy
+
+**Pattern:** Phased Parallel Execution (FIBY Approved)
+
+```
+Phase 0: Schema First (Sequential - KODY)
+├── Create ADMIN_API_SCHEMA.yaml (OpenAPI spec)
+└── Generate ADMIN_TYPES.ts (TypeScript types)
+
+Phase 1: Foundation (Sequential - KODY)
+├── Backend: Admin auth middleware, health endpoint
+└── Frontend: Layout, sidebar, password gate, toast system
+
+Phase 2-5: Build Pages (Parallel - Agents)
+├── api-builder → FastAPI routes (sonnet)
+└── frontend-dev → React components (sonnet)
+
+Phase 6: Dashboard (Sequential - KODY)
+└── Aggregate stats from all endpoints
+
+Phase 7: Polish & Deploy (Sequential - KODY)
+└── Loading states, error handling, deploy
+```
+
+**Delegation Contract:** Both agents reference `ADMIN_API_SCHEMA.yaml` as source of truth.
 
 ---
 
@@ -11,7 +40,8 @@
 
 | Phase | Description | Status | Tasks |
 |-------|-------------|--------|-------|
-| 1 | Foundation & Layout | 🟥 Not Started | 8 |
+| 0 | Schema & Types | 🟥 Not Started | 2 |
+| 1 | Foundation & Layout | 🟥 Not Started | 12 |
 | 2 | Users Page | 🟥 Not Started | 10 |
 | 3 | Jobs Page | 🟥 Not Started | 8 |
 | 4 | Payments Page | 🟥 Not Started | 6 |
@@ -20,6 +50,20 @@
 | 7 | Polish & Deploy | 🟥 Not Started | 6 |
 
 **Legend:** 🟥 Not Started | 🟨 In Progress | 🟩 Complete
+
+---
+
+## Phase 0: Schema & Types (30 min)
+
+| ID | Task | Status | Notes |
+|----|------|--------|-------|
+| 0.1 | Create `ADMIN_API_SCHEMA.yaml` | 🟥 | OpenAPI 3.0 spec for all 10 endpoints |
+| 0.2 | Generate `ADMIN_TYPES.ts` | 🟥 | TypeScript types from schema |
+
+### Acceptance Criteria
+- [ ] Schema defines all request/response types
+- [ ] TypeScript types match Pydantic models
+- [ ] Both backend and frontend reference same contract
 
 ---
 
@@ -38,15 +82,23 @@
 
 | ID | Task | Status | Notes |
 |----|------|--------|-------|
-| 1.5 | Create `frontend/app/admin555/layout.tsx` | 🟥 | Password gate + sidebar |
-| 1.6 | Create `frontend/components/admin/AdminSidebar.tsx` | 🟥 | Navigation links |
-| 1.7 | Create password prompt component | 🟥 | Input + localStorage storage |
+| 1.5 | Create `frontend/app/admin555/layout.tsx` | 🟥 | Password gate + sidebar + breadcrumbs |
+| 1.6 | Create `AdminSidebar.tsx` with failed jobs badge | 🟥 | Navigation + red badge for failed count |
+| 1.7 | Create `PasswordPrompt.tsx` | 🟥 | Input + localStorage storage |
 | 1.8 | Create `frontend/app/admin555/page.tsx` placeholder | 🟥 | Basic "Admin Dashboard" text |
+| 1.9 | Setup toast notifications (sonner) | 🟥 | Global toast provider |
+| 1.10 | Create `AdminErrorBoundary.tsx` | 🟥 | Per-section error boundaries |
+| 1.11 | Create `Breadcrumbs.tsx` component | 🟥 | Admin > Users > john@example.com |
+| 1.12 | Create admin API client with error handling | 🟥 | Centralized fetch with auth header |
 
 ### Acceptance Criteria
 - [ ] Visiting `/admin555` prompts for password
 - [ ] Correct password grants access, stored in localStorage
 - [ ] Sidebar shows navigation to all 5 pages
+- [ ] Sidebar shows badge with failed jobs count
+- [ ] Breadcrumbs show current location
+- [ ] Toast notifications work for success/error
+- [ ] Error boundaries prevent full page crashes
 - [ ] Incorrect password shows error message
 
 ---
@@ -80,6 +132,7 @@
 - [ ] Credit adjustment limited to 2000 max
 - [ ] Pagination works (25 per page)
 - [ ] Filters persist on page refresh
+- [ ] Toast shows on credit adjustment success/failure
 
 ---
 
@@ -109,6 +162,7 @@
 - [ ] Can retry failed jobs (resets to pending)
 - [ ] Job detail shows all metadata
 - [ ] Pagination works
+- [ ] Toast shows on retry success/failure
 
 ---
 
@@ -162,6 +216,7 @@
 - [ ] Can set credits amount, max uses, expiry date
 - [ ] Can deactivate/delete promo codes
 - [ ] Shows usage count for each code
+- [ ] Toast shows on create/delete success/failure
 
 ---
 
@@ -194,7 +249,7 @@
 | ID | Task | Status | Notes |
 |----|------|--------|-------|
 | 7.1 | Add loading states to all pages | 🟥 | Skeleton loaders |
-| 7.2 | Add error handling/display | 🟥 | Toast notifications |
+| 7.2 | Verify all toasts work correctly | 🟥 | Success/error for all actions |
 | 7.3 | Add empty states | 🟥 | "No users found" etc. |
 | 7.4 | TypeScript type check | 🟥 | `pnpm tsc --noEmit` |
 | 7.5 | Deploy backend | 🟥 | `/deploy backend` |
@@ -211,35 +266,43 @@
 ## File Structure (Final)
 
 ```
+docs/admin-panel/
+├── DESIGN_DECISIONS.md          # Architecture decisions
+├── ADMIN_PANEL_TRACKER.md       # This file
+├── ADMIN_API_SCHEMA.yaml        # OpenAPI 3.0 spec (source of truth)
+└── ADMIN_TYPES.ts               # Generated TypeScript types
+
 backend/app/admin/
 ├── __init__.py
-├── router.py               # All admin endpoints
-├── schemas.py              # Pydantic models
-├── dependencies.py         # Admin auth middleware
+├── router.py                    # All admin endpoints
+├── schemas.py                   # Pydantic models (match ADMIN_TYPES.ts)
+├── dependencies.py              # Admin auth middleware
 └── services/
     ├── __init__.py
-    ├── users.py            # User CRUD operations
-    ├── jobs.py             # Job management
-    ├── payments.py         # Stripe integration
-    └── promos.py           # Promo code management
+    ├── users.py                 # User CRUD operations
+    ├── jobs.py                  # Job management
+    ├── payments.py              # Stripe integration
+    └── promos.py                # Promo code management
 
 frontend/app/admin555/
-├── layout.tsx              # Password gate + sidebar
-├── page.tsx                # Dashboard
-├── users/page.tsx          # User management
-├── jobs/page.tsx           # Job management
-├── payments/page.tsx       # Payment analytics
-└── promos/page.tsx         # Promo codes
+├── layout.tsx                   # Password gate + sidebar + breadcrumbs
+├── page.tsx                     # Dashboard
+├── users/page.tsx               # User management
+├── jobs/page.tsx                # Job management
+├── payments/page.tsx            # Payment analytics
+└── promos/page.tsx              # Promo codes
 
 frontend/components/admin/
-├── AdminLayout.tsx         # (exported from layout.tsx)
-├── AdminSidebar.tsx        # Navigation
-├── DataTable.tsx           # Reusable table component
-├── StatsCard.tsx           # KPI card
-├── SlidePanel.tsx          # Side panel for details
-├── ConfirmDialog.tsx       # Confirmation modal
-├── EmptyState.tsx          # Empty state placeholder
-└── PasswordPrompt.tsx      # Password entry form
+├── AdminSidebar.tsx             # Navigation + failed jobs badge
+├── Breadcrumbs.tsx              # Navigation breadcrumbs
+├── DataTable.tsx                # Reusable table component
+├── StatsCard.tsx                # KPI card
+├── SlidePanel.tsx               # Side panel for details
+├── ConfirmDialog.tsx            # Confirmation modal
+├── EmptyState.tsx               # Empty state placeholder
+├── PasswordPrompt.tsx           # Password entry form
+├── AdminErrorBoundary.tsx       # Error boundary wrapper
+└── AdminToastProvider.tsx       # Sonner toast setup
 ```
 
 ---
@@ -250,7 +313,8 @@ frontend/components/admin/
 - No new dependencies (uses existing FastAPI, Firestore, Stripe)
 
 ### Frontend
-- No new dependencies (uses existing shadcn/ui components)
+- `sonner` - Toast notifications (shadcn/ui compatible)
+- No other new dependencies
 
 ---
 
@@ -271,6 +335,10 @@ Document in `CREDENTIALS_INVENTORY.md`.
 Before deployment:
 
 - [ ] Password protection works
+- [ ] Sidebar badge shows failed jobs count
+- [ ] Breadcrumbs update on navigation
+- [ ] Toast notifications work for all actions
+- [ ] Error boundaries catch component errors
 - [ ] Can search users
 - [ ] Can view user details
 - [ ] Can add credits (with confirmation)
@@ -296,6 +364,8 @@ Before deployment:
 | Export users/jobs to CSV | Low | 1h |
 | Email user directly | Low | 0.5h |
 | Multi-admin with roles | Low | 3h |
+| Keyboard shortcuts (Cmd+K) | Low | 1h |
+| Activity feed on dashboard | Low | 1.5h |
 
 ---
 
@@ -306,3 +376,6 @@ Before deployment:
 - Search: Server-side prefix search (Firestore range query)
 - Pagination: 25 items per page
 - Password: Stored in localStorage (persists across sessions)
+- Toasts: sonner library for all user feedback
+- Error boundaries: Per-section to prevent full page crashes
+- Breadcrumbs: Auto-generated from route structure
