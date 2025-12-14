@@ -18,7 +18,7 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application code
+# Copy application code (shared/ should be copied via symlink or directly)
 COPY . .
 
 # Set environment variables

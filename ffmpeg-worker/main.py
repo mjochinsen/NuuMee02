@@ -6,15 +6,22 @@ Handles post-processing jobs that require FFmpeg:
 """
 import os
 import logging
+import subprocess
 import tempfile
-from datetime import datetime, timezone
-from typing import Optional
 
 from flask import Flask, request, jsonify
-from google.cloud import firestore, storage
-from google.auth import default as auth_default
-from google.auth import impersonated_credentials
-import httpx
+
+# Import shared utilities
+import sys
+# Support both local dev (shared in parent) and container (shared in same dir)
+sys.path.insert(0, os.path.dirname(__file__))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from shared.worker_utils import (
+    get_firestore, get_storage,
+    download_from_gcs, upload_to_gcs,
+    update_job_status, refund_credits,
+    OUTPUT_BUCKET, ASSETS_BUCKET,
+)
 
 # Configure logging
 logging.basicConfig(
@@ -25,173 +32,6 @@ logger = logging.getLogger(__name__)
 
 # Initialize Flask app
 app = Flask(__name__)
-
-# GCP configuration
-PROJECT_ID = os.environ.get("GCP_PROJECT", "wanapi-prod")
-OUTPUT_BUCKET = os.environ.get("OUTPUT_BUCKET", "nuumee-outputs")
-ASSETS_BUCKET = os.environ.get("ASSETS_BUCKET", "nuumee-assets")
-
-# Lazy-initialized clients
-_db: Optional[firestore.Client] = None
-_storage_client: Optional[storage.Client] = None
-_signing_credentials = None
-_service_account_email: Optional[str] = None
-
-
-def get_firestore() -> firestore.Client:
-    """Get Firestore client (lazy initialization)."""
-    global _db
-    if _db is None:
-        _db = firestore.Client(project=PROJECT_ID)
-    return _db
-
-
-def get_storage() -> storage.Client:
-    """Get Storage client (lazy initialization)."""
-    global _storage_client
-    if _storage_client is None:
-        _storage_client = storage.Client(project=PROJECT_ID)
-    return _storage_client
-
-
-def _get_service_account_email() -> str:
-    """Get service account email from metadata server or environment."""
-    global _service_account_email
-    if _service_account_email is not None:
-        return _service_account_email
-
-    # Try environment variable first
-    sa_email = os.environ.get("SERVICE_ACCOUNT_EMAIL")
-    if sa_email:
-        _service_account_email = sa_email
-        return sa_email
-
-    # Try metadata server (Cloud Run)
-    try:
-        import requests
-        response = requests.get(
-            "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/email",
-            headers={"Metadata-Flavor": "Google"},
-            timeout=2
-        )
-        if response.status_code == 200:
-            _service_account_email = response.text
-            return _service_account_email
-    except Exception:
-        pass
-
-    # Fallback
-    _service_account_email = "nuumee-ffmpeg-worker@wanapi-prod.iam.gserviceaccount.com"
-    return _service_account_email
-
-
-def _get_signing_credentials():
-    """Get impersonated credentials for signing GCS URLs."""
-    global _signing_credentials
-
-    if _signing_credentials is not None:
-        return _signing_credentials
-
-    source_credentials, project = auth_default()
-    sa_email = _get_service_account_email()
-
-    _signing_credentials = impersonated_credentials.Credentials(
-        source_credentials=source_credentials,
-        target_principal=sa_email,
-        target_scopes=['https://www.googleapis.com/auth/cloud-platform'],
-        lifetime=3600,
-    )
-
-    return _signing_credentials
-
-
-def generate_signed_url(bucket_name: str, blob_path: str, expiration: int = 3600) -> str:
-    """Generate a signed URL for GCS object."""
-    from datetime import timedelta
-
-    signing_creds = _get_signing_credentials()
-    client = get_storage()
-    bucket = client.bucket(bucket_name)
-    blob = bucket.blob(blob_path)
-
-    url = blob.generate_signed_url(
-        version="v4",
-        expiration=timedelta(seconds=expiration),
-        method="GET",
-        credentials=signing_creds,
-    )
-    return url
-
-
-def download_from_gcs(bucket_name: str, blob_path: str, local_path: str) -> None:
-    """Download file from GCS to local path."""
-    client = get_storage()
-    bucket = client.bucket(bucket_name)
-    blob = bucket.blob(blob_path)
-    blob.download_to_filename(local_path)
-    logger.info(f"Downloaded gs://{bucket_name}/{blob_path} to {local_path}")
-
-
-def upload_to_gcs(local_path: str, bucket_name: str, blob_path: str, content_type: str = "video/mp4") -> str:
-    """Upload local file to GCS."""
-    client = get_storage()
-    bucket = client.bucket(bucket_name)
-    blob = bucket.blob(blob_path)
-    blob.upload_from_filename(local_path, content_type=content_type)
-    logger.info(f"Uploaded {local_path} to gs://{bucket_name}/{blob_path}")
-    return f"gs://{bucket_name}/{blob_path}"
-
-
-def update_job_status(
-    job_id: str,
-    status: str,
-    output_video_path: str = None,
-    error_message: str = None
-):
-    """Update job document in Firestore."""
-    db = get_firestore()
-    job_ref = db.collection("jobs").document(job_id)
-
-    update_data = {
-        "status": status,
-        "updated_at": datetime.now(timezone.utc),
-    }
-
-    if output_video_path:
-        update_data["output_video_path"] = output_video_path
-        update_data["completed_at"] = datetime.now(timezone.utc)
-
-    if error_message:
-        update_data["error_message"] = error_message
-
-    job_ref.update(update_data)
-    logger.info(f"Updated job {job_id}: status={status}")
-
-
-def refund_credits(user_id: str, credits: float, job_id: str):
-    """Refund credits to user on job failure."""
-    db = get_firestore()
-    user_ref = db.collection("users").document(user_id)
-
-    @firestore.transactional
-    def refund_transaction(transaction, user_ref, credits):
-        user_doc = user_ref.get(transaction=transaction)
-        if not user_doc.exists:
-            logger.error(f"User {user_id} not found for refund")
-            return
-
-        user_data = user_doc.to_dict()
-        current_balance = user_data.get("credits_balance", 0)
-        new_balance = current_balance + credits
-
-        transaction.update(user_ref, {
-            "credits_balance": new_balance,
-            "updated_at": firestore.SERVER_TIMESTAMP,
-        })
-
-    transaction = db.transaction()
-    refund_transaction(transaction, user_ref, credits)
-    logger.info(f"Refunded {credits} credits to user {user_id} for job {job_id}")
 
 
 def process_subtitles_job(job_data: dict) -> str:
@@ -211,7 +51,6 @@ def process_subtitles_job(job_data: dict) -> str:
     Returns:
         Output video GCS path
     """
-    import subprocess
     from stt import transcribe_audio_sync, transcribe_audio_async
     from subtitles import generate_ass
     from stt_correction import correct_stt_with_script
@@ -220,18 +59,31 @@ def process_subtitles_job(job_data: dict) -> str:
     input_video_path = job_data.get("input_video_path")
     options = job_data.get("options", {})
     subtitle_style = options.get("subtitle_style", "simple")
-    script_content = options.get("script_content")  # Optional original script
+    script_content = options.get("script_content")
 
     if not input_video_path:
         raise ValueError("No input_video_path provided")
 
-    # Create temp directory for processing
     with tempfile.TemporaryDirectory() as tmpdir:
         # Step 1: Download source video
         local_video = os.path.join(tmpdir, "input.mp4")
         download_from_gcs(OUTPUT_BUCKET, input_video_path, local_video)
 
-        # Step 2: Extract audio
+        # Step 2: Check if video has audio stream
+        probe_audio_cmd = [
+            "ffprobe", "-v", "quiet",
+            "-select_streams", "a",
+            "-show_entries", "stream=codec_type",
+            "-of", "csv=p=0",
+            local_video
+        ]
+        probe_result = subprocess.run(probe_audio_cmd, capture_output=True, text=True)
+        has_audio = bool(probe_result.stdout.strip())
+
+        if not has_audio:
+            raise ValueError("Video has no audio track. Subtitles require audio for speech-to-text transcription.")
+
+        # Step 3: Extract audio
         local_audio = os.path.join(tmpdir, "audio.wav")
         extract_cmd = [
             "ffmpeg", "-i", local_video,
@@ -244,7 +96,7 @@ def process_subtitles_job(job_data: dict) -> str:
         if result.returncode != 0:
             raise RuntimeError(f"Audio extraction failed: {result.stderr}")
 
-        # Check audio duration to decide sync vs async
+        # Check audio duration
         probe_cmd = [
             "ffprobe", "-v", "quiet",
             "-show_entries", "format=duration",
@@ -257,10 +109,8 @@ def process_subtitles_job(job_data: dict) -> str:
 
         # Step 3: Transcribe audio
         if audio_duration < 60:
-            # Use sync API for short audio
             words = transcribe_audio_sync(local_audio)
         else:
-            # Upload audio to GCS for async API
             audio_gcs_path = f"temp/{job_id}/audio.wav"
             upload_to_gcs(local_audio, OUTPUT_BUCKET, audio_gcs_path, content_type="audio/wav")
             audio_gcs_uri = f"gs://{OUTPUT_BUCKET}/{audio_gcs_path}"
@@ -319,22 +169,18 @@ def process_watermark_job(job_data: dict) -> str:
     Returns:
         Output video GCS path
     """
-    import subprocess
-
     job_id = job_data["id"]
     input_video_path = job_data.get("input_video_path")
     options = job_data.get("options", {})
 
-    # Watermark configuration
     watermark_path = options.get("watermark_path", "assets/watermark.png")
-    position = options.get("position", "bottom-right")  # bottom-right, bottom-left, top-right, top-left
+    position = options.get("position", "bottom-right")
     opacity = options.get("opacity", 0.7)
     margin_percent = options.get("margin_percent", 5)
 
     if not input_video_path:
         raise ValueError("No input_video_path provided")
 
-    # Create temp directory for processing
     with tempfile.TemporaryDirectory() as tmpdir:
         # Step 1: Download source video
         local_video = os.path.join(tmpdir, "input.mp4")
@@ -345,8 +191,6 @@ def process_watermark_job(job_data: dict) -> str:
         download_from_gcs(ASSETS_BUCKET, watermark_path, local_watermark)
 
         # Step 3: Build FFmpeg overlay filter
-        # Calculate position based on margin percentage
-        # W=video width, H=video height, w=overlay width, h=overlay height
         margin = f"(W*{margin_percent}/100)"
         positions = {
             "bottom-right": f"W-w-{margin}:H-h-{margin}",
@@ -356,11 +200,6 @@ def process_watermark_job(job_data: dict) -> str:
         }
         overlay_pos = positions.get(position, positions["bottom-right"])
 
-        # Build filter that preserves original PNG transparency and applies additional opacity
-        # 1. format=rgba ensures we work in RGBA colorspace (preserves PNG alpha)
-        # 2. geq filter multiplies the existing alpha channel by opacity factor
-        #    This preserves transparent pixels while reducing overall opacity
-        # 3. Overlay with format=auto preserves the alpha blending
         filter_complex = (
             f"[1:v]format=rgba,"
             f"geq=r='r(X,Y)':g='g(X,Y)':b='b(X,Y)':a='{opacity}*alpha(X,Y)'"
@@ -463,8 +302,6 @@ def health():
 @app.route("/ffmpeg-check", methods=["GET"])
 def ffmpeg_check():
     """Check FFmpeg capabilities."""
-    import subprocess
-
     checks = {}
 
     # Check FFmpeg version

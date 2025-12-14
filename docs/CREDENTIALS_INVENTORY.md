@@ -276,6 +276,13 @@ WAVESPEED_BASE_URL=https://api.wavespeed.ai
 WORKER_AUTH_TOKEN=<from secret manager: worker-auth-token>
 ```
 
+### Admin Panel
+```env
+ADMIN_PASSWORD=<secure password for admin panel access>
+```
+**Note:** Set this environment variable in Cloud Run for the backend service.
+The admin panel at `/admin555` requires this password for access.
+
 ---
 
 ## 10. API Endpoints
@@ -298,6 +305,7 @@ WORKER_AUTH_TOKEN=<from secret manager: worker-auth-token>
 | `/api/v1/referral/*` | Referral program |
 | `/api/v1/status/*` | Service status |
 | `/api/v1/changelog/*` | Changelog |
+| `/api/v1/admin/*` | Admin panel endpoints (password protected) |
 
 ---
 
@@ -326,6 +334,7 @@ WORKER_AUTH_TOKEN=<from secret manager: worker-auth-token>
 | `coming_soon` | Upcoming features |
 | `mail` | Email queue (Trigger Email extension) |
 | `referral_codes` | Referral code lookup |
+| `promo_codes` | Admin promo codes for credit grants |
 
 ### Firestore Indexes
 Defined in: `infra/firestore/firestore.indexes.json`
