@@ -194,10 +194,10 @@ async def redeem_promo(promo_id: str, user_id: str) -> int:
         "redeemed_at": datetime.now(timezone.utc),
     })
 
-    # Add credits to user
+    # Add credits_balance to user (consistent with rest of codebase)
     user_ref = db.collection("users").document(user_id)
     user_ref.update({
-        "credits": firestore.Increment(credits),
+        "credits_balance": firestore.Increment(credits),
     })
 
     # Record credit transaction

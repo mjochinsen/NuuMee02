@@ -105,7 +105,7 @@ def redeem_promo_code(db: firestore.Client, user_id: str, code: str) -> Tuple[in
             raise PromoRedemptionError("User not found")
 
         user_data = user_doc.to_dict()
-        current_credits = user_data.get("credits", 0)
+        current_credits = user_data.get("credits_balance", 0)
         new_balance = current_credits + credits_to_add
 
         # Update promo code: increment uses and add user to redeemed_by
@@ -114,9 +114,9 @@ def redeem_promo_code(db: firestore.Client, user_id: str, code: str) -> Tuple[in
             "redeemed_by": firestore.ArrayUnion([user_id])
         })
 
-        # Update user credits
+        # Update user credits_balance (consistent with rest of codebase)
         transaction.update(user_ref, {
-            "credits": new_balance
+            "credits_balance": new_balance
         })
 
         logger.info(f"User {user_id} redeemed {code} for {credits_to_add} credits")

@@ -464,7 +464,98 @@ STRIPE_PRICE_STARTER_LIVE=price_live_xxx
 
 ---
 
+## Cloud Run / Docker Lessons (Dec 2025)
+
+### 1. Docker Layer Caching Can Serve Stale Code
+**What Happened:** Source files were correct, `.dockerignore` was in place, `__pycache__` was cleared locally - but Cloud Run kept serving old code after 5+ deployments.
+
+**Root Cause:** Docker layer caching preserved old code. Even `gcloud run deploy` with new code didn't rebuild layers that appeared unchanged.
+
+**The Fix:**
+```bash
+# Force fresh build with new image tag
+gcloud builds submit --tag gcr.io/PROJECT/IMAGE:fresh-v2
+
+# Then deploy that specific image
+gcloud run deploy SERVICE --image gcr.io/PROJECT/IMAGE:fresh-v2
+```
+
+**Rule:** When code changes aren't reflected after deploy, build a fresh image with a new tag.
+
+### 2. Always Add .dockerignore to Exclude Pycache
+```
+# backend/.dockerignore
+__pycache__
+*.pyc
+*.pyo
+.pytest_cache
+.mypy_cache
+```
+
+**Rule:** Add `.dockerignore` before first Docker build. It prevents compiled Python files from being included.
+
+### 3. Enum Values Must Match Firestore Data
+**What Happened:** Admin users endpoint returned 500 because `UserTier` enum didn't include `creator` tier that existed in Firestore.
+
+**The Bug:**
+```python
+# BAD - Missing tier values
+class UserTier(str, Enum):
+    FREE = "free"
+    PRO = "pro"
+
+# User in Firestore has subscription_tier: "creator"
+# → ValueError: 'creator' is not a valid UserTier
+```
+
+**The Fix:**
+```python
+# GOOD - All tiers included + defensive parsing
+class UserTier(str, Enum):
+    FREE = "free"
+    STARTER = "starter"
+    CREATOR = "creator"
+    PRO = "pro"
+
+# Defensive parsing with fallback
+try:
+    tier = UserTier(tier_value)
+except ValueError:
+    tier = UserTier.FREE  # Safe default
+```
+
+**Rule:** Enums must include ALL possible values from Firestore. Use try/except for defensive parsing.
+
+---
+
 ## Firestore Lessons
+
+### 0. CRITICAL: Use `credits_balance` NOT `credits` (Dec 2025)
+**What Happened:** User documents had TWO credit fields:
+- `credits` - old field, used by some admin services
+- `credits_balance` - correct field, used by main app
+
+Promo code redemption wrote to `credits` but billing page displayed `credits_balance`. Users appeared to get no credits.
+
+**The Bug:**
+```python
+# BAD - Wrong field name
+user_data.get("credits", 0)
+user_ref.update({"credits": new_balance})
+
+# GOOD - Correct field name
+user_data.get("credits_balance", 0)
+user_ref.update({"credits_balance": new_balance})
+```
+
+**Files Fixed:**
+- `backend/app/promo/service.py` - promo redemption
+- `backend/app/admin/services/users.py` - admin user display + credit adjustment
+- `backend/app/admin/services/promos.py` - admin promo redemption
+
+**Rule:** ALWAYS use `credits_balance` for user credit operations. Search for `"credits"` before adding credit logic.
+
+---
 
 ### 1. Transactions for Credit Operations
 ```typescript

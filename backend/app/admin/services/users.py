@@ -138,12 +138,18 @@ async def list_users(
     items = []
     for doc in paginated_docs:
         data = doc.to_dict()
+        # Handle tier safely - default to FREE if unknown
+        tier_value = data.get("subscription_tier", data.get("tier", "free"))
+        try:
+            tier = UserTier(tier_value)
+        except ValueError:
+            tier = UserTier.FREE
         items.append(AdminUserSummary(
             uid=doc.id,
             email=data.get("email", ""),
             display_name=data.get("display_name"),
-            tier=UserTier(data.get("tier", "free")),
-            credits=data.get("credits", 0),
+            tier=tier,
+            credits=data.get("credits_balance", 0),
             created_at=data.get("created_at", datetime.now(timezone.utc)),
             last_active=data.get("last_active"),
             jobs_count=data.get("jobs_count", 0),
@@ -221,12 +227,19 @@ async def get_user_detail(uid: str) -> Optional[AdminUserDetail]:
             current_period_end=sub_data.get("current_period_end", datetime.now(timezone.utc)),
         )
 
+    # Handle tier safely - default to FREE if unknown
+    tier_value = data.get("subscription_tier", data.get("tier", "free"))
+    try:
+        tier = UserTier(tier_value)
+    except ValueError:
+        tier = UserTier.FREE
+
     return AdminUserDetail(
         uid=uid,
         email=data.get("email", ""),
         display_name=data.get("display_name"),
-        tier=UserTier(data.get("tier", "free")),
-        credits=data.get("credits", 0),
+        tier=tier,
+        credits=data.get("credits_balance", 0),
         created_at=data.get("created_at", datetime.now(timezone.utc)),
         last_active=data.get("last_active"),
         jobs_count=data.get("jobs_count", 0),
@@ -252,14 +265,14 @@ async def adjust_credits(uid: str, amount: int, reason: Optional[str] = None) ->
         raise ValueError("User not found")
 
     user_data = user_doc.to_dict()
-    current_balance = user_data.get("credits", 0)
+    current_balance = user_data.get("credits_balance", 0)
     new_balance = current_balance + amount
 
     if new_balance < 0:
         raise ValueError("Cannot deduct more credits than user has")
 
-    # Update user credits
-    user_ref.update({"credits": new_balance})
+    # Update user credits_balance (consistent with rest of codebase)
+    user_ref.update({"credits_balance": new_balance})
 
     # Create transaction record
     transaction_data = {
