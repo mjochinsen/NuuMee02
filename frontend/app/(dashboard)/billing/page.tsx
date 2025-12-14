@@ -60,7 +60,6 @@ export default function BillingPage() {
   const { profile, user, loading, refreshProfile } = useAuth();
   const router = useRouter();
   const credits = loading ? null : (profile?.credits_balance ?? 0);
-  const creditValue = (credits ?? 0) * 0.10;
   const currentPlan = profile?.subscription_tier || 'free';
   const billingPeriod = profile?.billing_period;  // "month", "year", or null
   // For paid subscribers with missing billing_period, default to monthly display
@@ -452,7 +451,6 @@ export default function BillingPage() {
         <div className="space-y-4">
           <BalanceCard
             credits={credits}
-            creditValue={creditValue}
             onBuyCredits={() => {
               setSelectedPackage(creditPackages[1]);
               setIsBuyModalOpen(true);

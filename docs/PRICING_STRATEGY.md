@@ -1,8 +1,8 @@
 # NuuMee Pricing Strategy
 
-**Version:** 3.2
-**Updated:** 2025-12-10
-**Status:** FINAL - Extender pricing + insufficient credits policy
+**Version:** 3.3
+**Updated:** 2025-12-14
+**Status:** FINAL - UI display decisions + insufficient credits policy
 
 ---
 
@@ -367,7 +367,36 @@ if current_balance < credits_to_charge:
 
 ---
 
-## ✅ FINAL STATUS (v3.2)
+## 13. UI Display Decisions
+
+### Credit Balance: Show Credits Only, Not Dollar Value
+
+**Decision (Dec 2025):** Remove "Worth: $X.XX" from billing page balance display.
+
+**Before:**
+```
+Current Balance
+435 Credits
+Worth: $43.50
+```
+
+**After:**
+```
+Current Balance
+435 Credits
+```
+
+**Rationale:**
+1. **Psychological framing** - Credits should feel like "generation power" not "stored dollars"
+2. **Refund expectations** - Dollar amounts make users think credits are withdrawable
+3. **Pricing flexibility** - Removes friction when adjusting credit values later
+4. **Simplicity** - Cleaner UI, less cognitive load
+
+**Implementation:** Removed `creditValue` prop from `BalanceCard` component.
+
+---
+
+## ✅ FINAL STATUS (v3.3)
 
 This pricing file is now:
 
@@ -379,6 +408,11 @@ This pricing file is now:
 - ✔ sustainable margin (all add-ons now 43-50%)
 - ✔ clear for users
 - ✔ ready for production launch
+
+### v3.3 Change Log (2025-12-14)
+- Added Section 13: UI Display Decisions
+- Removed "Worth: $X.XX" from billing page balance display
+- Credits displayed as units, not dollar equivalents
 
 ### v3.2 Change Log (2025-12-10)
 - Added Section 12: Insufficient Credits Policy
