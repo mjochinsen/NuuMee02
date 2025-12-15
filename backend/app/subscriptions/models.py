@@ -23,22 +23,40 @@ class SubscriptionStatus(str, Enum):
 # Cache for Stripe price IDs
 _cached_price_ids = {}
 
-# Annual price IDs are hardcoded since they don't change
-ANNUAL_PRICE_IDS = {
-    "creator": "price_1SXnPS75wY1iQccDwN8BkV0x",  # $276/year (20% off)
-    "studio": "price_1SXnPT75wY1iQccDO68erN98",   # $948/year (20% off)
-}
+# Annual price IDs - loaded from environment or hardcoded fallback
+# TEST MODE IDs (fallback):
+#   Creator: price_1SePpgQBPfmhkssa4nNUgZVl ($278/year)
+#   Studio: price_1SePyyQBPfmhkssaGbXATEed ($948/year)
+# LIVE MODE IDs (set via environment):
+#   STRIPE_CREATOR_ANNUAL_PRICE_ID
+#   STRIPE_STUDIO_ANNUAL_PRICE_ID
+def _get_annual_price_id(tier: str) -> str:
+    """Get annual price ID from environment or use TEST mode fallback."""
+    env_var = f"STRIPE_{tier.upper()}_ANNUAL_PRICE_ID"
+    live_id = os.getenv(env_var)
+    if live_id:
+        return live_id
+    # Fallback to TEST mode IDs
+    test_ids = {
+        "creator": "price_1SePpgQBPfmhkssa4nNUgZVl",  # $278/year TEST
+        "studio": "price_1SePyyQBPfmhkssaGbXATEed",   # $948/year TEST
+    }
+    return test_ids.get(tier.lower(), "")
 
 
 def _get_stripe_price_id(tier: str, annual: bool = False) -> str:
     """
     Get Stripe price ID from environment or Secret Manager.
 
-    For annual billing, uses hardcoded annual price IDs.
+    For annual billing, checks environment first, then uses TEST mode fallback.
 
     Environment variables (checked first for monthly):
     - STRIPE_CREATOR_PRICE_ID
     - STRIPE_STUDIO_PRICE_ID
+
+    Environment variables (for annual):
+    - STRIPE_CREATOR_ANNUAL_PRICE_ID
+    - STRIPE_STUDIO_ANNUAL_PRICE_ID
 
     Secret Manager secrets (production):
     - stripe-creator-price-id
@@ -46,9 +64,9 @@ def _get_stripe_price_id(tier: str, annual: bool = False) -> str:
     """
     global _cached_price_ids
 
-    # For annual billing, use hardcoded IDs
+    # For annual billing, use environment or fallback
     if annual:
-        return ANNUAL_PRICE_IDS.get(tier.lower(), "")
+        return _get_annual_price_id(tier)
 
     cache_key = tier
     if cache_key in _cached_price_ids:
@@ -87,15 +105,16 @@ def get_subscription_tiers(annual: bool = False) -> dict:
         annual: If True, returns annual pricing and price IDs
 
     Price IDs are loaded from:
-    1. Environment variables (STRIPE_CREATOR_PRICE_ID, STRIPE_STUDIO_PRICE_ID)
-    2. Secret Manager (stripe-creator-price-id, stripe-studio-price-id)
-    3. Hardcoded annual price IDs
+    1. Environment variables (monthly: STRIPE_CREATOR_PRICE_ID, STRIPE_STUDIO_PRICE_ID)
+    2. Environment variables (annual: STRIPE_CREATOR_ANNUAL_PRICE_ID, STRIPE_STUDIO_ANNUAL_PRICE_ID)
+    3. Secret Manager (stripe-creator-price-id, stripe-studio-price-id)
+    4. TEST mode fallback for annual prices
     """
     if annual:
         return {
             SubscriptionTier.CREATOR: {
                 "name": "Creator",
-                "price_cents": 27600,  # $276/year (20% off = $23/month effective)
+                "price_cents": 27800,  # $278/year (20% off = $23.17/month effective)
                 "monthly_credits": 400,
                 "stripe_price_id": _get_stripe_price_id("creator", annual=True),
                 "credits_rollover_cap": 800,
