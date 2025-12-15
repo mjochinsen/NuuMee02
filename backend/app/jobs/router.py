@@ -116,11 +116,12 @@ async def create_job(
     user_data = user_doc.to_dict()
     current_credits = user_data.get("credits_balance", 0)
 
-    # Calculate credit cost
+    # Calculate credit cost - use actual duration from request, fallback to default
+    duration = request.motion_video_duration_seconds or DEFAULT_DURATION_SECONDS
     credits_to_charge = calculate_credits(
         request.job_type,
         request.resolution,
-        duration_seconds=DEFAULT_DURATION_SECONDS,
+        duration_seconds=duration,
         source_base_credits=source_base_credits
     )
 

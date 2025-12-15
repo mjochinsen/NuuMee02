@@ -48,7 +48,7 @@ class WaveSpeedClient:
 
     # Polling configuration
     POLL_INTERVAL = 5  # seconds
-    MAX_POLL_TIME = 600  # 10 minutes
+    MAX_POLL_TIME = 2400  # 40 minutes (videos can take time to generate)
 
     def __init__(self, api_key: str = None):
         """Initialize WaveSpeed client.

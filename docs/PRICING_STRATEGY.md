@@ -1,8 +1,8 @@
 # NuuMee Pricing Strategy
 
-**Version:** 3.3
-**Updated:** 2025-12-14
-**Status:** FINAL - UI display decisions + insufficient credits policy
+**Version:** 3.4
+**Updated:** 2025-12-15
+**Status:** FINAL - Critical pricing formula fix for profitability
 
 ---
 
@@ -15,29 +15,31 @@
 ### Base Video Formula (Core Engine)
 
 ```
-credits = (video_seconds × resolution_multiplier) ÷ 10
+credits = video_seconds × rate_per_second
 ```
 
-### Resolution Multipliers (Final)
+### Credit Rates Per Second (PROFITABLE - ~50% margin)
 
-| Resolution | Multiplier |
-|------------|------------|
-| 480p       | 1.0x       |
-| 720p       | 1.5x       |
+| Resolution | Rate/Second | WaveSpeed Cost/Sec | Our Revenue/Sec | Margin |
+|------------|-------------|--------------------| ----------------|--------|
+| 480p       | 0.8 credits | $0.04              | $0.08           | 50%    |
+| 720p       | 1.6 credits | $0.08              | $0.16           | 50%    |
 
 ### Minimum Billing
 
-**Minimum: 5 seconds**
+**Minimum: 5 credits** (not 5 seconds)
 
 ### Correct Examples
 
 | Length | 480p Credits | 720p Credits |
 |--------|--------------|--------------|
-| 5s     | 0.5          | 0.75         |
-| 10s    | 1.0          | 1.5          |
-| 30s    | 3.0          | 4.5          |
-| 60s    | 6.0          | 9.0          |
-| 120s   | 12.0         | 18.0         |
+| 5s     | 5 (min)      | 8            |
+| 10s    | 8            | 16           |
+| 30s    | 24           | 48           |
+| 60s    | 48           | 96           |
+| 120s   | 96           | 192          |
+
+**IMPORTANT:** These rates ensure ~50% profit margin over WaveSpeed costs.
 
 ---
 
@@ -103,14 +105,15 @@ All free and unlimited:
 ## 3. Total Credit Calculation (Final Code)
 
 ```javascript
+const CREDIT_RATES = { "480p": 0.8, "720p": 1.6 };  // credits per second
 const EXTENDER_FIXED_CREDITS = { "480p": 5, "720p": 10 };
+const MIN_CREDITS = 5;
 
 function calculateTotalCredits(config) {
-  const billed = Math.max(5, Math.ceil(config.seconds));
-  const multiplier = config.resolution === "720p" ? 1.5 : 1.0;
+  const rate = CREDIT_RATES[config.resolution];
 
-  // Base generation
-  const base = (billed * multiplier) / 10;
+  // Base generation: seconds × rate, minimum 5 credits
+  const base = Math.max(MIN_CREDITS, Math.ceil(config.seconds * rate));
   let total = base;
 
   // Extender = FIXED cost per resolution (WaveSpeed charges per output second)
@@ -123,7 +126,7 @@ function calculateTotalCredits(config) {
     total += base;
   }
 
-  return parseFloat(total.toFixed(2));
+  return total;
 }
 ```
 
@@ -197,33 +200,38 @@ function calculateTotalCredits(config) {
 
 ---
 
-## 8. Profit Margins (Corrected v3.1)
+## 8. Profit Margins (Corrected v3.4)
 
 ### Example 1 — 10s 720p (base only)
-- Base = 1.5 credits = $0.15 retail
-- WaveSpeed cost ≈ $0.08
-- **Margin ≈ 46%** ✅
+- Base = 16 credits = $1.60 retail
+- WaveSpeed cost = 10 × $0.08 = $0.80
+- **Margin = 50%** ✅
 
 ### Example 2 — 10s 720p + Extender
-- Base = 1.5 credits = $0.15
+- Base = 16 credits = $1.60
 - Extender = 10 credits = $1.00 (fixed)
-- Total = 11.5 credits = $1.15 retail
-- WaveSpeed cost = $0.08 (base) + $0.50 (extend) = $0.58
-- **Margin ≈ 50%** ✅
+- Total = 26 credits = $2.60 retail
+- WaveSpeed cost = $0.80 (base) + $0.50 (extend) = $1.30
+- **Margin = 50%** ✅
 
 ### Example 3 — 30s 720p + Extender + Upscaler
-- Base = 4.5 credits = $0.45
+- Base = 48 credits = $4.80
 - Extender = 10 credits = $1.00 (fixed)
-- Upscale = 4.5 credits = $0.45
-- Total = 19 credits = $1.90 retail
-- WaveSpeed cost ≈ $0.24 (base) + $0.50 (extend) + $0.35 (upscale) = $1.09
-- **Margin ≈ 43%** ✅
+- Upscale = 48 credits = $4.80
+- Total = 106 credits = $10.60 retail
+- WaveSpeed cost = $2.40 (base) + $0.50 (extend) + $2.40 (upscale) = $5.30
+- **Margin = 50%** ✅
 
-### v3.0 Bug (FIXED)
-Previous extender formula `baseCredits × 0.50` was **losing money**:
-- 10s 720p extend charged 0.75 credits ($0.075)
-- WaveSpeed cost was $0.50
-- **Loss of $0.425 per extend (-567% margin)** ❌
+### v3.4 Bug Fix (Dec 2025)
+Previous formula `(seconds × multiplier) / 10` was **losing money**:
+- 36s 720p video charged only 5.4 credits ($0.54)
+- WaveSpeed cost was $2.88
+- **Loss of $2.34 per job (-433% margin)** ❌
+
+Now using `seconds × rate_per_second` (0.8 for 480p, 1.6 for 720p):
+- 36s 720p video charges 57.6 credits ($5.76)
+- WaveSpeed cost = $2.88
+- **Profit of $2.88 per job (+50% margin)** ✅
 
 ---
 
@@ -232,9 +240,10 @@ Previous extender formula `baseCredits × 0.50` was **losing money**:
 ```python
 CREDIT_VALUE_USD = 0.10
 
-RESOLUTION_MULTIPLIER = {
-    "480p": 1.0,
-    "720p": 1.5
+# ANIMATE: Credits per second of video (ensures 50% margin over WaveSpeed)
+ANIMATE_CREDIT_RATES = {
+    "480p": 0.8,   # $0.08/sec revenue vs $0.04/sec WaveSpeed cost = 50% margin
+    "720p": 1.6,   # $0.16/sec revenue vs $0.08/sec WaveSpeed cost = 50% margin
 }
 
 # EXTENDER: Fixed credits per resolution (NOT a multiplier!)
@@ -246,7 +255,7 @@ EXTENDER_FIXED_CREDITS = {
 
 UPSCALER_MULTIPLIER = 1.00  # 100% of base (doubles the cost)
 
-MIN_VIDEO_SECONDS = 5
+MIN_CREDITS = 5  # Minimum charge
 MAX_VIDEO_SECONDS = 120
 ```
 
@@ -396,7 +405,7 @@ Current Balance
 
 ---
 
-## ✅ FINAL STATUS (v3.3)
+## ✅ FINAL STATUS (v3.4)
 
 This pricing file is now:
 
@@ -405,9 +414,17 @@ This pricing file is now:
 - ✔ aligned with Terms & front-end
 - ✔ aligned with Stripe setup
 - ✔ aligned with affiliate/referral pages
-- ✔ sustainable margin (all add-ons now 43-50%)
+- ✔ sustainable margin (all operations now 50%)
 - ✔ clear for users
 - ✔ ready for production launch
+
+### v3.4 Change Log (2025-12-15)
+- **CRITICAL FIX:** Base video pricing formula corrected for profitability
+- Old formula `(seconds × multiplier) / 10` was losing money (-433% margin)
+- New formula `seconds × rate` where 480p=0.8, 720p=1.6 credits/sec
+- Now achieving consistent 50% profit margin on all video generation
+- Added video duration detection in frontend for accurate charging
+- Backend now accepts `motion_video_duration_seconds` parameter
 
 ### v3.3 Change Log (2025-12-14)
 - Added Section 13: UI Display Decisions

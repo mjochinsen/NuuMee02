@@ -234,6 +234,7 @@ export interface CreateJobRequest {
   // ANIMATE job fields
   reference_image_path?: string;
   motion_video_path?: string;
+  motion_video_duration_seconds?: number;  // Required for accurate credit calculation
   // EXTEND/UPSCALE job fields
   source_job_id?: string;
   input_video_path?: string;

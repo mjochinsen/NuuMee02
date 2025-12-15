@@ -52,6 +52,12 @@ class CreateJobRequest(BaseModel):
         default=None,
         description="GCS path to motion source video (required for ANIMATE jobs)"
     )
+    motion_video_duration_seconds: Optional[int] = Field(
+        default=None,
+        ge=1,
+        le=300,
+        description="Duration of motion video in seconds (required for accurate credit calculation)"
+    )
     # EXTEND/UPSCALE job fields
     source_job_id: Optional[str] = Field(
         default=None,

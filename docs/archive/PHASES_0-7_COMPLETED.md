@@ -87,7 +87,7 @@
 
 ---
 
-## PHASE 5 — WORKER ⬜
+## PHASE 5 — WORKER ✅
 
 - worker/main.py (Flask + Cloud Tasks handler)
 - worker/wavespeed.py (WaveSpeed API client)

@@ -166,25 +166,33 @@ def process_animate_job(job_data: dict) -> str:
     job_id = job_data["id"]
     resolution = job_data.get("resolution", "480p")
     seed = job_data.get("seed", -1) or -1
-
-    image_path = job_data["reference_image_path"]
-    video_path = job_data["motion_video_path"]
-
-    image_url = generate_signed_url(IMAGE_BUCKET, image_path, worker_type="worker")
-    video_bucket = OUTPUT_BUCKET if video_path.startswith(("outputs/", "demo/")) else VIDEO_BUCKET
-    video_url = generate_signed_url(video_bucket, video_path, worker_type="worker")
-
-    logger.info(f"Processing animate job {job_id}: resolution={resolution}")
+    existing_request_id = job_data.get("wavespeed_request_id")
 
     wavespeed = get_wavespeed()
-    request_id = wavespeed.animate(
-        image_url=image_url,
-        video_url=video_url,
-        resolution=resolution,
-        seed=seed,
-    )
 
-    update_job_status(job_id, "processing", wavespeed_request_id=request_id)
+    # Idempotency: if we already have a WaveSpeed request, poll it instead of making a new one
+    if existing_request_id:
+        logger.info(f"Job {job_id} has existing WaveSpeed request {existing_request_id}, resuming poll")
+        request_id = existing_request_id
+    else:
+        # No existing request - create a new one
+        image_path = job_data["reference_image_path"]
+        video_path = job_data["motion_video_path"]
+
+        image_url = generate_signed_url(IMAGE_BUCKET, image_path, worker_type="worker")
+        video_bucket = OUTPUT_BUCKET if video_path.startswith(("outputs/", "demo/")) else VIDEO_BUCKET
+        video_url = generate_signed_url(video_bucket, video_path, worker_type="worker")
+
+        logger.info(f"Processing animate job {job_id}: resolution={resolution}")
+
+        request_id = wavespeed.animate(
+            image_url=image_url,
+            video_url=video_url,
+            resolution=resolution,
+            seed=seed,
+        )
+
+        update_job_status(job_id, "processing", wavespeed_request_id=request_id)
 
     result = wavespeed.poll_result(request_id)
     outputs = wavespeed.get_outputs(result)
@@ -205,22 +213,29 @@ def process_extend_job(job_data: dict) -> str:
     duration = job_data.get("duration", 5)
     seed = job_data.get("seed", -1) or -1
     prompt = job_data.get("extension_prompt", "")
-
-    video_path = job_data["input_video_path"]
-    video_url = generate_signed_url(OUTPUT_BUCKET, video_path, worker_type="worker")
-
-    logger.info(f"Processing extend job {job_id}: duration={duration}, resolution={resolution}")
+    existing_request_id = job_data.get("wavespeed_request_id")
 
     wavespeed = get_wavespeed()
-    request_id = wavespeed.extend(
-        video_url=video_url,
-        prompt=prompt,
-        duration=duration,
-        resolution=resolution,
-        seed=seed,
-    )
 
-    update_job_status(job_id, "processing", wavespeed_request_id=request_id)
+    # Idempotency: resume existing request if present
+    if existing_request_id:
+        logger.info(f"Job {job_id} has existing WaveSpeed request {existing_request_id}, resuming poll")
+        request_id = existing_request_id
+    else:
+        video_path = job_data["input_video_path"]
+        video_url = generate_signed_url(OUTPUT_BUCKET, video_path, worker_type="worker")
+
+        logger.info(f"Processing extend job {job_id}: duration={duration}, resolution={resolution}")
+
+        request_id = wavespeed.extend(
+            video_url=video_url,
+            prompt=prompt,
+            duration=duration,
+            resolution=resolution,
+            seed=seed,
+        )
+
+        update_job_status(job_id, "processing", wavespeed_request_id=request_id)
 
     result = wavespeed.poll_result(request_id)
     outputs = wavespeed.get_outputs(result)
@@ -238,19 +253,26 @@ def process_upscale_job(job_data: dict) -> str:
     """Process a video upscale job."""
     job_id = job_data["id"]
     target_resolution = job_data.get("target_resolution", "1080p")
-
-    video_path = job_data["input_video_path"]
-    video_url = generate_signed_url(OUTPUT_BUCKET, video_path, worker_type="worker")
-
-    logger.info(f"Processing upscale job {job_id}: target={target_resolution}")
+    existing_request_id = job_data.get("wavespeed_request_id")
 
     wavespeed = get_wavespeed()
-    request_id = wavespeed.upscale(
-        video_url=video_url,
-        target_resolution=target_resolution,
-    )
 
-    update_job_status(job_id, "processing", wavespeed_request_id=request_id)
+    # Idempotency: resume existing request if present
+    if existing_request_id:
+        logger.info(f"Job {job_id} has existing WaveSpeed request {existing_request_id}, resuming poll")
+        request_id = existing_request_id
+    else:
+        video_path = job_data["input_video_path"]
+        video_url = generate_signed_url(OUTPUT_BUCKET, video_path, worker_type="worker")
+
+        logger.info(f"Processing upscale job {job_id}: target={target_resolution}")
+
+        request_id = wavespeed.upscale(
+            video_url=video_url,
+            target_resolution=target_resolution,
+        )
+
+        update_job_status(job_id, "processing", wavespeed_request_id=request_id)
 
     result = wavespeed.poll_result(request_id)
     outputs = wavespeed.get_outputs(result)
@@ -269,20 +291,27 @@ def process_foley_job(job_data: dict) -> str:
     job_id = job_data["id"]
     seed = job_data.get("seed", -1) or -1
     prompt = job_data.get("audio_prompt", "")
-
-    video_path = job_data["input_video_path"]
-    video_url = generate_signed_url(OUTPUT_BUCKET, video_path, worker_type="worker")
-
-    logger.info(f"Processing foley job {job_id}")
+    existing_request_id = job_data.get("wavespeed_request_id")
 
     wavespeed = get_wavespeed()
-    request_id = wavespeed.foley(
-        video_url=video_url,
-        prompt=prompt if prompt else None,
-        seed=seed,
-    )
 
-    update_job_status(job_id, "processing", wavespeed_request_id=request_id)
+    # Idempotency: resume existing request if present
+    if existing_request_id:
+        logger.info(f"Job {job_id} has existing WaveSpeed request {existing_request_id}, resuming poll")
+        request_id = existing_request_id
+    else:
+        video_path = job_data["input_video_path"]
+        video_url = generate_signed_url(OUTPUT_BUCKET, video_path, worker_type="worker")
+
+        logger.info(f"Processing foley job {job_id}")
+
+        request_id = wavespeed.foley(
+            video_url=video_url,
+            prompt=prompt if prompt else None,
+            seed=seed,
+        )
+
+        update_job_status(job_id, "processing", wavespeed_request_id=request_id)
 
     result = wavespeed.poll_result(request_id)
     outputs = wavespeed.get_outputs(result)

@@ -20,5 +20,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY . .
 
-# Run with gunicorn for production
-CMD exec gunicorn --bind :$PORT --workers 1 --threads 8 --timeout 600 main:app
+# Run with gunicorn for production (timeout=2400 for long video processing)
+CMD exec gunicorn --bind :$PORT --workers 1 --threads 8 --timeout 2400 main:app

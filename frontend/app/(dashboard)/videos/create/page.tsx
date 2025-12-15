@@ -56,6 +56,7 @@ export default function CreateVideoPage() {
   const [referenceImagePreview, setReferenceImagePreview] = useState<string | null>(null);
   const [motionVideo, setMotionVideo] = useState<File | null>(null);
   const [motionVideoPreview, setMotionVideoPreview] = useState<string | null>(null);
+  const [motionVideoDuration, setMotionVideoDuration] = useState<number | null>(null);
   const [resolution, setResolution] = useState('720p');
   const [seed, setSeed] = useState('-1');
   const [jsonContent, setJsonContent] = useState('');
@@ -165,10 +166,12 @@ export default function CreateVideoPage() {
     setDemoMode(false);
   }, []);
 
-  // Cost calculation based on resolution (per second of video)
-  // 480p: $0.04/sec, 720p: $0.08/sec - minimum 5 seconds
+  // Cost calculation based on resolution and actual video duration
+  // 480p: 0.8 credits/sec, 720p: 1.6 credits/sec - minimum 5 credits
   const estimatedTime = demoMode ? 'Instant' : '2 to 5 minutes';
-  const creditCost = demoMode ? 0 : (resolution === '480p' ? 10 : 20); // Demo is free
+  const durationForCost = motionVideoDuration || 10; // Default to 10s if not detected
+  const ratePerSecond = resolution === '480p' ? 0.8 : 1.6;
+  const creditCost = demoMode ? 0 : Math.max(5, Math.ceil(durationForCost * ratePerSecond));
   // Can generate if we have: demo mode with both previews loaded, OR (image AND either video file OR selected job)
   const hasMotionSource = motionVideo || selectedJobForMotion || (demoMode && motionVideoPreview);
   const canGenerate = (referenceImage || (demoMode && referenceImagePreview)) && hasMotionSource;
@@ -215,7 +218,24 @@ export default function CreateVideoPage() {
       console.log('Setting motion video');
       exitDemoMode(); // Exit demo mode when user uploads their own file
       setMotionVideo(file);
-      setMotionVideoPreview(URL.createObjectURL(file));
+      const videoUrl = URL.createObjectURL(file);
+      setMotionVideoPreview(videoUrl);
+
+      // Get video duration using temporary video element
+      const tempVideo = document.createElement('video');
+      tempVideo.preload = 'metadata';
+      tempVideo.onloadedmetadata = () => {
+        const duration = Math.ceil(tempVideo.duration);
+        console.log('Video duration detected:', duration, 'seconds');
+        setMotionVideoDuration(duration);
+        URL.revokeObjectURL(tempVideo.src); // Clean up temp URL
+      };
+      tempVideo.onerror = () => {
+        console.warn('Could not detect video duration, using default');
+        setMotionVideoDuration(null);
+      };
+      tempVideo.src = videoUrl;
+
       // Clear selected job when uploading a file
       setSelectedJobForMotion(null);
       setSelectedJobThumbnailUrl(null);
@@ -251,6 +271,7 @@ export default function CreateVideoPage() {
     setMotionVideo(null);
     if (motionVideoPreview) URL.revokeObjectURL(motionVideoPreview);
     setMotionVideoPreview(null);
+    setMotionVideoDuration(null);
     if (videoInputRef.current) videoInputRef.current.value = '';
   }, [motionVideoPreview]);
 
@@ -363,6 +384,7 @@ export default function CreateVideoPage() {
         job_type: 'animate',
         reference_image_path: imagePath,
         motion_video_path: motionVideoPath,
+        motion_video_duration_seconds: motionVideoDuration || undefined,
         resolution: resolution as ApiResolution,
         seed: isNaN(seedValue as number) ? null : seedValue,
       });
@@ -413,7 +435,7 @@ export default function CreateVideoPage() {
     } finally {
       setIsGenerating(false);
     }
-  }, [referenceImage, motionVideo, selectedJobForMotion, user, profile, creditCost, resolution, seed, removeImage, removeVideo, demoMode]);
+  }, [referenceImage, motionVideo, motionVideoDuration, selectedJobForMotion, user, profile, creditCost, resolution, seed, removeImage, removeVideo, demoMode]);
 
   return (
     <main className="container mx-auto px-6 py-12 max-w-7xl">
