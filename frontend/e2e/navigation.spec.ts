@@ -28,8 +28,8 @@ test.describe('Homepage Navigation', () => {
     await expect(page).toHaveURL('/');
 
     // Test Create Videos link
-    await page.click('nav a[href="/jobs/create"]');
-    await expect(page).toHaveURL('/jobs/create');
+    await page.click('nav a[href="/videos/create"]');
+    await expect(page).toHaveURL('/videos/create');
     await page.goBack();
 
     // Test Pricing link
@@ -63,15 +63,15 @@ test.describe('Homepage Navigation', () => {
 
   test('should navigate via CTA buttons', async ({ page }) => {
     // Test "Start Creating Free" button in hero
-    const heroButton = page.locator('a[href="/jobs/create"] button:has-text("Start Creating")').first();
+    const heroButton = page.locator('a[href="/videos/create"] button:has-text("Start Creating")').first();
     await expect(heroButton).toBeVisible();
     await heroButton.click();
-    await expect(page).toHaveURL('/jobs/create');
+    await expect(page).toHaveURL('/videos/create');
     await page.goBack();
 
     // Test "Try It Now" button in How It Works section
     await page.evaluate(() => window.scrollTo(0, 1000));
-    const tryButton = page.locator('a[href="/jobs/create"] button:has-text("Try It Now")').first();
+    const tryButton = page.locator('a[href="/videos/create"] button:has-text("Try It Now")').first();
     await expect(tryButton).toBeVisible();
   });
 
@@ -334,7 +334,7 @@ test.describe('404 Page', () => {
 
     // Verify helpful links exist
     await expect(page.locator('a[href="/"]')).toBeVisible();
-    await expect(page.locator('a[href="/jobs/create"]')).toBeVisible();
+    await expect(page.locator('a[href="/videos/create"]')).toBeVisible();
     await expect(page.locator('a[href="/jobs"]')).toBeVisible();
     await expect(page.locator('a[href="/support"]')).toBeVisible();
   });
@@ -351,8 +351,8 @@ test.describe('404 Page', () => {
     await page.goto('/missing-page');
 
     // Click Generate Videos button
-    await page.click('a[href="/jobs/create"] button:has-text("Generate Videos")');
-    await expect(page).toHaveURL('/jobs/create');
+    await page.click('a[href="/videos/create"] button:has-text("Generate Videos")');
+    await expect(page).toHaveURL('/videos/create');
   });
 });
 
@@ -402,8 +402,8 @@ test.describe('Cross-Page Navigation Flows', () => {
     await expect(page).toHaveURL('/documentation');
 
     // Go to create videos
-    await page.click('nav a[href="/jobs/create"]');
-    await expect(page).toHaveURL('/jobs/create');
+    await page.click('nav a[href="/videos/create"]');
+    await expect(page).toHaveURL('/videos/create');
 
     // Return home via logo
     await page.click('header a[href="/"]');
@@ -473,7 +473,7 @@ test.describe('Responsive Navigation', () => {
 
     // All nav links should be visible
     await expect(page.locator('nav a[href="/"]')).toBeVisible();
-    await expect(page.locator('nav a[href="/jobs/create"]')).toBeVisible();
+    await expect(page.locator('nav a[href="/videos/create"]')).toBeVisible();
     await expect(page.locator('nav a[href="/pricing"]')).toBeVisible();
   });
 });

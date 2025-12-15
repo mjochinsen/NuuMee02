@@ -51,7 +51,7 @@ export default function NotFound() {
         <div className="border-t border-[#334155] pt-8">
           <p className="text-[#94A3B8] mb-4">Or try these:</p>
           <div className="flex flex-wrap justify-center gap-4">
-            <Link href="/jobs/create">
+            <Link href="/videos/create">
               <Button
                 variant="outline"
                 className="border-[#334155] text-[#F1F5F9] hover:border-[#00F0D9] hover:text-[#00F0D9]"

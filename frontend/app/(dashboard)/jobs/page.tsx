@@ -642,7 +642,7 @@ export default function JobsPage() {
         <p className="text-[#94A3B8] mb-6">
           Create your first AI character replacement
         </p>
-        <Link href="/jobs/create">
+        <Link href="/videos/create">
           <Button className="bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] hover:opacity-90 text-white">
             🚀 Start New Project
           </Button>

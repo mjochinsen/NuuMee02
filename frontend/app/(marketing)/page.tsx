@@ -176,7 +176,7 @@ export default function HomePage() {
 
             {/* CTAs */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
-              <Link href="/jobs/create">
+              <Link href="/videos/create">
                 <Button
                   size="lg"
                   className="bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] hover:opacity-90 text-white px-8 py-6 text-lg shadow-lg shadow-[#00F0D9]/20"
@@ -302,7 +302,7 @@ export default function HomePage() {
           </div>
 
           <div className="text-center mt-12">
-            <Link href="/jobs/create">
+            <Link href="/videos/create">
               <Button
                 size="lg"
                 className="bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] hover:opacity-90 text-white px-8"
@@ -392,7 +392,7 @@ export default function HomePage() {
 
             <div className="mt-12">
               <p className="text-[#94A3B8] mb-6">Ready to create your own success story?</p>
-              <Link href="/jobs/create">
+              <Link href="/videos/create">
                 <Button
                   size="lg"
                   className="bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] hover:opacity-90 text-white px-8"
@@ -560,7 +560,7 @@ export default function HomePage() {
                 See All Features
               </Button>
             </Link>
-            <Link href="/jobs/create">
+            <Link href="/videos/create">
               <Button
                 size="lg"
                 className="bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] hover:opacity-90 text-white px-8"

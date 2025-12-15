@@ -181,11 +181,11 @@ export default function ExamplesPage() {
                   <div><div className="text-[#64748B] text-sm mb-1">Credits used</div><div className="text-[#F1F5F9]">{useCase.credits}</div></div>
                   <div><div className="text-[#64748B] text-sm mb-1">{useCase.result ? 'Result' : useCase.saved ? 'Saved' : 'Processing time'}</div><div className="text-[#F1F5F9]">{useCase.result || useCase.saved || useCase.processingTime}</div></div>
                 </div>
-                <Link href="/jobs/create"><Button className="bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] hover:opacity-90 text-white">Try This Template<ArrowRight className="w-4 h-4 ml-2" /></Button></Link>
+                <Link href="/videos/create"><Button className="bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] hover:opacity-90 text-white">Try This Template<ArrowRight className="w-4 h-4 ml-2" /></Button></Link>
               </div>
             ))}
             <div className="text-center">
-              <Link href="/jobs/create"><Button variant="outline" className="border-[#334155] text-[#F1F5F9] hover:border-[#00F0D9] hover:text-[#00F0D9]">View All Use Cases</Button></Link>
+              <Link href="/videos/create"><Button variant="outline" className="border-[#334155] text-[#F1F5F9] hover:border-[#00F0D9] hover:text-[#00F0D9]">View All Use Cases</Button></Link>
             </div>
           </div>
         </section>
@@ -259,7 +259,7 @@ export default function ExamplesPage() {
           <h2 className="text-2xl font-bold text-[#F1F5F9] mb-4">Ready to Create?</h2>
           <p className="text-[#94A3B8] text-lg mb-8">Start with 25 free credits — no credit card required</p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link href="/jobs/create"><Button size="lg" className="bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] hover:opacity-90 text-white h-14 px-8"><Sparkles className="w-5 h-5 mr-2" />Try NuuMee.AI Free</Button></Link>
+            <Link href="/videos/create"><Button size="lg" className="bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] hover:opacity-90 text-white h-14 px-8"><Sparkles className="w-5 h-5 mr-2" />Try NuuMee.AI Free</Button></Link>
             <Link href="/pricing"><Button size="lg" variant="outline" className="border-[#334155] text-[#F1F5F9] hover:border-[#00F0D9] hover:text-[#00F0D9] h-14 px-8">View Pricing</Button></Link>
             <Link href="/documentation"><Button size="lg" variant="outline" className="border-[#334155] text-[#F1F5F9] hover:border-[#00F0D9] hover:text-[#00F0D9] h-14 px-8">Read Documentation</Button></Link>
           </div>
