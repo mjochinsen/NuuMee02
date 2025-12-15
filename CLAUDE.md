@@ -214,6 +214,13 @@ See: [DELEGATION_CONTRACT.md](../docs/agents/orchestration/DELEGATION_CONTRACT.m
 
 ## Workflow Quick Reference
 
+**MANDATORY: Use slash commands and MCP tools instead of CLI commands.**
+
+- Deploy → `/deploy` NOT `gcloud run deploy`
+- Logs → `/logs` NOT `gcloud logging read`
+- Commit → `/commit` NOT `git add && git commit`
+- PRs → `mcp__github__list_pull_requests` NOT `gh pr list`
+
 | Situation                  | Action                                  |
 | -------------------------- | --------------------------------------- |
 | Learned something useful   | `/remember insight: ...`                |

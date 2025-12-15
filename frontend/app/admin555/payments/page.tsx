@@ -223,7 +223,7 @@ function PaymentsContent() {
                       </span>
                     </td>
                     <td className="py-4 px-6 text-sm text-[#F1F5F9] text-right font-mono">
-                      ${(txn.amount / 100).toFixed(2)}
+                      ${txn.amount.toFixed(2)}
                     </td>
                     <td className="py-4 px-6">
                       <span className={`px-2 py-1 rounded-md text-xs font-medium border ${getStatusBadgeClass(txn.status)}`}>

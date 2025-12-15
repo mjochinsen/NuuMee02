@@ -118,58 +118,30 @@ export default function HomePage() {
               just stunning results that look completely natural.
             </p>
 
-            {/* Split-screen video preview placeholder */}
+            {/* Split-screen video comparison */}
             <div className="max-w-5xl mx-auto mb-10">
-              <div className="relative border-2 border-[#334155] rounded-2xl overflow-hidden bg-[#1E293B] aspect-video">
-                <div className="grid grid-cols-2 h-full">
-                  {/* Before */}
-                  <div className="relative group cursor-pointer">
-                    <ImageWithFallback
-                      src="https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?w=800&h=450&fit=crop"
-                      alt="Original video"
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-                    <div className="absolute top-4 left-4">
-                      <Badge className="bg-black/50 text-white border-white/20">
-                        Original
-                      </Badge>
-                    </div>
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      <div className="w-16 h-16 rounded-full bg-white/90 flex items-center justify-center">
-                        <Play className="w-8 h-8 text-[#0F172A] ml-1" />
-                      </div>
-                    </div>
-                  </div>
+              <div className="relative border-2 border-[#334155] rounded-2xl overflow-hidden bg-[#1E293B]">
+                {/* Video element */}
+                <video
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  className="w-full h-auto"
+                >
+                  <source src="/hero-comparison.mp4" type="video/mp4" />
+                </video>
 
-                  {/* After */}
-                  <div className="relative group cursor-pointer border-l-2 border-[#00F0D9]">
-                    <ImageWithFallback
-                      src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&h=450&fit=crop"
-                      alt="AI-replaced character"
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-                    <div className="absolute top-4 left-4">
-                      <Badge className="bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] text-white border-none">
-                        AI Generated
-                      </Badge>
-                    </div>
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      <div className="w-16 h-16 rounded-full bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] flex items-center justify-center">
-                        <Play className="w-8 h-8 text-white ml-1" />
-                      </div>
-                    </div>
-                  </div>
+                {/* Overlay badges */}
+                <div className="absolute top-4 left-4">
+                  <Badge className="bg-black/50 text-white border-white/20">
+                    Original
+                  </Badge>
                 </div>
-
-                {/* Center divider with icon */}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
-                  <div className="w-20 h-20 rounded-full bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] p-1">
-                    <div className="w-full h-full rounded-full bg-[#0F172A] flex items-center justify-center">
-                      <Sparkles className="w-8 h-8 text-[#00F0D9]" />
-                    </div>
-                  </div>
+                <div className="absolute top-4 right-4">
+                  <Badge className="bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] text-white border-none">
+                    AI Generated
+                  </Badge>
                 </div>
               </div>
             </div>
@@ -243,8 +215,8 @@ export default function HomePage() {
                 </div>
                 <h3 className="text-[#F1F5F9] text-xl mb-4 font-semibold">Upload Character</h3>
                 <div className="mb-4 rounded-xl overflow-hidden aspect-video bg-[#1E293B]">
-                  <ImageWithFallback
-                    src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=300&fit=crop"
+                  <img
+                    src="/step1-character.jpeg"
                     alt="Upload character reference"
                     className="w-full h-full object-cover"
                   />
@@ -265,17 +237,16 @@ export default function HomePage() {
                   2
                 </div>
                 <h3 className="text-[#F1F5F9] text-xl mb-4 font-semibold">Upload Video</h3>
-                <div className="mb-4 rounded-xl overflow-hidden aspect-video bg-[#1E293B] relative group cursor-pointer">
-                  <ImageWithFallback
-                    src="https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=400&h=300&fit=crop"
-                    alt="Upload video"
+                <div className="mb-4 rounded-xl overflow-hidden aspect-video bg-[#1E293B]">
+                  <video
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
                     className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40">
-                    <div className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center">
-                      <Play className="w-6 h-6 text-[#0F172A] ml-1" />
-                    </div>
-                  </div>
+                  >
+                    <source src="/step2-video.mp4" type="video/mp4" />
+                  </video>
                 </div>
                 <p className="text-[#94A3B8]">
                   Upload the video where you want to replace the character
@@ -292,8 +263,16 @@ export default function HomePage() {
                 3
               </div>
               <h3 className="text-[#F1F5F9] text-xl mb-4 font-semibold">Generate Magic</h3>
-              <div className="mb-4 rounded-xl overflow-hidden aspect-video bg-gradient-to-br from-[#00F0D9]/20 to-[#3B1FE2]/20 flex items-center justify-center">
-                <Sparkles className="w-16 h-16 text-[#00F0D9]" />
+              <div className="mb-4 rounded-xl overflow-hidden aspect-video bg-[#1E293B]">
+                <video
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  className="w-full h-full object-cover"
+                >
+                  <source src="/step3-result.mp4" type="video/mp4" />
+                </video>
               </div>
               <p className="text-[#94A3B8]">
                 Our AI works its magic and delivers a perfect transformation
@@ -506,7 +485,7 @@ export default function HomePage() {
               </div>
               <h3 className="text-[#F1F5F9] text-xl mb-3 font-semibold">Lightning Fast</h3>
               <p className="text-[#94A3B8]">
-                1-3 hour processing for most videos with priority queue available
+                2 to 10 minutes processing for most videos
               </p>
             </div>
 

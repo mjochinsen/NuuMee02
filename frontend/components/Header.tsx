@@ -57,14 +57,6 @@ export function Header() {
             Create Videos
           </Link>
           <Link
-            href="/dev"
-            className={`hover:text-[#00F0D9] transition-colors ${
-              isActive('/dev') ? 'text-[#F1F5F9]' : 'text-[#94A3B8]'
-            }`}
-          >
-            Dev
-          </Link>
-          <Link
             href="/pricing"
             className={`hover:text-[#00F0D9] transition-colors ${
               isActive('/pricing') ? 'text-[#F1F5F9]' : 'text-[#94A3B8]'
