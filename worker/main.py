@@ -14,7 +14,7 @@ from google.cloud import firestore, secretmanager, tasks_v2
 from google.protobuf import timestamp_pb2
 from datetime import datetime, timedelta, timezone
 
-from wavespeed import WaveSpeedClient, WaveSpeedError, WaveSpeedAPIError
+from wavespeed import WaveSpeedClient, WaveSpeedError, WaveSpeedAPIError, JobStatus
 
 # Import shared utilities
 import sys
@@ -82,6 +82,35 @@ def get_tasks_client() -> tasks_v2.CloudTasksClient:
     if _tasks_client is None:
         _tasks_client = tasks_v2.CloudTasksClient()
     return _tasks_client
+
+
+def check_existing_wavespeed_request(request_id: str, job_id: str) -> Optional[str]:
+    """Check if an existing WaveSpeed request is still valid (not failed).
+
+    Args:
+        request_id: The WaveSpeed request ID to check
+        job_id: Our job ID (for logging)
+
+    Returns:
+        The request_id if still valid (processing/completed/success), None if failed
+    """
+    wavespeed = get_wavespeed()
+    try:
+        result = wavespeed.get_result(request_id)
+        status = result.get("status") or result.get("data", {}).get("status")
+        logger.info(f"Job {job_id}: existing WaveSpeed request {request_id} has status={status}")
+
+        if status == JobStatus.FAILED.value:
+            logger.warning(f"Job {job_id}: WaveSpeed request {request_id} FAILED, will create new request")
+            return None
+
+        # Still valid - can resume (processing, completed, success, created)
+        return request_id
+
+    except WaveSpeedAPIError as e:
+        # If we can't check status (e.g., request doesn't exist), create new
+        logger.warning(f"Job {job_id}: Could not check WaveSpeed request {request_id}: {e}")
+        return None
 
 
 def apply_free_tier_watermark(job_id: str, output_video_path: str) -> str:
@@ -170,11 +199,14 @@ def process_animate_job(job_data: dict) -> str:
 
     wavespeed = get_wavespeed()
 
-    # Idempotency: if we already have a WaveSpeed request, poll it instead of making a new one
+    # Idempotency: check if existing request is still valid (not failed)
+    request_id = None
     if existing_request_id:
-        logger.info(f"Job {job_id} has existing WaveSpeed request {existing_request_id}, resuming poll")
-        request_id = existing_request_id
-    else:
+        request_id = check_existing_wavespeed_request(existing_request_id, job_id)
+        if request_id:
+            logger.info(f"Job {job_id}: resuming existing WaveSpeed request {request_id}")
+
+    if not request_id:
         # No existing request - create a new one
         image_path = job_data["reference_image_path"]
         video_path = job_data["motion_video_path"]
@@ -217,11 +249,14 @@ def process_extend_job(job_data: dict) -> str:
 
     wavespeed = get_wavespeed()
 
-    # Idempotency: resume existing request if present
+    # Idempotency: check if existing request is still valid (not failed)
+    request_id = None
     if existing_request_id:
-        logger.info(f"Job {job_id} has existing WaveSpeed request {existing_request_id}, resuming poll")
-        request_id = existing_request_id
-    else:
+        request_id = check_existing_wavespeed_request(existing_request_id, job_id)
+        if request_id:
+            logger.info(f"Job {job_id}: resuming existing WaveSpeed request {request_id}")
+
+    if not request_id:
         video_path = job_data["input_video_path"]
         video_url = generate_signed_url(OUTPUT_BUCKET, video_path, worker_type="worker")
 
@@ -257,11 +292,14 @@ def process_upscale_job(job_data: dict) -> str:
 
     wavespeed = get_wavespeed()
 
-    # Idempotency: resume existing request if present
+    # Idempotency: check if existing request is still valid (not failed)
+    request_id = None
     if existing_request_id:
-        logger.info(f"Job {job_id} has existing WaveSpeed request {existing_request_id}, resuming poll")
-        request_id = existing_request_id
-    else:
+        request_id = check_existing_wavespeed_request(existing_request_id, job_id)
+        if request_id:
+            logger.info(f"Job {job_id}: resuming existing WaveSpeed request {request_id}")
+
+    if not request_id:
         video_path = job_data["input_video_path"]
         video_url = generate_signed_url(OUTPUT_BUCKET, video_path, worker_type="worker")
 
@@ -295,11 +333,14 @@ def process_foley_job(job_data: dict) -> str:
 
     wavespeed = get_wavespeed()
 
-    # Idempotency: resume existing request if present
+    # Idempotency: check if existing request is still valid (not failed)
+    request_id = None
     if existing_request_id:
-        logger.info(f"Job {job_id} has existing WaveSpeed request {existing_request_id}, resuming poll")
-        request_id = existing_request_id
-    else:
+        request_id = check_existing_wavespeed_request(existing_request_id, job_id)
+        if request_id:
+            logger.info(f"Job {job_id}: resuming existing WaveSpeed request {request_id}")
+
+    if not request_id:
         video_path = job_data["input_video_path"]
         video_url = generate_signed_url(OUTPUT_BUCKET, video_path, worker_type="worker")
 
