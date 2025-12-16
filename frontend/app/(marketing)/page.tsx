@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   Play,
   Zap,
@@ -20,9 +21,28 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ImageWithFallback } from '@/components/ui/ImageWithFallback';
+import { useAuth } from '@/components/AuthProvider';
 
 export default function HomePage() {
+  const router = useRouter();
+  const { user } = useAuth();
   const [selectedCategory, setSelectedCategory] = useState('all');
+
+  const handleStartCreating = () => {
+    if (user) {
+      router.push('/videos/create');
+    } else {
+      router.push('/login?redirect=/videos/create');
+    }
+  };
+
+  const handlePricingClick = () => {
+    if (user) {
+      router.push('/billing');
+    } else {
+      router.push('/login?redirect=/billing');
+    }
+  };
 
   const useCases = [
     {
@@ -115,11 +135,11 @@ export default function HomePage() {
 
             <p className="text-[#94A3B8] text-lg md:text-xl max-w-3xl mx-auto mb-10">
               Transform your videos in minutes with cutting-edge AI. No reshoots, no expensive equipment,
-              just stunning results that look completely natural.
+              just stunning results that can look completely natural, or not. Your choice.
             </p>
 
             {/* Split-screen video comparison */}
-            <div className="max-w-5xl mx-auto mb-10">
+            <div className="max-w-5xl md:max-w-[70%] lg:max-w-[65%] mx-auto mb-10">
               <div className="relative border-2 border-[#334155] rounded-2xl overflow-hidden bg-[#1E293B]">
                 {/* Video element */}
                 <video
@@ -129,7 +149,7 @@ export default function HomePage() {
                   playsInline
                   className="w-full h-auto"
                 >
-                  <source src="/hero-comparison.mp4" type="video/mp4" />
+                  <source src="/hero-comparison-2.mp4" type="video/mp4" />
                 </video>
 
                 {/* Overlay badges */}
@@ -148,14 +168,13 @@ export default function HomePage() {
 
             {/* CTAs */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
-              <Link href="/videos/create">
-                <Button
-                  size="lg"
-                  className="bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] hover:opacity-90 text-white px-8 py-6 text-lg shadow-lg shadow-[#00F0D9]/20"
-                >
-                  🎬 Start Creating Free
-                </Button>
-              </Link>
+              <Button
+                size="lg"
+                onClick={handleStartCreating}
+                className="bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] hover:opacity-90 text-white px-8 py-6 text-lg shadow-lg shadow-[#00F0D9]/20"
+              >
+                🎬 Start Creating Free
+              </Button>
               <p className="text-[#94A3B8] text-sm">No credit card required</p>
             </div>
 
@@ -214,11 +233,11 @@ export default function HomePage() {
                   1
                 </div>
                 <h3 className="text-[#F1F5F9] text-xl mb-4 font-semibold">Upload Character</h3>
-                <div className="mb-4 rounded-xl overflow-hidden aspect-video bg-[#1E293B]">
+                <div className="mb-4 rounded-xl overflow-hidden aspect-[9/16] max-h-[280px] mx-auto bg-[#1E293B]">
                   <img
-                    src="/step1-character.jpeg"
+                    src="/step1-character.png"
                     alt="Upload character reference"
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-contain"
                   />
                 </div>
                 <p className="text-[#94A3B8]">
@@ -237,13 +256,13 @@ export default function HomePage() {
                   2
                 </div>
                 <h3 className="text-[#F1F5F9] text-xl mb-4 font-semibold">Upload Video</h3>
-                <div className="mb-4 rounded-xl overflow-hidden aspect-video bg-[#1E293B]">
+                <div className="mb-4 rounded-xl overflow-hidden aspect-[9/16] max-h-[280px] mx-auto bg-[#1E293B]">
                   <video
                     autoPlay
                     loop
                     muted
                     playsInline
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-contain"
                   >
                     <source src="/step2-video.mp4" type="video/mp4" />
                   </video>
@@ -263,13 +282,13 @@ export default function HomePage() {
                 3
               </div>
               <h3 className="text-[#F1F5F9] text-xl mb-4 font-semibold">Generate Magic</h3>
-              <div className="mb-4 rounded-xl overflow-hidden aspect-video bg-[#1E293B]">
+              <div className="mb-4 rounded-xl overflow-hidden aspect-[9/16] max-h-[280px] mx-auto bg-[#1E293B]">
                 <video
                   autoPlay
                   loop
                   muted
                   playsInline
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-contain"
                 >
                   <source src="/step3-result.mp4" type="video/mp4" />
                 </video>
@@ -281,14 +300,13 @@ export default function HomePage() {
           </div>
 
           <div className="text-center mt-12">
-            <Link href="/videos/create">
-              <Button
-                size="lg"
-                className="bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] hover:opacity-90 text-white px-8"
-              >
-                Try It Now - It&apos;s Free
-              </Button>
-            </Link>
+            <Button
+              size="lg"
+              onClick={handleStartCreating}
+              className="bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] hover:opacity-90 text-white px-8"
+            >
+              Try It Now - It&apos;s Free
+            </Button>
           </div>
         </div>
       </section>
@@ -371,14 +389,13 @@ export default function HomePage() {
 
             <div className="mt-12">
               <p className="text-[#94A3B8] mb-6">Ready to create your own success story?</p>
-              <Link href="/videos/create">
-                <Button
-                  size="lg"
-                  className="bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] hover:opacity-90 text-white px-8"
-                >
-                  Start Generating Videos
-                </Button>
-              </Link>
+              <Button
+                size="lg"
+                onClick={handleStartCreating}
+                className="bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] hover:opacity-90 text-white px-8"
+              >
+                Start Generating Videos
+              </Button>
             </div>
           </div>
         </div>
@@ -539,14 +556,13 @@ export default function HomePage() {
                 See All Features
               </Button>
             </Link>
-            <Link href="/videos/create">
-              <Button
-                size="lg"
-                className="bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] hover:opacity-90 text-white px-8"
-              >
-                Start Creating
-              </Button>
-            </Link>
+            <Button
+              size="lg"
+              onClick={handleStartCreating}
+              className="bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] hover:opacity-90 text-white px-8"
+            >
+              Start Creating
+            </Button>
           </div>
         </div>
       </section>
@@ -621,6 +637,7 @@ export default function HomePage() {
                 </li>
               </ul>
               <Button
+                onClick={handlePricingClick}
                 className="w-full bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] hover:opacity-90 text-white"
               >
                 Start Now
@@ -653,6 +670,7 @@ export default function HomePage() {
                 </li>
               </ul>
               <Button
+                onClick={handlePricingClick}
                 variant="outline"
                 className="w-full border-[#334155] text-[#F1F5F9] hover:border-[#00F0D9] hover:text-[#00F0D9]"
               >
