@@ -7,6 +7,7 @@ import { Eye, EyeOff, ArrowRight, ArrowLeft, Check, AlertCircle, Loader2, Lock }
 import { auth, googleProvider, githubProvider } from '@/lib/firebase';
 import { signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, updateProfile, ActionCodeSettings } from 'firebase/auth';
 import { applyReferralCodeWithToken } from '@/lib/api';
+import { trackSignup, trackLogin } from '@/lib/analytics';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -76,6 +77,7 @@ function LoginPageContent() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   // Password strength calculation
   const calculatePasswordStrength = (pwd: string): { score: number; label: string; color: string } => {
@@ -131,6 +133,9 @@ function LoginPageContent() {
         // Get token BEFORE navigating so fetch can start immediately
         const token = await result.user.getIdToken();
         applyStoredReferralCode(token);
+        trackSignup(name);
+      } else {
+        trackLogin(name);
       }
       router.push(redirectTo);
     } catch (err: unknown) {
@@ -163,6 +168,7 @@ function LoginPageContent() {
     try {
       setIsLoading(true);
       await signInWithEmailAndPassword(auth, email, password);
+      trackLogin('email');
       router.push(redirectTo);
     } catch (err: unknown) {
       setError(getFirebaseErrorMessage(err));
@@ -195,6 +201,11 @@ function LoginPageContent() {
       return;
     }
 
+    if (!agreedToTerms) {
+      setError('Please agree to the Terms of Service and Privacy Policy');
+      return;
+    }
+
     try {
       setIsLoading(true);
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -203,6 +214,7 @@ function LoginPageContent() {
       const token = await userCredential.user.getIdToken();
       // Apply referral code for new signups (fire-and-forget with keepalive)
       applyStoredReferralCode(token);
+      trackSignup('email');
       router.push(redirectTo);
     } catch (err: unknown) {
       setError(getFirebaseErrorMessage(err));
@@ -515,10 +527,31 @@ function LoginPageContent() {
             )}
           </div>
 
+          <div className="flex items-start gap-3 p-4 bg-[#1E293B]/50 rounded-lg border border-[#334155]">
+            <Checkbox
+              id="agree-terms"
+              checked={agreedToTerms}
+              onCheckedChange={(checked) => setAgreedToTerms(checked as boolean)}
+              className="mt-0.5"
+            />
+            <div className="flex flex-col text-[#94A3B8] text-sm cursor-pointer leading-relaxed">
+              <span>I have read and agree to the</span>
+              <Link href="/terms" target="_blank" rel="noopener noreferrer" className="text-[#00F0D9] hover:text-[#00F0D9]/80 underline">
+                Terms of Service
+              </Link>
+              <span>
+                and{' '}
+                <Link href="/privacy" target="_blank" rel="noopener noreferrer" className="text-[#00F0D9] hover:text-[#00F0D9]/80 underline">
+                  Privacy Policy
+                </Link>
+              </span>
+            </div>
+          </div>
+
           <Button
             type="submit"
-            disabled={isLoading}
-            className="w-full bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] hover:opacity-90 text-white h-12"
+            disabled={isLoading || !agreedToTerms}
+            className="w-full bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] hover:opacity-90 text-white h-12 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? (
               <>

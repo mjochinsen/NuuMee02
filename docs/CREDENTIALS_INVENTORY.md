@@ -223,11 +223,26 @@ Access at: https://console.firebase.google.com/project/wanapi-prod/authenticatio
 
 ## 8. Analytics & Tracking
 
-| Service | ID |
-|---------|-------|
-| Google Analytics | `G-665HXGSWLB` |
-| Google Tag Manager | `GTM-WF8HJMM5` |
-| Microsoft Clarity | `ubfootn25x` |
+| Service | ID | Notes |
+|---------|-------|-------|
+| Google Analytics 4 (Firebase-linked) | `G-GN64HWEKWS` | Primary - linked to Firebase |
+| GA4 Stream ID | `13048850413` | NuuMee Frontend App |
+| Google Tag Manager | `GTM-WF8HJMM5` | Legacy (not currently used) |
+| Microsoft Clarity | `ubfootn25x` | Heatmaps/session recording |
+
+### GA4 Conversion Events Tracked
+| Event | Trigger | Data |
+|-------|---------|------|
+| `sign_up` | New user creates account | method (email/Google/GitHub) |
+| `login` | Existing user logs in | method (email/Google/GitHub) |
+| `purchase` | Payment success page loads | transaction_id, value, currency, items |
+
+### Analytics Implementation Files
+| File | Purpose |
+|------|---------|
+| `frontend/lib/analytics.ts` | Tracking utility functions |
+| `frontend/components/GoogleAnalytics.tsx` | GA4 script loader |
+| `frontend/app/layout.tsx` | GoogleAnalytics component inclusion |
 
 ---
 

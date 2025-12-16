@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { getReceipt, ReceiptResponse, getCreditBalance } from '@/lib/api';
 import { useAuth } from '@/components/AuthProvider';
+import { trackPurchase } from '@/lib/analytics';
 
 function PaymentSuccessContent() {
   const searchParams = useSearchParams();
@@ -35,6 +36,16 @@ function PaymentSuccessContent() {
         ]);
         setReceipt(receiptData);
         setCurrentBalance(balanceData.balance);
+
+        // Track purchase conversion in GA4
+        if (receiptData) {
+          trackPurchase(
+            receiptData.transaction_id,
+            receiptData.amount_cents / 100, // Convert cents to dollars
+            receiptData.currency?.toUpperCase() || 'USD',
+            [{ name: receiptData.package_name, quantity: 1, price: receiptData.amount_cents / 100 }]
+          );
+        }
       } catch (err) {
         console.error('Failed to fetch receipt:', err);
         setError('Failed to load receipt details');
