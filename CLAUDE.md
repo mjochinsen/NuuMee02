@@ -22,7 +22,7 @@ Don't guess — check the repo. Don't assume — read the file. Don't over-engin
 
 ---
 
-## Three Pillars
+## Four Pillars
 
 **KODY** — Orchestrator & Application Engineer
 
@@ -42,6 +42,7 @@ KODY is NOT a solo agent. KODY delegates, coordinates, and writes code after del
 - API endpoint? → `api-builder`
 - Need codebase research? → `explorer` agent
 - Deployment? → `deployment-orchestrator`
+- Marketing/analytics? → Ask MARKY
 
 **CLAUDY** — Claude Code Environment Optimizer
 
@@ -51,6 +52,14 @@ KODY is NOT a solo agent. KODY delegates, coordinates, and writes code after del
 
 - Owns: Agents, hooks, memory system, auditor, orchestration docs
 - Only FIBY may create/modify agents
+
+**MARKY** — Marketing & Analytics Expert
+
+- Owns: GA4 analytics, conversion tracking, marketing strategy
+- Tools: `mcp-google-analytics` MCP + `ga_admin.py` script
+- Can: Read reports, manage conversions, analyze funnels, track campaigns
+- GA4 Property: `514341875` (wanapi-prod)
+- Service Account: `nuumee-analytics@wanapi-prod.iam.gserviceaccount.com`
 
 ---
 
@@ -79,15 +88,18 @@ docs/        Specs, schemas, plans
 
 ## MCP Servers (External Tool Integrations)
 
-6 MCP servers provide direct tool access. **Prefer MCP tools over CLI commands.**
+9 MCP servers provide direct tool access. **Prefer MCP tools over CLI commands.**
 
 | Server | Purpose | Key Tools |
 |--------|---------|-----------|
 | `github` | PR/issue management, code search | `list_pull_requests`, `create_issue`, `search_code` |
-| `stripe` | Subscriptions, payments, customers | `list_subscriptions`, `list_customers`, `create_payment_link` |
+| `stripe-test` | Subscriptions, payments (TEST mode) | `list_subscriptions`, `list_customers`, `create_payment_link` |
+| `stripe-live` | Subscriptions, payments (LIVE mode) | Same as stripe-test (use with caution) |
 | `playwright` | E2E testing, browser automation | `playwright_navigate`, `playwright_screenshot`, `playwright_click` |
 | `apidog` | API documentation, OpenAPI specs | `read_project_oas`, `refresh_project_oas` |
 | `gcp` | Cloud Run logs, billing, resources | `get-logs`, `get-billing-info`, `list-sql-instances` |
+| `firebase` | Firestore, Auth, Hosting management | `experimental:mcp` tools |
+| `google-analytics` | GA4 traffic, conversions, user behavior | Data API + Admin via `/migrate ga_admin.py` |
 | `figma` | Design extraction | (via figma-extractor agent) |
 
 **Tool Naming:** `mcp__{server}__{tool}` (e.g., `mcp__stripe__list_subscriptions`)
@@ -104,13 +116,36 @@ docs/        Specs, schemas, plans
 
 **Config:** `.mcp.json` (credentials - do not commit to public repos)
 
-**MCP Server Notes:**
+**MCP Server Packages:**
 
-| Server | Status | Notes |
-|--------|--------|-------|
-| `gcp` | ⚠️ Partial | `run-gcp-code` broken (ESM error). Use `get-logs`, `get-billing-info`, `list-*` instead |
-| `apidog` | ✅ Working | Tool names include project suffix (e.g., `read_project_oas_pg3h8i`) |
-| Others | ✅ Working | Full functionality |
+| Server | Package | Status |
+|--------|---------|--------|
+| `github` | `@modelcontextprotocol/server-github` | ✅ |
+| `stripe-test` | `@stripe/mcp` | ✅ |
+| `stripe-live` | `@stripe/mcp` | ✅ |
+| `playwright` | `@executeautomation/playwright-mcp-server` | ✅ |
+| `apidog` | `apidog-mcp-server@latest` | ✅ |
+| `gcp` | `gcp-mcp` | ✅ (select project first) |
+| `firebase` | `firebase-tools@latest experimental:mcp` | ✅ |
+| `google-analytics` | `mcp-google-analytics` | ✅ |
+| `figma` | Custom extension | ✅ |
+
+**MCP Troubleshooting:**
+
+- **Tools not showing?** → Restart VS Code
+- **Auth errors?** → Run `gcloud auth login --update-adc`
+- **GA4 not working?** → Needs service account JSON + SA added to GA4 property with Viewer role
+- **GCP run-gcp-code?** → Run `select-project` first, use pre-initialized clients (run, storage, bigquery, logging)
+- **Package not found?** → Verify package name in `.mcp.json` matches table above
+
+**GA4 Admin Commands (for MARKY):**
+```bash
+/migrate ga_admin.py list_conversions        # List all conversion events
+/migrate ga_admin.py create_conversion <name> # Mark event as conversion
+/migrate ga_admin.py delete_conversion <id>   # Remove conversion
+/migrate ga_admin.py list_audiences           # List audiences
+/migrate ga_admin.py list_streams             # List data streams
+```
 
 ---
 
@@ -159,12 +194,14 @@ See [INFRASTRUCTURE_REFERENCE.md](../docs/agents/orchestration/systems/INFRASTRU
 | Next.js components | `frontend-dev`            |
 | Deployment         | `deployment-orchestrator` |
 | Agent help         | `/ask-fiby`               |
+| Analytics/Marketing | MARKY (GA4 tools)        |
 
 **Multi-Agent Rules:**
 
 - KODY SHOULD delegate multi-file tasks to specialized agents
 - Only FIBY may create/modify agents
-- Only CLAUDY may modify primes
+- Only CLAUDY may modify primes and CLAUDE.md
+- Only MARKY handles GA4 analytics and marketing
 - Sub-agents return code, KODY writes files
 
 **Model Selection:**

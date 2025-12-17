@@ -223,10 +223,27 @@ Access at: https://console.firebase.google.com/project/wanapi-prod/authenticatio
 
 ## 8. Analytics & Tracking
 
+### GA4 Property Details
+| Item | Value |
+|------|-------|
+| GA4 Property ID | `514341875` |
+| Property Name | `wanapi-prod` |
+| Measurement ID | `G-GN64HWEKWS` |
+| GA4 Stream ID | `13048850413` |
+| Stream Name | `NuuMee Frontend App` |
+| Account ID | `366511275` |
+
+### Analytics Service Account
+| Item | Value |
+|------|-------|
+| Service Account | `nuumee-analytics@wanapi-prod.iam.gserviceaccount.com` |
+| Key Location | `.claude/nuumee-analytics-key.json` |
+| GA4 Role | Viewer (can read + manage conversions) |
+| Admin Script | `backend/scripts/ga_admin.py` |
+
+### Other Tracking
 | Service | ID | Notes |
 |---------|-------|-------|
-| Google Analytics 4 (Firebase-linked) | `G-GN64HWEKWS` | Primary - linked to Firebase |
-| GA4 Stream ID | `13048850413` | NuuMee Frontend App |
 | Google Tag Manager | `GTM-WF8HJMM5` | Legacy (not currently used) |
 | Microsoft Clarity | `ubfootn25x` | Heatmaps/session recording |
 
@@ -237,12 +254,22 @@ Access at: https://console.firebase.google.com/project/wanapi-prod/authenticatio
 | `login` | Existing user logs in | method (email/Google/GitHub) |
 | `purchase` | Payment success page loads | transaction_id, value, currency, items |
 
+### GA4 Admin Commands (for MARKY)
+```bash
+/migrate ga_admin.py list_conversions         # List all conversion events
+/migrate ga_admin.py create_conversion <name> # Mark event as conversion
+/migrate ga_admin.py delete_conversion <id>   # Remove conversion
+/migrate ga_admin.py list_audiences           # List audiences
+/migrate ga_admin.py list_streams             # List data streams
+```
+
 ### Analytics Implementation Files
 | File | Purpose |
 |------|---------|
 | `frontend/lib/analytics.ts` | Tracking utility functions |
 | `frontend/components/GoogleAnalytics.tsx` | GA4 script loader |
 | `frontend/app/layout.tsx` | GoogleAnalytics component inclusion |
+| `backend/scripts/ga_admin.py` | GA4 Admin API script |
 
 ---
 
@@ -436,6 +463,59 @@ Use slash commands for deployment (NOT shell scripts):
 
 ---
 
+## 16. MCP Servers (Claude Code Integrations)
+
+**Config File:** `.mcp.json`
+
+### Active MCP Servers
+
+| Server | Purpose | User |
+|--------|---------|------|
+| `figma` | Design extraction from Figma files | KODY |
+| `github` | PR/issue management, code search | KODY |
+| `stripe-test` | Stripe TEST mode - subscriptions, payments | KODY |
+| `stripe-live` | Stripe LIVE mode - production payments | KODY |
+| `playwright` | E2E testing, browser automation | KODY |
+| `apidog` | API documentation, OpenAPI specs | KODY |
+| `gcp` | Cloud Run logs, billing, GCP resources | KODY |
+| `firebase` | Firestore data, Firebase project management | KODY |
+| `google-analytics` | GA4 Data API + Admin API (via ga_admin.py) | MARKY |
+
+### Tool Naming Convention
+```
+mcp__{server}__{tool}
+```
+Examples:
+- `mcp__stripe-test__list_subscriptions`
+- `mcp__firebase__firestore_query`
+- `mcp__google-analytics__get_report`
+
+### Setup Requirements
+
+**Firebase MCP:**
+- Requires: `firebase login` (one-time auth)
+- Uses: `GOOGLE_CLOUD_PROJECT=wanapi-prod`
+- Docs: https://firebase.google.com/docs/ai-assistance/mcp-server
+
+**Google Analytics MCP:**
+- Service Account: `nuumee-analytics@wanapi-prod.iam.gserviceaccount.com`
+- Key File: `.claude/nuumee-analytics-key.json`
+- Property ID: `514341875` (wanapi-prod GA4)
+- Admin Script: `backend/scripts/ga_admin.py` (for conversions, audiences)
+
+**Stripe MCP:**
+- Test: Uses `sk_test_*` key
+- Live: Needs `sk_live_*` key (replace placeholder in .mcp.json)
+
+### User Assignment
+
+| User | MCP Servers | Purpose |
+|------|-------------|---------|
+| **KODY** | figma, github, stripe-*, playwright, apidog, gcp, firebase | Code & Infrastructure |
+| **MARKY** | google-analytics, stripe-* | Marketing & Revenue Analytics |
+
+---
+
 ## Notes
 
 1. **Secret Keys**: All sensitive keys (Stripe secret, Firebase admin, WaveSpeed API) are stored in GCP Secret Manager, NOT in code.
@@ -447,6 +527,8 @@ Use slash commands for deployment (NOT shell scripts):
 4. **WaveSpeed API**: Requires valid API key to be configured in Secret Manager for video processing to work.
 
 5. **CORS**: Currently configured for `localhost:3000` and `nuumee.ai` only.
+
+6. **MCP Servers**: Restart Claude Code after modifying `.mcp.json` for changes to take effect.
 
 ---
 

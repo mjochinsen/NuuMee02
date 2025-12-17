@@ -56,3 +56,4 @@ playwright-report/
 *.pyc
 __pycache__/
 .mcp.json
+.claude/*.json
