@@ -11,13 +11,29 @@ declare global {
   }
 }
 
+// Helper: Push to dataLayer (works even before gtag loads)
+// This is more reliable than checking window.gtag
+const pushToDataLayer = (...args: unknown[]) => {
+  if (typeof window !== "undefined") {
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push(arguments);
+  }
+};
+
+// Safe gtag wrapper - uses dataLayer directly
+const gtag = (...args: unknown[]) => {
+  if (typeof window !== "undefined") {
+    window.dataLayer = window.dataLayer || [];
+    // Push as arguments object (how gtag expects it)
+    window.dataLayer.push(args);
+  }
+};
+
 // Track page views
 export const pageview = (url: string) => {
-  if (typeof window !== "undefined" && window.gtag) {
-    window.gtag("config", GA_MEASUREMENT_ID, {
-      page_path: url,
-    });
-  }
+  gtag("config", GA_MEASUREMENT_ID, {
+    page_path: url,
+  });
 };
 
 // Track custom events
@@ -27,30 +43,26 @@ export const event = (
   label?: string,
   value?: number
 ) => {
-  if (typeof window !== "undefined" && window.gtag) {
-    window.gtag("event", action, {
-      event_category: category,
-      event_label: label,
-      value: value,
-    });
-  }
+  gtag("event", action, {
+    event_category: category,
+    event_label: label,
+    value: value,
+  });
 };
 
 // Conversion Events for Google Ads
 export const trackSignup = (method: string) => {
-  if (typeof window !== "undefined" && window.gtag) {
-    window.gtag("event", "sign_up", {
-      method: method,
-    });
-  }
+  console.log("[GA4] Tracking signup:", method);
+  gtag("event", "sign_up", {
+    method: method,
+  });
 };
 
 export const trackLogin = (method: string) => {
-  if (typeof window !== "undefined" && window.gtag) {
-    window.gtag("event", "login", {
-      method: method,
-    });
-  }
+  console.log("[GA4] Tracking login:", method);
+  gtag("event", "login", {
+    method: method,
+  });
 };
 
 export const trackPurchase = (
@@ -59,23 +71,21 @@ export const trackPurchase = (
   currency: string = "USD",
   items?: { name: string; quantity: number; price: number }[]
 ) => {
-  if (typeof window !== "undefined" && window.gtag) {
-    window.gtag("event", "purchase", {
-      transaction_id: transactionId,
-      value: value,
-      currency: currency,
-      items: items,
-    });
-  }
+  console.log("[GA4] Tracking purchase:", { transactionId, value, currency });
+  gtag("event", "purchase", {
+    transaction_id: transactionId,
+    value: value,
+    currency: currency,
+    items: items,
+  });
 };
 
 export const trackBeginCheckout = (value: number, currency: string = "USD") => {
-  if (typeof window !== "undefined" && window.gtag) {
-    window.gtag("event", "begin_checkout", {
-      value: value,
-      currency: currency,
-    });
-  }
+  console.log("[GA4] Tracking begin_checkout:", { value, currency });
+  gtag("event", "begin_checkout", {
+    value: value,
+    currency: currency,
+  });
 };
 
 export const trackVideoGenerated = (
@@ -83,12 +93,11 @@ export const trackVideoGenerated = (
   resolution: string,
   creditsUsed: number
 ) => {
-  if (typeof window !== "undefined" && window.gtag) {
-    window.gtag("event", "video_generated", {
-      event_category: "engagement",
-      video_duration: duration,
-      video_resolution: resolution,
-      credits_used: creditsUsed,
-    });
-  }
+  console.log("[GA4] Tracking video_generated:", { duration, resolution, creditsUsed });
+  gtag("event", "video_generated", {
+    event_category: "engagement",
+    video_duration: duration,
+    video_resolution: resolution,
+    credits_used: creditsUsed,
+  });
 };
