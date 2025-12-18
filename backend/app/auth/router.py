@@ -47,7 +47,7 @@ def generate_referral_code() -> str:
 
 
 def firestore_doc_to_user_profile(doc_data: dict, user_id: str) -> UserProfile:
-    """Convert Firestore document to UserProfile model."""
+    """Convert Firestore document to UserProfile model with defensive validation."""
     created_at = doc_data.get("created_at")
     updated_at = doc_data.get("updated_at")
 
@@ -62,22 +62,38 @@ def firestore_doc_to_user_profile(doc_data: dict, user_id: str) -> UserProfile:
     elif updated_at is None:
         updated_at = datetime.now(timezone.utc)
 
+    # Defensive int conversion for credits_balance (Firestore may store as float)
+    credits_raw = doc_data.get("credits_balance", 25)
+    try:
+        credits_balance = int(credits_raw) if credits_raw is not None else 25
+    except (TypeError, ValueError):
+        logger.warning(f"Invalid credits_balance for user {user_id}: {credits_raw}, defaulting to 25")
+        credits_balance = 25
+
+    # Defensive string handling for tier and status fields
+    subscription_tier = doc_data.get("subscription_tier") or "free"
+    if subscription_tier not in ("free", "creator", "studio"):
+        logger.warning(f"Unknown subscription_tier for user {user_id}: {subscription_tier}, defaulting to free")
+        subscription_tier = "free"
+
+    affiliate_status = doc_data.get("affiliate_status") or "none"
+
     return UserProfile(
         user_id=user_id,
-        email=doc_data.get("email", ""),
-        email_verified=doc_data.get("email_verified", False),
+        email=doc_data.get("email") or "",
+        email_verified=bool(doc_data.get("email_verified", False)),
         display_name=doc_data.get("display_name"),
         avatar_url=doc_data.get("avatar_url"),
         company=doc_data.get("company"),
         location=doc_data.get("location"),
         bio=doc_data.get("bio"),
-        credits_balance=doc_data.get("credits_balance", 25),
-        subscription_tier=doc_data.get("subscription_tier", "free"),
+        credits_balance=credits_balance,
+        subscription_tier=subscription_tier,
         billing_period=doc_data.get("billing_period"),  # "month" or "year", None for free
-        referral_code=doc_data.get("referral_code", ""),
+        referral_code=doc_data.get("referral_code") or "",
         referred_by=doc_data.get("referred_by"),
-        is_affiliate=doc_data.get("is_affiliate", False),
-        affiliate_status=doc_data.get("affiliate_status", "none"),
+        is_affiliate=bool(doc_data.get("is_affiliate", False)),
+        affiliate_status=affiliate_status,
         created_at=created_at,
         updated_at=updated_at,
     )

@@ -29,7 +29,7 @@ WAVESPEED_API_URL = "https://api.wavespeed.ai/api/v2"
 # Cloud Scheduler service account for OIDC verification
 SCHEDULER_AUDIENCE = os.getenv(
     "SCHEDULER_AUDIENCE",
-    "https://api.nuumee.ai/internal/watchdog"
+    "https://nuumee-api-450296399943.us-central1.run.app/internal/watchdog"
 )
 
 # Cache for WaveSpeed API key

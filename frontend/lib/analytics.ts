@@ -11,15 +11,6 @@ declare global {
   }
 }
 
-// Helper: Push to dataLayer (works even before gtag loads)
-// This is more reliable than checking window.gtag
-const pushToDataLayer = (...args: unknown[]) => {
-  if (typeof window !== "undefined") {
-    window.dataLayer = window.dataLayer || [];
-    window.dataLayer.push(arguments);
-  }
-};
-
 // Safe gtag wrapper - uses dataLayer directly
 const gtag = (...args: unknown[]) => {
   if (typeof window !== "undefined") {

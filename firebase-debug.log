@@ -1,0 +1,174 @@
+[debug] [2025-12-18T06:21:16.991Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"firestore-send-email"}
+[debug] [2025-12-18T06:21:17.003Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"firestore-send-email"}
+[debug] [2025-12-18T06:21:17.011Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"firestore-send-email"}
+[debug] [2025-12-18T06:21:17.017Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"firestore-send-email"}
+[debug] [2025-12-18T06:21:17.058Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"firestore-send-email"}
+[debug] [2025-12-18T06:21:17.067Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"firestore-send-email"}
+[debug] [2025-12-18T06:21:17.071Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-12-18T06:21:17.073Z] > authorizing via signed-in user (h2op@h2op.us)
+[debug] [2025-12-18T06:21:17.073Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-12-18T06:21:17.077Z] > authorizing via signed-in user (h2op@h2op.us)
+[debug] [2025-12-18T06:21:17.079Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"firestore-send-email"}
+[debug] [2025-12-18T06:21:17.095Z] Checked if tokens are valid: true, expires at: 1766042184217
+[debug] [2025-12-18T06:21:17.096Z] Checked if tokens are valid: true, expires at: 1766042184217
+[debug] [2025-12-18T06:21:17.116Z] Checked if tokens are valid: true, expires at: 1766042184217
+[debug] [2025-12-18T06:21:17.117Z] Checked if tokens are valid: true, expires at: 1766042184217
+[debug] [2025-12-18T06:21:17.118Z] Checked if tokens are valid: true, expires at: 1766042184217
+[debug] [2025-12-18T06:21:17.118Z] Checked if tokens are valid: true, expires at: 1766042184217
+[debug] [2025-12-18T06:21:17.119Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"firestore-send-email"}
+[debug] [2025-12-18T06:21:17.120Z] Checked if tokens are valid: true, expires at: 1766042184217
+[debug] [2025-12-18T06:21:17.121Z] Checked if tokens are valid: true, expires at: 1766042184217
+[debug] [2025-12-18T06:21:17.130Z] Checked if tokens are valid: true, expires at: 1766042184217
+[debug] [2025-12-18T06:21:17.131Z] Checked if tokens are valid: true, expires at: 1766042184217
+[debug] [2025-12-18T06:21:17.132Z] Checked if tokens are valid: true, expires at: 1766042184217
+[debug] [2025-12-18T06:21:17.132Z] Checked if tokens are valid: true, expires at: 1766042184217
+[debug] [2025-12-18T06:21:17.132Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-12-18T06:21:17.132Z] > authorizing via signed-in user (h2op@h2op.us)
+[debug] [2025-12-18T06:21:17.135Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebasedataconnect.googleapis.com [none]
+[debug] [2025-12-18T06:21:17.135Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebasedataconnect.googleapis.com x-goog-quota-user=projects/wanapi-prod
+[debug] [2025-12-18T06:21:17.266Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebaseapphosting.googleapis.com [none]
+[debug] [2025-12-18T06:21:17.269Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebaseapphosting.googleapis.com x-goog-quota-user=projects/wanapi-prod
+[debug] [2025-12-18T06:21:17.276Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebaseio.com [none]
+[debug] [2025-12-18T06:21:17.277Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebaseio.com x-goog-quota-user=projects/wanapi-prod
+[debug] [2025-12-18T06:21:17.283Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebasedataconnect.googleapis.com [none]
+[debug] [2025-12-18T06:21:17.287Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebasedataconnect.googleapis.com x-goog-quota-user=projects/wanapi-prod
+[debug] [2025-12-18T06:21:17.293Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebaseapphosting.googleapis.com [none]
+[debug] [2025-12-18T06:21:17.293Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebaseapphosting.googleapis.com x-goog-quota-user=projects/wanapi-prod
+[debug] [2025-12-18T06:21:17.300Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebaseio.com [none]
+[debug] [2025-12-18T06:21:17.300Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebaseio.com x-goog-quota-user=projects/wanapi-prod
+[debug] [2025-12-18T06:21:17.306Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"firestore-send-email"}
+[debug] [2025-12-18T06:21:17.308Z] Checked if tokens are valid: true, expires at: 1766042184217
+[debug] [2025-12-18T06:21:17.308Z] Checked if tokens are valid: true, expires at: 1766042184217
+[debug] [2025-12-18T06:21:17.318Z] Checked if tokens are valid: true, expires at: 1766042184217
+[debug] [2025-12-18T06:21:17.318Z] Checked if tokens are valid: true, expires at: 1766042184217
+[debug] [2025-12-18T06:21:17.319Z] Checked if tokens are valid: true, expires at: 1766042184217
+[debug] [2025-12-18T06:21:17.320Z] Checked if tokens are valid: true, expires at: 1766042184217
+[debug] [2025-12-18T06:21:17.320Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebasedataconnect.googleapis.com [none]
+[debug] [2025-12-18T06:21:17.321Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebasedataconnect.googleapis.com x-goog-quota-user=projects/wanapi-prod
+[debug] [2025-12-18T06:21:17.323Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebaseapphosting.googleapis.com [none]
+[debug] [2025-12-18T06:21:17.324Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebaseapphosting.googleapis.com x-goog-quota-user=projects/wanapi-prod
+[debug] [2025-12-18T06:21:17.327Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebaseio.com [none]
+[debug] [2025-12-18T06:21:17.328Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebaseio.com x-goog-quota-user=projects/wanapi-prod
+[debug] [2025-12-18T06:21:18.151Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebaseio.com 403
+[debug] [2025-12-18T06:21:18.153Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebaseio.com [omitted]
+[debug] [2025-12-18T06:21:18.235Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebaseapphosting.googleapis.com 200
+[debug] [2025-12-18T06:21:18.235Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebaseapphosting.googleapis.com [omitted]
+[debug] [2025-12-18T06:21:18.791Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebaseio.com 403
+[debug] [2025-12-18T06:21:18.796Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebaseio.com [omitted]
+[debug] [2025-12-18T06:21:18.802Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebasedataconnect.googleapis.com 200
+[debug] [2025-12-18T06:21:18.802Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebasedataconnect.googleapis.com [omitted]
+[debug] [2025-12-18T06:21:18.809Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebaseio.com 403
+[debug] [2025-12-18T06:21:18.809Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebaseio.com [omitted]
+[debug] [2025-12-18T06:21:18.814Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebasedataconnect.googleapis.com 200
+[debug] [2025-12-18T06:21:18.815Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebasedataconnect.googleapis.com [omitted]
+[debug] [2025-12-18T06:21:18.816Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"firestore-send-email"}
+[debug] [2025-12-18T06:21:18.823Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"firestore-send-email"}
+[debug] [2025-12-18T06:21:18.828Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"firestore-send-email"}
+[debug] [2025-12-18T06:21:18.838Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-12-18T06:21:18.838Z] > authorizing via signed-in user (h2op@h2op.us)
+[debug] [2025-12-18T06:21:18.842Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"firestore-send-email"}
+[debug] [2025-12-18T06:21:18.848Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"firestore-send-email"}
+[debug] [2025-12-18T06:21:18.850Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-12-18T06:21:18.850Z] > authorizing via signed-in user (h2op@h2op.us)
+[debug] [2025-12-18T06:21:18.858Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebaseapphosting.googleapis.com 200
+[debug] [2025-12-18T06:21:18.858Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebaseapphosting.googleapis.com [omitted]
+[debug] [2025-12-18T06:21:18.861Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebaseapphosting.googleapis.com 200
+[debug] [2025-12-18T06:21:18.865Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebaseapphosting.googleapis.com [omitted]
+[debug] [2025-12-18T06:21:18.866Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"firestore-send-email"}
+[debug] [2025-12-18T06:21:18.871Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"firestore-send-email"}
+[debug] [2025-12-18T06:21:18.872Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"firestore-send-email"}
+[debug] [2025-12-18T06:21:18.873Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-12-18T06:21:18.879Z] > authorizing via signed-in user (h2op@h2op.us)
+[debug] [2025-12-18T06:21:18.881Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"firestore-send-email"}
+[debug] [2025-12-18T06:21:18.885Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"firestore-send-email"}
+[debug] [2025-12-18T06:21:18.891Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-12-18T06:21:18.892Z] > authorizing via signed-in user (h2op@h2op.us)
+[debug] [2025-12-18T06:21:18.900Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebasedataconnect.googleapis.com 200
+[debug] [2025-12-18T06:21:18.908Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebasedataconnect.googleapis.com [omitted]
+[debug] [2025-12-18T06:21:25.947Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"firestore-send-email"}
+[debug] [2025-12-18T06:21:25.955Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"firestore-send-email"}
+[debug] [2025-12-18T06:21:25.958Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"firestore-send-email"}
+[debug] [2025-12-18T06:21:25.960Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"firestore-send-email"}
+[debug] [2025-12-18T06:21:25.962Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"firestore-send-email"}
+[debug] [2025-12-18T06:21:25.963Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"firestore-send-email"}
+[debug] [2025-12-18T06:21:25.964Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-12-18T06:21:25.965Z] > authorizing via signed-in user (h2op@h2op.us)
+[debug] [2025-12-18T06:21:25.965Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-12-18T06:21:25.966Z] > authorizing via signed-in user (h2op@h2op.us)
+[debug] [2025-12-18T06:21:25.967Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"firestore-send-email"}
+[debug] [2025-12-18T06:21:25.976Z] Checked if tokens are valid: true, expires at: 1766042184217
+[debug] [2025-12-18T06:21:25.976Z] Checked if tokens are valid: true, expires at: 1766042184217
+[debug] [2025-12-18T06:21:25.988Z] Checked if tokens are valid: true, expires at: 1766042184217
+[debug] [2025-12-18T06:21:25.988Z] Checked if tokens are valid: true, expires at: 1766042184217
+[debug] [2025-12-18T06:21:25.988Z] Checked if tokens are valid: true, expires at: 1766042184217
+[debug] [2025-12-18T06:21:25.989Z] Checked if tokens are valid: true, expires at: 1766042184217
+[debug] [2025-12-18T06:21:26.003Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"firestore-send-email"}
+[debug] [2025-12-18T06:21:26.004Z] Checked if tokens are valid: true, expires at: 1766042184217
+[debug] [2025-12-18T06:21:26.004Z] Checked if tokens are valid: true, expires at: 1766042184217
+[debug] [2025-12-18T06:21:26.009Z] Checked if tokens are valid: true, expires at: 1766042184217
+[debug] [2025-12-18T06:21:26.009Z] Checked if tokens are valid: true, expires at: 1766042184217
+[debug] [2025-12-18T06:21:26.010Z] Checked if tokens are valid: true, expires at: 1766042184217
+[debug] [2025-12-18T06:21:26.010Z] Checked if tokens are valid: true, expires at: 1766042184217
+[debug] [2025-12-18T06:21:26.010Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-12-18T06:21:26.011Z] > authorizing via signed-in user (h2op@h2op.us)
+[debug] [2025-12-18T06:21:26.015Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebasedataconnect.googleapis.com [none]
+[debug] [2025-12-18T06:21:26.015Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebasedataconnect.googleapis.com x-goog-quota-user=projects/wanapi-prod
+[debug] [2025-12-18T06:21:26.074Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebaseapphosting.googleapis.com [none]
+[debug] [2025-12-18T06:21:26.075Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebaseapphosting.googleapis.com x-goog-quota-user=projects/wanapi-prod
+[debug] [2025-12-18T06:21:26.077Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebaseio.com [none]
+[debug] [2025-12-18T06:21:26.078Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebaseio.com x-goog-quota-user=projects/wanapi-prod
+[debug] [2025-12-18T06:21:26.080Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebasedataconnect.googleapis.com [none]
+[debug] [2025-12-18T06:21:26.080Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebasedataconnect.googleapis.com x-goog-quota-user=projects/wanapi-prod
+[debug] [2025-12-18T06:21:26.082Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebaseapphosting.googleapis.com [none]
+[debug] [2025-12-18T06:21:26.082Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebaseapphosting.googleapis.com x-goog-quota-user=projects/wanapi-prod
+[debug] [2025-12-18T06:21:26.084Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebaseio.com [none]
+[debug] [2025-12-18T06:21:26.084Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebaseio.com x-goog-quota-user=projects/wanapi-prod
+[debug] [2025-12-18T06:21:26.087Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"firestore-send-email"}
+[debug] [2025-12-18T06:21:26.087Z] Checked if tokens are valid: true, expires at: 1766042184217
+[debug] [2025-12-18T06:21:26.088Z] Checked if tokens are valid: true, expires at: 1766042184217
+[debug] [2025-12-18T06:21:26.091Z] Checked if tokens are valid: true, expires at: 1766042184217
+[debug] [2025-12-18T06:21:26.091Z] Checked if tokens are valid: true, expires at: 1766042184217
+[debug] [2025-12-18T06:21:26.092Z] Checked if tokens are valid: true, expires at: 1766042184217
+[debug] [2025-12-18T06:21:26.092Z] Checked if tokens are valid: true, expires at: 1766042184217
+[debug] [2025-12-18T06:21:26.092Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebasedataconnect.googleapis.com [none]
+[debug] [2025-12-18T06:21:26.092Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebasedataconnect.googleapis.com x-goog-quota-user=projects/wanapi-prod
+[debug] [2025-12-18T06:21:26.095Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebaseapphosting.googleapis.com [none]
+[debug] [2025-12-18T06:21:26.095Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebaseapphosting.googleapis.com x-goog-quota-user=projects/wanapi-prod
+[debug] [2025-12-18T06:21:26.097Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebaseio.com [none]
+[debug] [2025-12-18T06:21:26.097Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebaseio.com x-goog-quota-user=projects/wanapi-prod
+[debug] [2025-12-18T06:21:26.418Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebaseio.com 403
+[debug] [2025-12-18T06:21:26.418Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebaseio.com [omitted]
+[debug] [2025-12-18T06:21:26.488Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebaseapphosting.googleapis.com 200
+[debug] [2025-12-18T06:21:26.489Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebaseapphosting.googleapis.com [omitted]
+[debug] [2025-12-18T06:21:26.555Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebaseio.com 403
+[debug] [2025-12-18T06:21:26.556Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebaseio.com [omitted]
+[debug] [2025-12-18T06:21:26.618Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebasedataconnect.googleapis.com 200
+[debug] [2025-12-18T06:21:26.619Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebasedataconnect.googleapis.com [omitted]
+[debug] [2025-12-18T06:21:26.626Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebaseio.com 403
+[debug] [2025-12-18T06:21:26.626Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebaseio.com [omitted]
+[debug] [2025-12-18T06:21:26.630Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebaseapphosting.googleapis.com 200
+[debug] [2025-12-18T06:21:26.630Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebaseapphosting.googleapis.com [omitted]
+[debug] [2025-12-18T06:21:26.634Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebaseapphosting.googleapis.com 200
+[debug] [2025-12-18T06:21:26.634Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebaseapphosting.googleapis.com [omitted]
+[debug] [2025-12-18T06:21:26.635Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebasedataconnect.googleapis.com 200
+[debug] [2025-12-18T06:21:26.635Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebasedataconnect.googleapis.com [omitted]
+[debug] [2025-12-18T06:21:26.635Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"firestore-send-email"}
+[debug] [2025-12-18T06:21:26.637Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"firestore-send-email"}
+[debug] [2025-12-18T06:21:26.638Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"firestore-send-email"}
+[debug] [2025-12-18T06:21:26.639Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-12-18T06:21:26.639Z] > authorizing via signed-in user (h2op@h2op.us)
+[debug] [2025-12-18T06:21:26.639Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"firestore-send-email"}
+[debug] [2025-12-18T06:21:26.640Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"firestore-send-email"}
+[debug] [2025-12-18T06:21:26.641Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-12-18T06:21:26.641Z] > authorizing via signed-in user (h2op@h2op.us)
+[debug] [2025-12-18T06:21:26.645Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebasedataconnect.googleapis.com 200
+[debug] [2025-12-18T06:21:26.646Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/wanapi-prod/services/firebasedataconnect.googleapis.com [omitted]
+[debug] [2025-12-18T06:21:26.646Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"firestore-send-email"}
+[debug] [2025-12-18T06:21:26.648Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"firestore-send-email"}
+[debug] [2025-12-18T06:21:26.649Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"firestore-send-email"}
+[debug] [2025-12-18T06:21:26.650Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-12-18T06:21:26.650Z] > authorizing via signed-in user (h2op@h2op.us)
+[debug] [2025-12-18T06:21:26.651Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"firestore-send-email"}
+[debug] [2025-12-18T06:21:26.652Z] Object "/extensions" in "firebase.json" has unknown property: {"additionalProperty":"firestore-send-email"}
+[debug] [2025-12-18T06:21:26.652Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-12-18T06:21:26.653Z] > authorizing via signed-in user (h2op@h2op.us)

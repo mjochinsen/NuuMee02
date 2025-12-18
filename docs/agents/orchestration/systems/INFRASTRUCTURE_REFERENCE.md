@@ -237,7 +237,7 @@ From Anthropic: "Resume from checkpoints rather than restarting."
 
 ## MCP Server System
 
-6 Model Context Protocol servers provide direct API access without CLI commands.
+9 Model Context Protocol servers provide direct API access without CLI commands.
 
 ### Tool Naming Convention
 ```
@@ -245,9 +245,11 @@ mcp__{server}__{tool}
 
 Examples:
 - mcp__github__list_pull_requests
-- mcp__stripe__list_subscriptions
+- mcp__stripe-test__list_subscriptions
 - mcp__playwright__playwright_navigate
 - mcp__gcp__get-logs
+- mcp__firebase__*
+- mcp__google-analytics__*
 ```
 
 ### Server Inventory
@@ -255,10 +257,13 @@ Examples:
 | Server | Auth | Key Tools | Config |
 |--------|------|-----------|--------|
 | `github` | PAT | `list_pull_requests`, `create_issue`, `search_code`, `get_file_contents`, `create_pull_request` | .mcp.json |
-| `stripe` | API Key (test) | `list_products`, `list_customers`, `list_subscriptions`, `create_payment_link`, `search_stripe_documentation` | .mcp.json |
-| `playwright` | None | `playwright_navigate`, `playwright_screenshot`, `playwright_click`, `playwright_fill`, `playwright_get_visible_text`, `playwright_get_visible_html` | .mcp.json |
-| `apidog` | Access Token | `read_project_oas_nqgkfr`, `refresh_project_oas_nqgkfr` | .mcp.json |
-| `gcp` | ADC | `get-logs`, `get-billing-info`, `list-projects`, `list-gke-clusters`, `run-gcp-code` | .mcp.json |
+| `stripe-test` | API Key (test) | `list_products`, `list_customers`, `list_subscriptions`, `create_payment_link`, `search_stripe_documentation` | .mcp.json |
+| `stripe-live` | API Key (live) | Same as stripe-test (use with caution) | .mcp.json |
+| `playwright` | None | `playwright_navigate`, `playwright_screenshot`, `playwright_click`, `playwright_fill`, `playwright_get_visible_text` | .mcp.json |
+| `apidog` | Access Token | `read_project_oas_*`, `refresh_project_oas_*` | .mcp.json |
+| `gcp` | ADC | `get-logs`, `get-billing-info`, `list-projects`, `list-gke-clusters` | .mcp.json |
+| `firebase` | Firebase login | Firestore, Auth, Hosting management | .mcp.json |
+| `google-analytics` | ADC + Analytics API | GA4 traffic, conversions, user behavior queries | .mcp.json |
 | `figma` | API Key | Design extraction via figma-extractor agent | .mcp.json |
 
 ### When to Use MCP vs CLI

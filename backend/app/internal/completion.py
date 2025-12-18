@@ -26,9 +26,10 @@ ASSETS_BUCKET = os.getenv("ASSETS_BUCKET", "nuumee-assets")
 PROJECT_ID = os.getenv("GCP_PROJECT_ID", "wanapi-prod")
 
 # Pub/Sub push subscription audience (for OIDC verification)
+# Use Cloud Run URL as default - api.nuumee.ai can be added via env if domain is configured
 PUBSUB_AUDIENCE = os.getenv(
     "PUBSUB_AUDIENCE",
-    "https://api.nuumee.ai/internal/process-completion"
+    "https://nuumee-api-450296399943.us-central1.run.app/internal/process-completion"
 )
 
 # Cache storage client

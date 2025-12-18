@@ -137,23 +137,41 @@ async def list_users(
     # Convert to response
     items = []
     for doc in paginated_docs:
-        data = doc.to_dict()
-        # Handle tier safely - default to FREE if unknown
-        tier_value = data.get("subscription_tier", data.get("tier", "free"))
         try:
-            tier = UserTier(tier_value)
-        except ValueError:
-            tier = UserTier.FREE
-        items.append(AdminUserSummary(
-            uid=doc.id,
-            email=data.get("email", ""),
-            display_name=data.get("display_name"),
-            tier=tier,
-            credits=data.get("credits_balance", 0),
-            created_at=data.get("created_at", datetime.now(timezone.utc)),
-            last_active=data.get("last_active"),
-            jobs_count=data.get("jobs_count", 0),
-        ))
+            data = doc.to_dict()
+            # Handle tier safely - default to FREE if unknown
+            tier_value = data.get("subscription_tier", data.get("tier", "free"))
+            try:
+                tier = UserTier(tier_value)
+            except ValueError:
+                tier = UserTier.FREE
+
+            # Handle credits - ensure it's an int
+            credits_raw = data.get("credits_balance", 0)
+            credits = int(credits_raw) if credits_raw is not None else 0
+
+            # Handle jobs_count - ensure it's an int
+            jobs_count_raw = data.get("jobs_count", 0)
+            jobs_count = int(jobs_count_raw) if jobs_count_raw is not None else 0
+
+            # Handle created_at - ensure it's a datetime
+            created_at = data.get("created_at")
+            if created_at is None:
+                created_at = datetime.now(timezone.utc)
+
+            items.append(AdminUserSummary(
+                uid=doc.id,
+                email=data.get("email") or "",
+                display_name=data.get("display_name"),
+                tier=tier,
+                credits=credits,
+                created_at=created_at,
+                last_active=data.get("last_active"),
+                jobs_count=jobs_count,
+            ))
+        except Exception as e:
+            # Log and skip users with invalid data
+            logger.warning(f"Skipping user {doc.id} due to validation error: {e}")
 
     return {
         "items": items,
@@ -184,18 +202,31 @@ async def get_user_detail(uid: str) -> Optional[AdminUserDetail]:
     )
     recent_jobs = []
     for job_doc in jobs_query.stream():
-        job_data = job_doc.to_dict()
-        recent_jobs.append(AdminJobSummary(
-            id=job_doc.id,
-            user_id=uid,
-            user_email=data.get("email"),
-            type=job_data.get("type"),
-            status=JobStatus(job_data.get("status", "pending")),
-            credits_used=job_data.get("credits_used", 0),
-            created_at=job_data.get("created_at", datetime.now(timezone.utc)),
-            completed_at=job_data.get("completed_at"),
-            error_message=job_data.get("error_message"),
-        ))
+        try:
+            job_data = job_doc.to_dict()
+            # Defensive status handling (may have "queued" or other non-enum values)
+            status_raw = job_data.get("status", "pending")
+            try:
+                status = JobStatus(status_raw)
+            except ValueError:
+                logger.warning(f"Unknown job status for {job_doc.id}: {status_raw}, defaulting to pending")
+                status = JobStatus.PENDING
+            # Defensive int conversion
+            credits_raw = job_data.get("credits_used", 0)
+            credits_used = int(credits_raw) if credits_raw is not None else 0
+            recent_jobs.append(AdminJobSummary(
+                id=job_doc.id,
+                user_id=uid,
+                user_email=data.get("email"),
+                type=job_data.get("type"),
+                status=status,
+                credits_used=credits_used,
+                created_at=job_data.get("created_at") or datetime.now(timezone.utc),
+                completed_at=job_data.get("completed_at"),
+                error_message=job_data.get("error_message"),
+            ))
+        except Exception as e:
+            logger.warning(f"Skipping job {job_doc.id} in user detail: {e}")
 
     # Get recent transactions (last 10)
     transactions_query = (
@@ -206,15 +237,30 @@ async def get_user_detail(uid: str) -> Optional[AdminUserDetail]:
     )
     recent_transactions = []
     for tx_doc in transactions_query.stream():
-        tx_data = tx_doc.to_dict()
-        recent_transactions.append(CreditTransaction(
-            id=tx_doc.id,
-            type=CreditTransactionType(tx_data.get("type", "usage")),
-            amount=tx_data.get("amount", 0),
-            balance_after=tx_data.get("balance_after", 0),
-            description=tx_data.get("description"),
-            created_at=tx_data.get("created_at", datetime.now(timezone.utc)),
-        ))
+        try:
+            tx_data = tx_doc.to_dict()
+            # Defensive type handling
+            type_raw = tx_data.get("type", "usage")
+            try:
+                tx_type = CreditTransactionType(type_raw)
+            except ValueError:
+                logger.warning(f"Unknown transaction type for {tx_doc.id}: {type_raw}, defaulting to usage")
+                tx_type = CreditTransactionType.USAGE
+            # Defensive int conversion
+            amount_raw = tx_data.get("amount", 0)
+            amount = int(amount_raw) if amount_raw is not None else 0
+            balance_raw = tx_data.get("balance_after", 0)
+            balance_after = int(balance_raw) if balance_raw is not None else 0
+            recent_transactions.append(CreditTransaction(
+                id=tx_doc.id,
+                type=tx_type,
+                amount=amount,
+                balance_after=balance_after,
+                description=tx_data.get("description"),
+                created_at=tx_data.get("created_at") or datetime.now(timezone.utc),
+            ))
+        except Exception as e:
+            logger.warning(f"Skipping transaction {tx_doc.id} in user detail: {e}")
 
     # Get subscription info if exists
     subscription = None
@@ -234,15 +280,27 @@ async def get_user_detail(uid: str) -> Optional[AdminUserDetail]:
     except ValueError:
         tier = UserTier.FREE
 
+    # Defensive int conversion (Firestore may store as float)
+    credits_raw = data.get("credits_balance", 0)
+    credits = int(credits_raw) if credits_raw is not None else 0
+
+    jobs_count_raw = data.get("jobs_count", 0)
+    jobs_count = int(jobs_count_raw) if jobs_count_raw is not None else 0
+
+    # Handle created_at - ensure it's a datetime
+    created_at = data.get("created_at")
+    if created_at is None:
+        created_at = datetime.now(timezone.utc)
+
     return AdminUserDetail(
         uid=uid,
-        email=data.get("email", ""),
+        email=data.get("email") or "",
         display_name=data.get("display_name"),
         tier=tier,
-        credits=data.get("credits_balance", 0),
-        created_at=data.get("created_at", datetime.now(timezone.utc)),
+        credits=credits,
+        created_at=created_at,
         last_active=data.get("last_active"),
-        jobs_count=data.get("jobs_count", 0),
+        jobs_count=jobs_count,
         subscription=subscription,
         recent_jobs=recent_jobs,
         recent_transactions=recent_transactions,
@@ -265,7 +323,9 @@ async def adjust_credits(uid: str, amount: int, reason: Optional[str] = None) ->
         raise ValueError("User not found")
 
     user_data = user_doc.to_dict()
-    current_balance = user_data.get("credits_balance", 0)
+    # Defensive: ensure current_balance is int (Firestore may have float)
+    current_balance_raw = user_data.get("credits_balance", 0)
+    current_balance = int(current_balance_raw) if current_balance_raw is not None else 0
     new_balance = current_balance + amount
 
     if new_balance < 0:

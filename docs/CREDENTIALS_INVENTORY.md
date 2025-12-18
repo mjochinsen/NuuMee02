@@ -241,6 +241,31 @@ Access at: https://console.firebase.google.com/project/wanapi-prod/authenticatio
 | GA4 Role | Viewer (can read + manage conversions) |
 | Admin Script | `backend/scripts/ga_admin.py` |
 
+### MARKY Quick Start (GA4 Data API)
+```bash
+# Set credentials (required before any GA4 query)
+export GOOGLE_APPLICATION_CREDENTIALS=/home/user/NuuMee02/.claude/nuumee-analytics-key.json
+
+# Example: Get event counts for last 7 days
+GOOGLE_CLOUD_PROJECT=wanapi-prod python3 -c "
+from google.analytics.data_v1beta import BetaAnalyticsDataClient
+from google.analytics.data_v1beta.types import RunReportRequest, DateRange, Dimension, Metric
+
+client = BetaAnalyticsDataClient()
+request = RunReportRequest(
+    property='properties/514341875',
+    dimensions=[Dimension(name='eventName')],
+    metrics=[Metric(name='eventCount')],
+    date_ranges=[DateRange(start_date='7daysAgo', end_date='today')],
+)
+response = client.run_report(request)
+for row in response.rows:
+    print(f'{row.dimension_values[0].value}: {row.metric_values[0].value}')
+"
+```
+
+**Verified Working:** 2025-12-18 ✅
+
 ### Other Tracking
 | Service | ID | Notes |
 |---------|-------|-------|
