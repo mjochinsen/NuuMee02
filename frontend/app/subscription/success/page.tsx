@@ -1,15 +1,18 @@
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Check, Zap, ArrowRight, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { trackPurchase } from '@/lib/analytics';
 
 function SubscriptionSuccessContent() {
   const searchParams = useSearchParams();
   const plan = searchParams.get('plan') || 'creator';
+  const sessionId = searchParams.get('session_id');
+  const hasTracked = useRef(false);
 
   const planDetails = {
     creator: {
@@ -29,6 +32,20 @@ function SubscriptionSuccessContent() {
   const currentPlan = planDetails[plan as keyof typeof planDetails] || planDetails.creator;
   const nextBillingDate = new Date();
   nextBillingDate.setMonth(nextBillingDate.getMonth() + 1);
+
+  // Track subscription purchase conversion in GA4
+  useEffect(() => {
+    if (hasTracked.current) return;
+    hasTracked.current = true;
+
+    const value = plan === 'studio' ? 99 : 29;
+    trackPurchase(
+      sessionId || `sub_${Date.now()}`,
+      value,
+      'USD',
+      [{ name: `${currentPlan.name} Subscription`, quantity: 1, price: value }]
+    );
+  }, [plan, sessionId, currentPlan.name]);
 
   return (
     <main className="container mx-auto px-6 py-20 max-w-4xl">
