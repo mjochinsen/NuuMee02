@@ -11,12 +11,15 @@ declare global {
   }
 }
 
-// Safe gtag wrapper - uses dataLayer directly
+// Safe gtag wrapper - uses real gtag when available, falls back to dataLayer
 const gtag = (...args: unknown[]) => {
   if (typeof window !== "undefined") {
-    window.dataLayer = window.dataLayer || [];
-    // Push as arguments object (how gtag expects it)
-    window.dataLayer.push(args);
+    if (typeof window.gtag === "function") {
+      window.gtag(...args);
+    } else {
+      window.dataLayer = window.dataLayer || [];
+      window.dataLayer.push(args);
+    }
   }
 };
 
