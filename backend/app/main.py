@@ -22,6 +22,7 @@ from .public.router import router as public_router
 from .support.router import router as support_router
 from .admin.router import router as admin_router
 from .promo.router import router as promo_router
+from .internal import router as internal_router
 
 app = FastAPI(
     title="NuuMee API",
@@ -71,6 +72,9 @@ app.include_router(promo_router, prefix="/api/v1")
 
 # Public routes (no /api/v1 prefix for clean short URLs)
 app.include_router(public_router)
+
+# Internal routes (Pub/Sub, schedulers - no auth, uses OIDC tokens)
+app.include_router(internal_router)
 
 
 @app.get("/health")

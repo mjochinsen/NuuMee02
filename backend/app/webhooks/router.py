@@ -575,3 +575,8 @@ async def handle_subscription_deleted(subscription: dict):
         })
 
     print(f"Subscription canceled for user {user_id}")
+
+
+# Include WaveSpeed webhook router
+from .wavespeed import router as wavespeed_router
+router.include_router(wavespeed_router)

@@ -138,7 +138,8 @@ class WaveSpeedClient:
         resolution: str = "480p",
         seed: int = -1,
         mode: str = "animate",
-        prompt: str = None
+        prompt: str = None,
+        webhook_url: str = None
     ) -> str:
         """Start Wan 2.2 Animate job (image-to-video).
 
@@ -149,6 +150,7 @@ class WaveSpeedClient:
             seed: Random seed (-1 for random)
             mode: "animate" or "replace"
             prompt: Optional generation constraints
+            webhook_url: Optional webhook URL for completion callback
 
         Returns:
             Request ID for polling
@@ -166,7 +168,10 @@ class WaveSpeedClient:
         if prompt:
             data["prompt"] = prompt
 
-        logger.info(f"Starting animate job: resolution={resolution}, mode={mode}")
+        if webhook_url:
+            data["webhook"] = webhook_url
+
+        logger.info(f"Starting animate job: resolution={resolution}, mode={mode}, webhook={'yes' if webhook_url else 'no'}")
 
         response = self._request("POST", endpoint, data)
         request_id = response.get("data", {}).get("id")
@@ -185,7 +190,8 @@ class WaveSpeedClient:
         resolution: str = "480p",
         audio_url: str = None,
         negative_prompt: str = None,
-        seed: int = -1
+        seed: int = -1,
+        webhook_url: str = None
     ) -> str:
         """Start Wan 2.5 Video Extend job.
 
@@ -197,6 +203,7 @@ class WaveSpeedClient:
             audio_url: Optional audio URL
             negative_prompt: Elements to avoid
             seed: Random seed
+            webhook_url: Optional webhook URL for completion callback
 
         Returns:
             Request ID for polling
@@ -216,8 +223,10 @@ class WaveSpeedClient:
             data["audio"] = audio_url
         if negative_prompt:
             data["negative_prompt"] = negative_prompt
+        if webhook_url:
+            data["webhook"] = webhook_url
 
-        logger.info(f"Starting extend job: duration={duration}, resolution={resolution}")
+        logger.info(f"Starting extend job: duration={duration}, resolution={resolution}, webhook={'yes' if webhook_url else 'no'}")
 
         response = self._request("POST", endpoint, data)
         request_id = response.get("data", {}).get("id") or response.get("id")
