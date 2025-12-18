@@ -14,7 +14,7 @@
 | Phase 1: Infrastructure | ✅ DONE | All GCP resources created |
 | Phase 2: Webhook Receiver | ✅ DONE | Endpoint created and wired up |
 | Phase 3: Completion Processor | ✅ DONE | Pub/Sub handler created |
-| Phase 4: Modify Worker | 🔄 IN PROGRESS | WaveSpeedClient partially updated |
+| Phase 4: Modify Worker | ✅ DONE | All handlers use webhooks, polling fallback |
 | Phase 5: Watchdog | ⏳ PENDING | |
 | Phase 6: Admin Tools | ⏳ PENDING | |
 | Phase 7: Deploy & Test | ⏳ PENDING | |
@@ -82,32 +82,26 @@
 
 ---
 
-## Phase 4: Modify Worker 🔄 IN PROGRESS
+## Phase 4: Modify Worker ✅ DONE
 
 | Task | Status | Details |
 |------|--------|---------|
-| 4.1 Get webhook secret | ⏳ | Need to add to worker/main.py |
-| 4.2 Build webhook URL | ⏳ | `https://api.nuumee.ai/webhooks/wavespeed?token=SECRET` |
-| 4.3 Modify WaveSpeedClient | 🔄 | `animate()` updated, `extend()` updated, `upscale()` and `foley()` PENDING |
-| 4.4 Update job handlers | ⏳ | Pass webhook_url to WaveSpeed calls |
-| 4.5 Remove polling | ⏳ | Return immediately after submit |
-| 4.6 Keep polling fallback | ⏳ | If USE_WEBHOOK=false or secret missing |
-| 4.7 Final retry handling | ⏳ | Use X-CloudTasks-TaskRetryCount header |
+| 4.1 Get webhook secret | ✅ | `get_webhook_url()` in worker/main.py |
+| 4.2 Build webhook URL | ✅ | `https://api.nuumee.ai/api/v1/webhooks/wavespeed?token=SECRET` |
+| 4.3 Modify WaveSpeedClient | ✅ | All methods: animate, extend, upscale, foley |
+| 4.4 Update job handlers | ✅ | All handlers pass webhook_url |
+| 4.5 Remove polling | ✅ | Returns immediately when webhook enabled |
+| 4.6 Keep polling fallback | ✅ | Falls back if USE_WEBHOOK=false or secret unavailable |
+| 4.7 Final retry handling | ✅ | Handled via Pub/Sub retry policy |
 
-**Files Modified (in progress):**
-- `worker/wavespeed.py` - Added `webhook_url` param to `animate()` and `extend()`, need to do `upscale()` and `foley()`
-
-**Remaining work:**
-1. Add `webhook_url` param to `upscale()` method
-2. Add `webhook_url` param to `foley()` method
-3. Update `worker/main.py`:
-   - Add `get_webhook_url()` function to get secret and build URL
-   - Modify `process_animate_job()` to pass webhook_url
-   - Modify `process_extend_job()` to pass webhook_url
-   - Modify `process_upscale_job()` to pass webhook_url
-   - Modify `process_foley_job()` to pass webhook_url
-   - Add fallback: if USE_WEBHOOK=false or no secret, use polling
-   - Return immediately after WaveSpeed submit (no poll_result)
+**Files Modified:**
+- `worker/wavespeed.py` - Added `webhook_url` param to all 4 methods
+- `worker/main.py`:
+  - Added `USE_WEBHOOK` env var (default: true)
+  - Added `WEBHOOK_BASE_URL` env var
+  - Added `get_webhook_url()` function
+  - Updated all 4 handlers to pass webhook_url and return None in webhook mode
+  - `process_job()` handles None return (webhook mode)
 
 ---
 

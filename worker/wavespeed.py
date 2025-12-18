@@ -240,13 +240,15 @@ class WaveSpeedClient:
     def upscale(
         self,
         video_url: str,
-        target_resolution: str = "1080p"
+        target_resolution: str = "1080p",
+        webhook_url: str = None
     ) -> str:
         """Start Video Upscaler Pro job.
 
         Args:
             video_url: URL to input video
             target_resolution: Target resolution ("720p", "1080p", "2k", "4k")
+            webhook_url: Optional webhook URL for completion callback
 
         Returns:
             Request ID for polling
@@ -258,7 +260,10 @@ class WaveSpeedClient:
             "target_resolution": target_resolution,
         }
 
-        logger.info(f"Starting upscale job: target={target_resolution}")
+        if webhook_url:
+            data["webhook"] = webhook_url
+
+        logger.info(f"Starting upscale job: target={target_resolution}, webhook={'yes' if webhook_url else 'no'}")
 
         response = self._request("POST", endpoint, data)
         request_id = response.get("data", {}).get("id") or response.get("id")
@@ -273,7 +278,8 @@ class WaveSpeedClient:
         self,
         video_url: str,
         prompt: str = None,
-        seed: int = -1
+        seed: int = -1,
+        webhook_url: str = None
     ) -> str:
         """Start Hunyuan Video Foley job (add audio).
 
@@ -281,6 +287,7 @@ class WaveSpeedClient:
             video_url: URL to input video
             prompt: Sound description
             seed: Random seed
+            webhook_url: Optional webhook URL for completion callback
 
         Returns:
             Request ID for polling
@@ -294,8 +301,10 @@ class WaveSpeedClient:
 
         if prompt:
             data["prompt"] = prompt
+        if webhook_url:
+            data["webhook"] = webhook_url
 
-        logger.info("Starting foley job")
+        logger.info(f"Starting foley job, webhook={'yes' if webhook_url else 'no'}")
 
         response = self._request("POST", endpoint, data)
         request_id = response.get("data", {}).get("id") or response.get("id")

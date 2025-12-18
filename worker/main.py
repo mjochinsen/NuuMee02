@@ -44,9 +44,42 @@ FFMPEG_WORKER_URL = os.environ.get(
     "https://nuumee-ffmpeg-worker-450296399943.us-central1.run.app"
 )
 
+# Webhook configuration
+USE_WEBHOOK = os.environ.get("USE_WEBHOOK", "true").lower() == "true"
+WEBHOOK_BASE_URL = os.environ.get("WEBHOOK_BASE_URL", "https://api.nuumee.ai")
+
 # Lazy-initialized clients
 _wavespeed_client: Optional[WaveSpeedClient] = None
 _tasks_client: Optional[tasks_v2.CloudTasksClient] = None
+_webhook_url: Optional[str] = None
+
+
+def get_webhook_url() -> Optional[str]:
+    """Get webhook URL for WaveSpeed callbacks.
+
+    Returns:
+        Full webhook URL with token, or None if webhooks disabled/unavailable
+    """
+    global _webhook_url
+
+    if not USE_WEBHOOK:
+        logger.info("Webhooks disabled via USE_WEBHOOK=false")
+        return None
+
+    if _webhook_url:
+        return _webhook_url
+
+    try:
+        client = secretmanager.SecretManagerServiceClient()
+        name = f"projects/{PROJECT_ID}/secrets/wavespeed-webhook-token/versions/latest"
+        response = client.access_secret_version(request={"name": name})
+        token = response.payload.data.decode("UTF-8").strip()
+        _webhook_url = f"{WEBHOOK_BASE_URL}/api/v1/webhooks/wavespeed?token={token}"
+        logger.info("Webhook URL configured successfully")
+        return _webhook_url
+    except Exception as e:
+        logger.warning(f"Could not get webhook token, falling back to polling: {e}")
+        return None
 
 
 def get_wavespeed_api_key() -> str:
@@ -188,14 +221,19 @@ def apply_free_tier_watermark(job_id: str, output_video_path: str) -> str:
     return output_video_path
 
 
-def process_animate_job(job_data: dict) -> str:
-    """Process an animate (image-to-video) job."""
+def process_animate_job(job_data: dict) -> Optional[str]:
+    """Process an animate (image-to-video) job.
+
+    Returns:
+        Output path if completed inline (polling mode), None if using webhook mode
+    """
     job_id = job_data["id"]
     resolution = job_data.get("resolution", "480p")
     seed = job_data.get("seed", -1) or -1
     existing_request_id = job_data.get("wavespeed_request_id")
 
     wavespeed = get_wavespeed()
+    webhook_url = get_webhook_url()
 
     # Idempotency: check if existing request is still valid (not failed)
     request_id = None
@@ -213,17 +251,24 @@ def process_animate_job(job_data: dict) -> str:
         video_bucket = OUTPUT_BUCKET if video_path.startswith(("outputs/", "demo/")) else VIDEO_BUCKET
         video_url = generate_signed_url(video_bucket, video_path, worker_type="worker")
 
-        logger.info(f"Processing animate job {job_id}: resolution={resolution}")
+        logger.info(f"Processing animate job {job_id}: resolution={resolution}, webhook={'enabled' if webhook_url else 'disabled'}")
 
         request_id = wavespeed.animate(
             image_url=image_url,
             video_url=video_url,
             resolution=resolution,
             seed=seed,
+            webhook_url=webhook_url,
         )
 
         update_job_status(job_id, "processing", wavespeed_request_id=request_id)
 
+    # Webhook mode: return immediately, completion via Pub/Sub processor
+    if webhook_url:
+        logger.info(f"Job {job_id}: submitted to WaveSpeed (request_id={request_id}), webhook will handle completion")
+        return None
+
+    # Fallback: polling mode (when webhooks disabled or unavailable)
     result = wavespeed.poll_result(request_id)
     outputs = wavespeed.get_outputs(result)
     if not outputs:
@@ -236,8 +281,12 @@ def process_animate_job(job_data: dict) -> str:
     return output_path
 
 
-def process_extend_job(job_data: dict) -> str:
-    """Process a video extend job."""
+def process_extend_job(job_data: dict) -> Optional[str]:
+    """Process a video extend job.
+
+    Returns:
+        Output path if completed inline (polling mode), None if using webhook mode
+    """
     job_id = job_data["id"]
     resolution = job_data.get("resolution", "480p")
     duration = job_data.get("duration", 5)
@@ -246,6 +295,7 @@ def process_extend_job(job_data: dict) -> str:
     existing_request_id = job_data.get("wavespeed_request_id")
 
     wavespeed = get_wavespeed()
+    webhook_url = get_webhook_url()
 
     # Idempotency: check if existing request is still valid (not failed)
     request_id = None
@@ -258,7 +308,7 @@ def process_extend_job(job_data: dict) -> str:
         video_path = job_data["input_video_path"]
         video_url = generate_signed_url(OUTPUT_BUCKET, video_path, worker_type="worker")
 
-        logger.info(f"Processing extend job {job_id}: duration={duration}, resolution={resolution}")
+        logger.info(f"Processing extend job {job_id}: duration={duration}, resolution={resolution}, webhook={'enabled' if webhook_url else 'disabled'}")
 
         request_id = wavespeed.extend(
             video_url=video_url,
@@ -266,10 +316,17 @@ def process_extend_job(job_data: dict) -> str:
             duration=duration,
             resolution=resolution,
             seed=seed,
+            webhook_url=webhook_url,
         )
 
         update_job_status(job_id, "processing", wavespeed_request_id=request_id)
 
+    # Webhook mode: return immediately, completion via Pub/Sub processor
+    if webhook_url:
+        logger.info(f"Job {job_id}: submitted to WaveSpeed (request_id={request_id}), webhook will handle completion")
+        return None
+
+    # Fallback: polling mode (when webhooks disabled or unavailable)
     result = wavespeed.poll_result(request_id)
     outputs = wavespeed.get_outputs(result)
     if not outputs:
@@ -282,13 +339,18 @@ def process_extend_job(job_data: dict) -> str:
     return output_path
 
 
-def process_upscale_job(job_data: dict) -> str:
-    """Process a video upscale job."""
+def process_upscale_job(job_data: dict) -> Optional[str]:
+    """Process a video upscale job.
+
+    Returns:
+        Output path if completed inline (polling mode), None if using webhook mode
+    """
     job_id = job_data["id"]
     target_resolution = job_data.get("target_resolution", "1080p")
     existing_request_id = job_data.get("wavespeed_request_id")
 
     wavespeed = get_wavespeed()
+    webhook_url = get_webhook_url()
 
     # Idempotency: check if existing request is still valid (not failed)
     request_id = None
@@ -301,15 +363,22 @@ def process_upscale_job(job_data: dict) -> str:
         video_path = job_data["input_video_path"]
         video_url = generate_signed_url(OUTPUT_BUCKET, video_path, worker_type="worker")
 
-        logger.info(f"Processing upscale job {job_id}: target={target_resolution}")
+        logger.info(f"Processing upscale job {job_id}: target={target_resolution}, webhook={'enabled' if webhook_url else 'disabled'}")
 
         request_id = wavespeed.upscale(
             video_url=video_url,
             target_resolution=target_resolution,
+            webhook_url=webhook_url,
         )
 
         update_job_status(job_id, "processing", wavespeed_request_id=request_id)
 
+    # Webhook mode: return immediately, completion via Pub/Sub processor
+    if webhook_url:
+        logger.info(f"Job {job_id}: submitted to WaveSpeed (request_id={request_id}), webhook will handle completion")
+        return None
+
+    # Fallback: polling mode (when webhooks disabled or unavailable)
     result = wavespeed.poll_result(request_id)
     outputs = wavespeed.get_outputs(result)
     if not outputs:
@@ -322,14 +391,19 @@ def process_upscale_job(job_data: dict) -> str:
     return output_path
 
 
-def process_foley_job(job_data: dict) -> str:
-    """Process a video foley (add audio) job."""
+def process_foley_job(job_data: dict) -> Optional[str]:
+    """Process a video foley (add audio) job.
+
+    Returns:
+        Output path if completed inline (polling mode), None if using webhook mode
+    """
     job_id = job_data["id"]
     seed = job_data.get("seed", -1) or -1
     prompt = job_data.get("audio_prompt", "")
     existing_request_id = job_data.get("wavespeed_request_id")
 
     wavespeed = get_wavespeed()
+    webhook_url = get_webhook_url()
 
     # Idempotency: check if existing request is still valid (not failed)
     request_id = None
@@ -342,16 +416,23 @@ def process_foley_job(job_data: dict) -> str:
         video_path = job_data["input_video_path"]
         video_url = generate_signed_url(OUTPUT_BUCKET, video_path, worker_type="worker")
 
-        logger.info(f"Processing foley job {job_id}")
+        logger.info(f"Processing foley job {job_id}, webhook={'enabled' if webhook_url else 'disabled'}")
 
         request_id = wavespeed.foley(
             video_url=video_url,
             prompt=prompt if prompt else None,
             seed=seed,
+            webhook_url=webhook_url,
         )
 
         update_job_status(job_id, "processing", wavespeed_request_id=request_id)
 
+    # Webhook mode: return immediately, completion via Pub/Sub processor
+    if webhook_url:
+        logger.info(f"Job {job_id}: submitted to WaveSpeed (request_id={request_id}), webhook will handle completion")
+        return None
+
+    # Fallback: polling mode (when webhooks disabled or unavailable)
     result = wavespeed.poll_result(request_id)
     outputs = wavespeed.get_outputs(result)
     if not outputs:
@@ -398,6 +479,12 @@ def process_job(job_id: str):
 
         output_path = handler(job_data)
 
+        # Webhook mode: handler returned None, completion will happen via Pub/Sub
+        if output_path is None:
+            logger.info(f"Job {job_id}: webhook mode active, worker task complete (completion via Pub/Sub)")
+            return
+
+        # Polling mode: complete the job inline
         # Auto-apply NuuMee watermark inline for free tier users
         if is_user_free_tier(user_id):
             logger.info(f"User {user_id} is on free tier, applying watermark inline")
