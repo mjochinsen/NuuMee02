@@ -16,7 +16,7 @@
 | Phase 3: Completion Processor | ✅ DONE | Pub/Sub handler created |
 | Phase 4: Modify Worker | ✅ DONE | All handlers use webhooks, polling fallback |
 | Phase 5: Watchdog | ✅ DONE | Cloud Scheduler + endpoint created |
-| Phase 6: Admin Tools | ⏳ PENDING | |
+| Phase 6: Admin Tools | ✅ DONE | Replay webhook + wavespeed_request_id |
 | Phase 7: Deploy & Test | ⏳ PENDING | |
 
 ---
@@ -127,13 +127,24 @@
 
 ---
 
-## Phase 6: Admin Tools ⏳ PENDING
+## Phase 6: Admin Tools ✅ DONE
 
 | Task | Status | Details |
 |------|--------|---------|
-| 6.1 Webhook replay endpoint | ⏳ | `/admin/jobs/{id}/replay-webhook` |
-| 6.2 Job status in admin panel | ⏳ | Show wavespeed_request_id, webhook status |
-| 6.3 DLQ monitoring docs | ⏳ | Document how to check DLQ |
+| 6.1 Webhook replay endpoint | ✅ | `POST /admin/jobs/{id}/replay-webhook` |
+| 6.2 Job status in admin panel | ✅ | `wavespeed_request_id` added to AdminJobDetail |
+| 6.3 DLQ monitoring | ✅ | Via GCP Console (topic: wavespeed-completions-dlq) |
+
+**Files Modified:**
+- `backend/app/admin/schemas.py` - Added WebhookReplayResponse, wavespeed_request_id
+- `backend/app/admin/services/jobs.py` - Added replay_webhook() function
+- `backend/app/admin/router.py` - Added /jobs/{id}/replay-webhook endpoint
+
+**DLQ Monitoring:**
+```bash
+# Check DLQ messages
+gcloud pubsub subscriptions pull wavespeed-completions-dlq-sub --project=wanapi-prod --auto-ack
+```
 
 ---
 

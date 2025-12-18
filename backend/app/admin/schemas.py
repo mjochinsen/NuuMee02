@@ -17,6 +17,7 @@ class UserTier(str, Enum):
 
 class JobStatus(str, Enum):
     PENDING = "pending"
+    QUEUED = "queued"  # Job created, waiting for worker to pick up
     PROCESSING = "processing"
     COMPLETED = "completed"
     FAILED = "failed"
@@ -152,6 +153,8 @@ class AdminJobDetail(AdminJobSummary):
     output_path: Optional[str] = None
     error_details: Optional[str] = None
     metadata: Optional[Dict[str, Any]] = None
+    # Webhook reliability fields
+    wavespeed_request_id: Optional[str] = None
 
 
 class JobRetryRequest(BaseModel):
@@ -164,6 +167,14 @@ class JobRetryResponse(BaseModel):
     success: bool
     job_id: str
     new_status: str
+
+
+class WebhookReplayResponse(BaseModel):
+    """Response after replaying webhook for a stuck job."""
+    success: bool
+    job_id: str
+    action: str  # "recovered", "failed", "still_processing", "already_complete"
+    message: str
 
 
 # ==================== Payments ====================

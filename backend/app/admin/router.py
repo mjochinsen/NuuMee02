@@ -20,6 +20,7 @@ from .schemas import (
     CreditAdjustmentResponse,
     JobRetryRequest,
     JobRetryResponse,
+    WebhookReplayResponse,
     PaymentsResponse,
     PaymentStats,
     PaymentTransaction,
@@ -177,6 +178,27 @@ async def retry_job(
     except Exception as e:
         logger.error(f"Failed to retry job {job_id}: {e}")
         raise HTTPException(status_code=500, detail="Failed to retry job")
+
+
+@router.post("/jobs/{job_id}/replay-webhook", response_model=WebhookReplayResponse)
+async def replay_webhook(
+    job_id: str,
+    _: bool = Depends(verify_admin_password),
+):
+    """Replay webhook processing for a stuck job.
+
+    This checks WaveSpeed API for the actual job status and processes
+    the result (download video, apply watermark, update status) if
+    the job has completed but the webhook was missed.
+    """
+    try:
+        result = await jobs_service.replay_webhook(job_id)
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.error(f"Failed to replay webhook for job {job_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to replay webhook: {e}")
 
 
 # ==================== Payments ====================
