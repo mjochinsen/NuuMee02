@@ -44,7 +44,7 @@ export function BuyCreditsModal({ isOpen, onClose, selectedPackage, onProceed, i
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-[#0F172A] border-[#334155] text-[#F1F5F9] max-w-lg">
+      <DialogContent className="bg-[#0F172A] border-[#334155] text-[#F1F5F9] max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center justify-between">
             <DialogTitle className="text-[#F1F5F9] text-2xl">Confirm Purchase</DialogTitle>
