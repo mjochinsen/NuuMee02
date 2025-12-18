@@ -46,7 +46,7 @@ FFMPEG_WORKER_URL = os.environ.get(
 
 # Webhook configuration
 USE_WEBHOOK = os.environ.get("USE_WEBHOOK", "true").lower() == "true"
-WEBHOOK_BASE_URL = os.environ.get("WEBHOOK_BASE_URL", "https://api.nuumee.ai")
+WEBHOOK_BASE_URL = os.environ.get("WEBHOOK_BASE_URL", "https://nuumee-api-450296399943.us-central1.run.app")
 
 # Lazy-initialized clients
 _wavespeed_client: Optional[WaveSpeedClient] = None

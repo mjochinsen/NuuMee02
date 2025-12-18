@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { getJobs, getJob, retryJob, AdminJob, AdminJobDetail } from '@/lib/admin-api';
+import { getJobs, getJob, retryJob, recoverJob, AdminJob, AdminJobDetail } from '@/lib/admin-api';
 import { AdminErrorBoundary } from '@/components/admin/AdminErrorBoundary';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -13,7 +13,8 @@ import {
   Loader2,
   AlertCircle,
   RefreshCw,
-  RotateCcw
+  RotateCcw,
+  Wrench
 } from 'lucide-react';
 
 type JobStatus = 'all' | 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled';
@@ -272,7 +273,9 @@ function JobDetailPanel({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [retrying, setRetrying] = useState(false);
+  const [recovering, setRecovering] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [showRecoverConfirm, setShowRecoverConfirm] = useState(false);
 
   useEffect(() => {
     loadJobDetail();
@@ -305,6 +308,27 @@ function JobDetailPanel({
     } finally {
       setRetrying(false);
       setShowConfirm(false);
+    }
+  };
+
+  const handleRecover = async () => {
+    try {
+      setRecovering(true);
+      const result = await recoverJob(jobId);
+      if (result.success) {
+        toast.success(result.message || 'Job recovered successfully');
+        onRetry(); // Refresh the job list
+        onClose();
+      } else {
+        toast.info(result.message || 'Job recovery completed');
+        loadJobDetail(); // Refresh job details to show updated status
+      }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to recover job';
+      toast.error(message);
+    } finally {
+      setRecovering(false);
+      setShowRecoverConfirm(false);
     }
   };
 
@@ -438,37 +462,79 @@ function JobDetailPanel({
                 </div>
               )}
 
-              {/* Retry Button for Failed Jobs */}
-              {job.status === 'failed' && (
+              {/* Actions Section */}
+              {(job.status === 'failed' || job.status === 'processing') && (
                 <div className="bg-[#0F172A] border border-[#334155] rounded-lg p-6">
                   <h3 className="text-lg font-semibold text-[#F1F5F9] mb-4">Actions</h3>
-                  {showConfirm ? (
-                    <div className="flex items-center gap-4">
-                      <p className="text-[#94A3B8]">Retry this job?</p>
+
+                  {/* Retry Button for Failed Jobs */}
+                  {job.status === 'failed' && (
+                    showConfirm ? (
+                      <div className="flex items-center gap-4">
+                        <p className="text-[#94A3B8]">Retry this job?</p>
+                        <Button
+                          onClick={handleRetry}
+                          disabled={retrying}
+                          className="bg-[#00F0D9] text-[#0F172A] hover:bg-[#00D9C5]"
+                        >
+                          {retrying ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                          Confirm
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => setShowConfirm(false)}
+                          className="border-[#334155] text-[#F1F5F9]"
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    ) : (
                       <Button
-                        onClick={handleRetry}
-                        disabled={retrying}
+                        onClick={() => setShowConfirm(true)}
                         className="bg-[#00F0D9] text-[#0F172A] hover:bg-[#00D9C5]"
                       >
-                        {retrying ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                        Confirm
+                        <RotateCcw className="h-4 w-4 mr-2" />
+                        Retry Job
                       </Button>
-                      <Button
-                        variant="outline"
-                        onClick={() => setShowConfirm(false)}
-                        className="border-[#334155] text-[#F1F5F9]"
-                      >
-                        Cancel
-                      </Button>
-                    </div>
-                  ) : (
-                    <Button
-                      onClick={() => setShowConfirm(true)}
-                      className="bg-[#00F0D9] text-[#0F172A] hover:bg-[#00D9C5]"
-                    >
-                      <RotateCcw className="h-4 w-4 mr-2" />
-                      Retry Job
-                    </Button>
+                    )
+                  )}
+
+                  {/* Recover Button for Processing Jobs */}
+                  {job.status === 'processing' && (
+                    <>
+                      <p className="text-[#94A3B8] text-sm mb-4">
+                        If this job is stuck, recovery will check WaveSpeed for the actual status
+                        and complete or fail the job accordingly.
+                      </p>
+                      {showRecoverConfirm ? (
+                        <div className="flex items-center gap-4">
+                          <p className="text-[#94A3B8]">Recover this stuck job?</p>
+                          <Button
+                            onClick={handleRecover}
+                            disabled={recovering}
+                            className="bg-amber-500 text-[#0F172A] hover:bg-amber-400"
+                          >
+                            {recovering ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                            Confirm
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={() => setShowRecoverConfirm(false)}
+                            className="border-[#334155] text-[#F1F5F9]"
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      ) : (
+                        <Button
+                          onClick={() => setShowRecoverConfirm(true)}
+                          className="bg-amber-500 text-[#0F172A] hover:bg-amber-400"
+                        >
+                          <Wrench className="h-4 w-4 mr-2" />
+                          Recover Job
+                        </Button>
+                      )}
+                    </>
                   )}
                 </div>
               )}

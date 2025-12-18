@@ -265,6 +265,19 @@ export async function retryJob(
   });
 }
 
+export interface RecoverJobResponse {
+  success: boolean;
+  job_id: string;
+  action: 'recovered' | 'failed' | 'already_complete' | 'still_processing';
+  message: string;
+}
+
+export async function recoverJob(jobId: string): Promise<RecoverJobResponse> {
+  return adminRequest(`/admin/jobs/${jobId}/replay-webhook`, {
+    method: 'POST',
+  });
+}
+
 export async function getPayments(limit?: number): Promise<PaymentsResponse> {
   const query = limit ? `?limit=${limit}` : '';
   return adminRequest(`/admin/payments${query}`);

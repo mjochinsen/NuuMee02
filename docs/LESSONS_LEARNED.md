@@ -464,6 +464,65 @@ STRIPE_PRICE_STARTER_LIVE=price_live_xxx
 
 ---
 
+## WaveSpeed Webhook Lessons (Dec 2025)
+
+### 1. CRITICAL: Webhook URL Must Be Query Parameter, NOT JSON Body
+**What Happened:** Jobs were getting stuck in "processing" even though WaveSpeed completed them. Webhooks never arrived.
+
+**Root Cause:** WaveSpeed API expects the webhook URL as a **query parameter**, not in the JSON body:
+- **WaveSpeed docs:** `POST https://api.wavespeed.ai/api/v3/model?webhook=https://your-url`
+- **Our code was:** `data["webhook"] = webhook_url` (in JSON body - completely ignored!)
+
+**The Bug:**
+```python
+# BAD - Webhook in JSON body (ignored by WaveSpeed)
+def animate(self, image_url: str, video_url: str, webhook_url: str = None):
+    data = {"image": image_url, "video": video_url}
+    if webhook_url:
+        data["webhook"] = webhook_url  # WRONG! This is ignored!
+    response = self._request("POST", endpoint, data)
+```
+
+**The Fix:**
+```python
+# GOOD - Webhook as query parameter
+def animate(self, image_url: str, video_url: str, webhook_url: str = None):
+    data = {"image": image_url, "video": video_url}
+    params = {"webhook": webhook_url} if webhook_url else None
+    response = self._request("POST", endpoint, data, params=params)
+
+def _request(self, method, endpoint, data=None, params=None):
+    response = client.post(url, headers=self.headers, json=data, params=params)
+```
+
+**Rule:** Read API docs carefully. Webhook URL goes in query string: `?webhook=URL`
+
+### 2. Cloud Run URL vs Custom Domain
+**What Happened:** Worker was configured with `WEBHOOK_BASE_URL=https://api.nuumee.ai` but that domain wasn't mapped to Cloud Run yet.
+
+**The Fix:** Use the actual Cloud Run URL until custom domain is configured:
+```bash
+# Cloud Run URL (always works)
+WEBHOOK_BASE_URL=https://nuumee-api-450296399943.us-central1.run.app
+
+# Custom domain (only after DNS + SSL configured)
+WEBHOOK_BASE_URL=https://api.nuumee.ai
+```
+
+**Rule:** Don't use custom domains in production config until DNS mapping is verified.
+
+### 3. Always Have a Recovery Path
+**What Happened:** When webhooks failed, jobs were stuck forever with no way to recover.
+
+**Solution Implemented:**
+1. **Watchdog** - Cloud Scheduler runs every 30 min, catches stuck jobs
+2. **Admin Recovery Button** - Manual recovery from admin panel (`POST /admin/jobs/{id}/replay-webhook`)
+3. **Idempotent processing** - Safe to retry completion processing
+
+**Rule:** Design for failure. Every async job needs: timeout, retry mechanism, and manual recovery option.
+
+---
+
 ## Cloud Run / Docker Lessons (Dec 2025)
 
 ### 1. Docker Layer Caching Can Serve Stale Code

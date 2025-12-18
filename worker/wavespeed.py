@@ -70,7 +70,8 @@ class WaveSpeedClient:
         method: str,
         endpoint: str,
         data: dict = None,
-        timeout: float = 60.0
+        timeout: float = 60.0,
+        params: dict = None
     ) -> dict:
         """Make HTTP request with retry logic.
 
@@ -79,6 +80,7 @@ class WaveSpeedClient:
             endpoint: API endpoint path
             data: Request body for POST
             timeout: Request timeout in seconds
+            params: Query parameters (e.g., webhook URL)
 
         Returns:
             Response JSON
@@ -92,9 +94,9 @@ class WaveSpeedClient:
             try:
                 with httpx.Client(timeout=timeout) as client:
                     if method == "GET":
-                        response = client.get(url, headers=self.headers)
+                        response = client.get(url, headers=self.headers, params=params)
                     elif method == "POST":
-                        response = client.post(url, headers=self.headers, json=data)
+                        response = client.post(url, headers=self.headers, json=data, params=params)
                     else:
                         raise ValueError(f"Unsupported method: {method}")
 
@@ -168,12 +170,12 @@ class WaveSpeedClient:
         if prompt:
             data["prompt"] = prompt
 
-        if webhook_url:
-            data["webhook"] = webhook_url
+        # Webhook URL goes as query parameter per WaveSpeed API docs
+        params = {"webhook": webhook_url} if webhook_url else None
 
         logger.info(f"Starting animate job: resolution={resolution}, mode={mode}, webhook={'yes' if webhook_url else 'no'}")
 
-        response = self._request("POST", endpoint, data)
+        response = self._request("POST", endpoint, data, params=params)
         request_id = response.get("data", {}).get("id")
 
         if not request_id:
@@ -223,12 +225,13 @@ class WaveSpeedClient:
             data["audio"] = audio_url
         if negative_prompt:
             data["negative_prompt"] = negative_prompt
-        if webhook_url:
-            data["webhook"] = webhook_url
+
+        # Webhook URL goes as query parameter per WaveSpeed API docs
+        params = {"webhook": webhook_url} if webhook_url else None
 
         logger.info(f"Starting extend job: duration={duration}, resolution={resolution}, webhook={'yes' if webhook_url else 'no'}")
 
-        response = self._request("POST", endpoint, data)
+        response = self._request("POST", endpoint, data, params=params)
         request_id = response.get("data", {}).get("id") or response.get("id")
 
         if not request_id:
@@ -260,12 +263,12 @@ class WaveSpeedClient:
             "target_resolution": target_resolution,
         }
 
-        if webhook_url:
-            data["webhook"] = webhook_url
+        # Webhook URL goes as query parameter per WaveSpeed API docs
+        params = {"webhook": webhook_url} if webhook_url else None
 
         logger.info(f"Starting upscale job: target={target_resolution}, webhook={'yes' if webhook_url else 'no'}")
 
-        response = self._request("POST", endpoint, data)
+        response = self._request("POST", endpoint, data, params=params)
         request_id = response.get("data", {}).get("id") or response.get("id")
 
         if not request_id:
@@ -301,12 +304,13 @@ class WaveSpeedClient:
 
         if prompt:
             data["prompt"] = prompt
-        if webhook_url:
-            data["webhook"] = webhook_url
+
+        # Webhook URL goes as query parameter per WaveSpeed API docs
+        params = {"webhook": webhook_url} if webhook_url else None
 
         logger.info(f"Starting foley job, webhook={'yes' if webhook_url else 'no'}")
 
-        response = self._request("POST", endpoint, data)
+        response = self._request("POST", endpoint, data, params=params)
         request_id = response.get("data", {}).get("id") or response.get("id")
 
         if not request_id:
