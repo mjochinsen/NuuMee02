@@ -63,10 +63,14 @@ def verify_pubsub_token(request: Request) -> bool:
             audience=PUBSUB_AUDIENCE
         )
 
-        # Verify it's from Pub/Sub service account
+        # Verify it's from an authorized service account
         email = claim.get("email", "")
-        if not email.endswith("gcp-sa-pubsub.iam.gserviceaccount.com"):
-            logger.warning(f"Token not from Pub/Sub service account: {email}")
+        allowed_issuers = [
+            "gcp-sa-pubsub.iam.gserviceaccount.com",  # Default Pub/Sub SA
+            f"nuumee-api@{PROJECT_ID}.iam.gserviceaccount.com",  # Custom SA
+        ]
+        if not any(email.endswith(issuer) or email == issuer for issuer in allowed_issuers):
+            logger.warning(f"Token not from authorized service account: {email}")
             raise HTTPException(status_code=403, detail="Invalid token issuer")
 
         return True
