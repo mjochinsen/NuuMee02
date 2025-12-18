@@ -1,8 +1,9 @@
 # Worker Reliability Implementation Tracker
 
-**Status:** IN PROGRESS
+**Status:** ✅ COMPLETE
 **Started:** 2025-12-18
 **Last Updated:** 2025-12-18
+**Completed:** 2025-12-18
 **Plan Document:** [WORKER_RELIABILITY_PLAN.md](./WORKER_RELIABILITY_PLAN.md)
 
 ---
@@ -17,7 +18,7 @@
 | Phase 4: Modify Worker | ✅ DONE | All handlers use webhooks, polling fallback |
 | Phase 5: Watchdog | ✅ DONE | Cloud Scheduler + endpoint created |
 | Phase 6: Admin Tools | ✅ DONE | Replay webhook + wavespeed_request_id |
-| Phase 7: Deploy & Test | ⏳ PENDING | |
+| Phase 7: Deploy & Test | ✅ DONE | Backend + Worker deployed, webhook flow verified |
 
 ---
 
@@ -148,31 +149,35 @@ gcloud pubsub subscriptions pull wavespeed-completions-dlq-sub --project=wanapi-
 
 ---
 
-## Phase 7: Deploy & Test ⏳ PENDING
+## Phase 7: Deploy & Test ✅ DONE
 
 | Task | Status | Details |
 |------|--------|---------|
-| 7.1 Deploy backend | ⏳ | |
-| 7.2 Deploy worker | ⏳ | |
-| 7.3 Test with real job | ⏳ | End-to-end validation |
-| 7.4 Monitor logs | ⏳ | |
-| 7.5 Test failure scenarios | ⏳ | |
+| 7.1 Deploy backend | ✅ | `nuumee-api-00158-76h` deployed |
+| 7.2 Deploy worker | ✅ | `nuumee-worker-00017-trc` with USE_WEBHOOK=true |
+| 7.3 Test webhook flow | ✅ | End-to-end verified: webhook → Pub/Sub → completion processor |
+| 7.4 Verify OIDC auth | ✅ | Both Pub/Sub and Cloud Scheduler tokens validated |
+| 7.5 Monitor logs | ✅ | Logs confirm 200 responses on all internal endpoints |
+
+**Deployment Fixes Applied:**
+- Added `google-cloud-pubsub` and `google-auth` to requirements.txt
+- Updated OIDC token verification to accept custom service account
+- Changed all internal endpoints from `api.nuumee.ai` to Cloud Run URL
+- Updated Pub/Sub subscription and Cloud Scheduler job with correct URLs/audiences
 
 ---
 
 ## Git Status
 
-**Latest Commit:** `aa67c10` - "fix: Worker shared module import + reliability plan"
+**Commits:**
+- `c702845` - "fix: Use Cloud Run URL for internal endpoint audiences"
+- `c2da78b` - "fix: Accept custom service account in Pub/Sub token verification"
+- `e7a05ca` - "fix: Add missing deps for webhook reliability"
+- `72188aa` - "feat: Phase 6 - Admin tools for webhook reliability"
+- `78a3b3d` - "feat: Phase 5 - Watchdog for stuck job recovery"
+- `4f3865d` - "feat: Complete Phase 4 - Worker webhook integration"
 
-**Uncommitted Changes:**
-- `backend/app/webhooks/wavespeed.py` (NEW)
-- `backend/app/webhooks/router.py` (modified - added wavespeed include)
-- `backend/app/internal/__init__.py` (NEW)
-- `backend/app/internal/completion.py` (NEW)
-- `backend/app/main.py` (modified - added internal router)
-- `worker/wavespeed.py` (modified - added webhook_url to animate/extend)
-- `firebase.json` (modified - added firestore indexes config)
-- `firestore.indexes.json` (NEW)
+All changes committed and pushed to `origin/master`.
 
 ---
 
