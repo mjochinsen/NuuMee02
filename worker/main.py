@@ -16,9 +16,7 @@ from datetime import datetime, timedelta, timezone
 
 from wavespeed import WaveSpeedClient, WaveSpeedError, WaveSpeedAPIError, JobStatus
 
-# Import shared utilities
-import sys
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+# Import shared utilities (local copy in worker/shared/)
 from shared.worker_utils import (
     get_firestore, get_storage,
     generate_signed_url, upload_from_url,

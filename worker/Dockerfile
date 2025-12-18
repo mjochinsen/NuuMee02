@@ -20,5 +20,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY . .
 
+# Copy shared module (must be copied by deploy script before build)
+# The shared/ directory should be copied to worker/shared/ before docker build
+COPY shared/ ./shared/
+
 # Run with gunicorn for production (timeout=2400 for long video processing)
 CMD exec gunicorn --bind :$PORT --workers 1 --threads 8 --timeout 2400 main:app
