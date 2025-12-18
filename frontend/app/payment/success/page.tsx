@@ -196,7 +196,7 @@ function PaymentSuccessContent() {
           <div className="flex items-center justify-center gap-3 mb-4">
             <Zap className="w-8 h-8 text-[#00F0D9]" />
             <span className="text-[#00F0D9] text-5xl font-bold">
-              {currentBalance !== null ? currentBalance : '---'}
+              {currentBalance !== null ? Math.round(currentBalance * 100) / 100 : '---'}
             </span>
             <span className="text-[#94A3B8] text-xl">credits</span>
           </div>
