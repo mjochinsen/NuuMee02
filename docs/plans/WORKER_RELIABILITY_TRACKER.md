@@ -15,7 +15,7 @@
 | Phase 2: Webhook Receiver | ✅ DONE | Endpoint created and wired up |
 | Phase 3: Completion Processor | ✅ DONE | Pub/Sub handler created |
 | Phase 4: Modify Worker | ✅ DONE | All handlers use webhooks, polling fallback |
-| Phase 5: Watchdog | ⏳ PENDING | |
+| Phase 5: Watchdog | ✅ DONE | Cloud Scheduler + endpoint created |
 | Phase 6: Admin Tools | ⏳ PENDING | |
 | Phase 7: Deploy & Test | ⏳ PENDING | |
 
@@ -105,16 +105,25 @@
 
 ---
 
-## Phase 5: Watchdog ⏳ PENDING
+## Phase 5: Watchdog ✅ DONE
 
 | Task | Status | Details |
 |------|--------|---------|
-| 5.1 Create Cloud Scheduler job | ⏳ | Every 30 minutes |
-| 5.2 Create `/internal/watchdog` endpoint | ⏳ | |
-| 5.3 Query stuck jobs | ⏳ | status="processing" AND updated_at < 2 hours ago |
-| 5.4 Check WaveSpeed status | ⏳ | For each stuck job |
-| 5.5 Recover or fail | ⏳ | Based on WaveSpeed status |
-| 5.6 Log failures | ⏳ | Structured JSON logs |
+| 5.1 Create Cloud Scheduler job | ✅ | `nuumee-watchdog` runs every 30 min |
+| 5.2 Create `/internal/watchdog` endpoint | ✅ | OIDC-verified endpoint |
+| 5.3 Query stuck jobs | ✅ | status="processing" AND updated_at < 2 hours |
+| 5.4 Check WaveSpeed status | ✅ | Calls WaveSpeed API for actual status |
+| 5.5 Recover or fail | ✅ | Downloads video if completed, refunds if failed |
+| 5.6 Log failures | ✅ | Structured [WATCHDOG] logs |
+
+**Files Created:**
+- `backend/app/internal/watchdog.py` - Watchdog endpoint
+
+**Files Modified:**
+- `backend/app/internal/__init__.py` - Added watchdog router
+
+**GCP Resources:**
+- Cloud Scheduler job: `nuumee-watchdog` (*/30 * * * *)
 
 ---
 
