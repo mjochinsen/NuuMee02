@@ -151,7 +151,7 @@ function GoPageContent() {
     {
       quote: "This tool saved my content calendar. I can now create variations of my videos in minutes instead of days of reshooting. Game changer.",
       author: "Sarah Chen",
-      role: "YouTube (2.3M subscribers)",
+      role: "YouTube Creator",
       rating: 5,
     },
     {
@@ -170,7 +170,7 @@ function GoPageContent() {
 
   return (
     <div className="w-full">
-      {/* Hero Section */}
+      {/* PRIMARY HERO - Replace Any Character Video Demo */}
       <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
         {/* Background gradient */}
         <div className="absolute inset-0 bg-gradient-to-b from-[#0F172A] via-[#1E293B] to-[#0F172A]">
@@ -183,8 +183,83 @@ function GoPageContent() {
         <div className="container mx-auto px-6 relative z-10">
           <div className="text-center mb-12">
             <h1 className="text-[#F1F5F9] mb-6 text-5xl md:text-6xl lg:text-7xl max-w-5xl mx-auto leading-tight font-bold">
-              {content.heroHeadline}
+              Replace Any Character in Any Video
+              <span className="block mt-2 bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] bg-clip-text text-transparent">
+                With AI-Powered Precision
+              </span>
             </h1>
+
+            <p className="text-[#94A3B8] text-lg md:text-xl max-w-3xl mx-auto mb-10">
+              Transform your videos in minutes with cutting-edge AI. No reshoots, no expensive equipment,
+              just stunning results that can look completely natural, or not. Your choice.
+            </p>
+
+            {/* Split-screen video comparison */}
+            <div className="max-w-5xl md:max-w-[70%] lg:max-w-[65%] mx-auto mb-10">
+              <div className="relative border-2 border-[#334155] rounded-2xl overflow-hidden bg-[#1E293B]">
+                <video
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  className="w-full h-auto"
+                >
+                  <source src="/hero-comparison-2.mp4" type="video/mp4" />
+                </video>
+
+                <div className="absolute top-4 left-4">
+                  <Badge className="bg-black/50 text-white border-white/20">
+                    Original
+                  </Badge>
+                </div>
+                <div className="absolute top-4 right-4">
+                  <Badge className="bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] text-white border-none">
+                    AI Generated
+                  </Badge>
+                </div>
+              </div>
+            </div>
+
+            {/* CTAs */}
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
+              <Button
+                size="lg"
+                onClick={handleStartCreating}
+                className="bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] hover:opacity-90 text-white px-8 py-6 text-lg shadow-lg shadow-[#00F0D9]/20"
+              >
+                Start Creating Free
+              </Button>
+              <p className="text-[#94A3B8] text-sm">No credit card required</p>
+            </div>
+
+            {/* Honest value props instead of fake stats */}
+            <div className="flex flex-wrap justify-center gap-8 mt-8 text-center">
+              <div>
+                <div className="text-2xl md:text-3xl text-[#F1F5F9] mb-1 flex items-center justify-center gap-2">
+                  <Zap className="w-6 h-6 text-[#00F0D9]" />
+                  2-10 min
+                </div>
+                <div className="text-[#94A3B8] text-sm">Average processing time</div>
+              </div>
+              <div>
+                <div className="text-2xl md:text-3xl text-[#F1F5F9] mb-1 flex items-center justify-center gap-2">
+                  <Sparkles className="w-6 h-6 text-[#00F0D9]" />
+                  Free to try
+                </div>
+                <div className="text-[#94A3B8] text-sm">5 credits on signup</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* SECONDARY HERO - Angle-Specific Content */}
+      <section className="py-24 bg-gradient-to-b from-[#0F172A] to-[#1E293B]">
+        <div className="container mx-auto px-6">
+          <div className="max-w-4xl mx-auto text-center">
+            <h2 className="text-[#F1F5F9] mb-6 text-4xl md:text-5xl lg:text-6xl leading-tight font-bold">
+              {content.heroHeadline}
+            </h2>
 
             <p className="text-[#94A3B8] text-lg md:text-xl max-w-3xl mx-auto mb-6">
               {content.heroSubheadline}
@@ -196,66 +271,19 @@ function GoPageContent() {
             </p>
 
             {/* CTAs */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
-              <Button
-                size="lg"
-                onClick={handleStartCreating}
-                className="bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] hover:opacity-90 text-white px-8 py-6 text-lg shadow-lg shadow-[#00F0D9]/20"
-              >
-                {content.heroCta}
-              </Button>
-              <p className="text-[#94A3B8] text-sm">No credit card required</p>
-            </div>
-
-            {/* Stats */}
-            <div className="flex flex-wrap justify-center gap-8 mt-8 text-center">
-              <div>
-                <div className="text-2xl md:text-3xl text-[#F1F5F9] mb-1">1M+</div>
-                <div className="text-[#94A3B8] text-sm">Videos Generated</div>
-              </div>
-              <div>
-                <div className="text-2xl md:text-3xl text-[#F1F5F9] mb-1 flex items-center justify-center gap-1">
-                  ★★★★★
-                </div>
-                <div className="text-[#94A3B8] text-sm">4.9/5 from 10K+ creators</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Example Grid Section */}
-      <section className="py-16 bg-[#0F172A]">
-        <div className="container mx-auto px-6">
-          <div className="max-w-5xl md:max-w-[70%] lg:max-w-[65%] mx-auto">
-            <div className="relative border-2 border-[#334155] rounded-2xl overflow-hidden bg-[#1E293B]">
-              <video
-                autoPlay
-                loop
-                muted
-                playsInline
-                className="w-full h-auto"
-              >
-                <source src="/hero-comparison-2.mp4" type="video/mp4" />
-              </video>
-
-              <div className="absolute top-4 left-4">
-                <Badge className="bg-black/50 text-white border-white/20">
-                  Original
-                </Badge>
-              </div>
-              <div className="absolute top-4 right-4">
-                <Badge className="bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] text-white border-none">
-                  AI Generated
-                </Badge>
-              </div>
-            </div>
+            <Button
+              size="lg"
+              onClick={handleStartCreating}
+              className="bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] hover:opacity-90 text-white px-8 py-6 text-lg shadow-lg shadow-[#00F0D9]/20"
+            >
+              {content.heroCta}
+            </Button>
           </div>
         </div>
       </section>
 
       {/* How It Works */}
-      <section className="py-24 bg-gradient-to-b from-[#0F172A] to-[#1E293B]">
+      <section className="py-24 bg-[#1E293B]">
         <div className="container mx-auto px-6">
           <div className="text-center mb-16">
             <h2 className="text-[#F1F5F9] text-4xl md:text-5xl mb-4 font-bold">
@@ -384,7 +412,7 @@ function GoPageContent() {
         <div className="container mx-auto px-6">
           <div className="text-center mb-16">
             <h2 className="text-[#F1F5F9] text-4xl md:text-5xl mb-4 font-bold">
-              Loved by 10,000+ Creators
+              Loved by Creators
             </h2>
           </div>
 
@@ -422,7 +450,7 @@ function GoPageContent() {
               {content.finalCtaHeadline}
             </h2>
             <p className="text-[#94A3B8] text-xl mb-10">
-              Join 10,000+ creators making magic with AI
+              Join creators making magic with AI
             </p>
 
             <Button
