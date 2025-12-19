@@ -6,21 +6,18 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Shield,
-  Eye,
   EyeOff,
   Lock,
   User,
   X,
   Play,
-  Users,
-  FileText,
-  Download,
   ArrowRight,
   Quote,
   TrendingUp,
   MessageCircle,
   GraduationCap,
   Briefcase,
+  ChevronRight,
 } from 'lucide-react';
 
 export default function ForAnonymousPage() {
@@ -76,8 +73,147 @@ export default function ForAnonymousPage() {
         </div>
       </section>
 
-      {/* Problem Section */}
+      {/* Video Demo Section */}
       <section className="py-24 bg-[#0F172A]">
+        <div className="container mx-auto px-6">
+          <div className="text-center mb-12">
+            <h2 className="text-[#F1F5F9] text-4xl md:text-5xl mb-4 font-bold">
+              Replace Any Character in Any Video
+              <span className="block mt-2 bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] bg-clip-text text-transparent">
+                With AI-Powered Precision
+              </span>
+            </h2>
+            <p className="text-[#94A3B8] text-lg md:text-xl max-w-3xl mx-auto mt-6">
+              Transform your videos in minutes with cutting-edge AI. No reshoots, no expensive equipment,
+              just stunning results that can look completely natural, or not. Your choice.
+            </p>
+          </div>
+
+          {/* Split-screen video comparison */}
+          <div className="max-w-5xl md:max-w-[70%] lg:max-w-[65%] mx-auto">
+            <div className="relative border-2 border-[#334155] rounded-2xl overflow-hidden bg-[#1E293B]">
+              <video
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="w-full h-auto"
+              >
+                <source src="/hero-comparison-2.mp4" type="video/mp4" />
+              </video>
+
+              <div className="absolute top-4 left-4">
+                <Badge className="bg-black/50 text-white border-white/20">
+                  Original
+                </Badge>
+              </div>
+              <div className="absolute top-4 right-4">
+                <Badge className="bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] text-white border-none">
+                  AI Generated
+                </Badge>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works - Visual */}
+      <section className="py-24 bg-gradient-to-b from-[#0F172A] to-[#1E293B]">
+        <div className="container mx-auto px-6">
+          <div className="text-center mb-16">
+            <h2 className="text-[#F1F5F9] text-4xl md:text-5xl mb-4 font-bold">
+              See the magic in 3 simple steps
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            {/* Step 1 */}
+            <div className="relative">
+              <div className="border border-[#334155] rounded-2xl p-8 bg-[#0F172A] text-center h-full">
+                <div className="w-16 h-16 rounded-full bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] flex items-center justify-center mx-auto mb-6 text-2xl text-white font-bold">
+                  1
+                </div>
+                <h3 className="text-[#F1F5F9] text-xl mb-4 font-semibold">Upload Character</h3>
+                <div className="mb-4 rounded-xl overflow-hidden aspect-[9/16] max-h-[280px] mx-auto bg-[#1E293B]">
+                  <img
+                    src="/step1-character.png"
+                    alt="Upload character reference"
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+                <p className="text-[#94A3B8]">
+                  Upload a clear reference image of the character you want to use
+                </p>
+              </div>
+              <div className="hidden md:block absolute top-1/2 -right-4 transform -translate-y-1/2 z-10">
+                <ChevronRight className="w-8 h-8 text-[#00F0D9]" />
+              </div>
+            </div>
+
+            {/* Step 2 */}
+            <div className="relative">
+              <div className="border border-[#334155] rounded-2xl p-8 bg-[#0F172A] text-center h-full">
+                <div className="w-16 h-16 rounded-full bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] flex items-center justify-center mx-auto mb-6 text-2xl text-white font-bold">
+                  2
+                </div>
+                <h3 className="text-[#F1F5F9] text-xl mb-4 font-semibold">Upload Video</h3>
+                <div className="mb-4 rounded-xl overflow-hidden aspect-[9/16] max-h-[280px] mx-auto bg-[#1E293B]">
+                  <video
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    className="w-full h-full object-contain"
+                  >
+                    <source src="/step2-video.mp4" type="video/mp4" />
+                  </video>
+                </div>
+                <p className="text-[#94A3B8]">
+                  Upload the video where you want to replace the character
+                </p>
+              </div>
+              <div className="hidden md:block absolute top-1/2 -right-4 transform -translate-y-1/2 z-10">
+                <ChevronRight className="w-8 h-8 text-[#00F0D9]" />
+              </div>
+            </div>
+
+            {/* Step 3 */}
+            <div className="border border-[#334155] rounded-2xl p-8 bg-[#0F172A] text-center">
+              <div className="w-16 h-16 rounded-full bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] flex items-center justify-center mx-auto mb-6 text-2xl text-white font-bold">
+                3
+              </div>
+              <h3 className="text-[#F1F5F9] text-xl mb-4 font-semibold">Generate Magic</h3>
+              <div className="mb-4 rounded-xl overflow-hidden aspect-[9/16] max-h-[280px] mx-auto bg-[#1E293B]">
+                <video
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  className="w-full h-full object-contain"
+                >
+                  <source src="/step3-result.mp4" type="video/mp4" />
+                </video>
+              </div>
+              <p className="text-[#94A3B8]">
+                Our AI works its magic and delivers a perfect transformation
+              </p>
+            </div>
+          </div>
+
+          <div className="text-center mt-12">
+            <Button
+              size="lg"
+              onClick={handleCTA}
+              className="bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] hover:opacity-90 text-white px-8"
+            >
+              Try It Now - It&apos;s Free
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* Problem Section */}
+      <section className="py-24 bg-[#1E293B]">
         <div className="container mx-auto px-6 max-w-4xl">
           <h2 className="text-4xl font-bold text-[#F1F5F9] mb-6 text-center">
             Privacy Shouldn't Limit Your Reach
@@ -95,7 +231,7 @@ export default function ForAnonymousPage() {
             ].map((pain) => (
               <div
                 key={pain}
-                className="flex items-start gap-4 p-6 rounded-xl bg-[#1E293B]/50 border border-[#334155]"
+                className="flex items-start gap-4 p-6 rounded-xl bg-[#0F172A]/50 border border-[#334155]"
               >
                 <div className="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center flex-shrink-0">
                   <X className="w-4 h-4 text-red-400" />
@@ -108,7 +244,7 @@ export default function ForAnonymousPage() {
       </section>
 
       {/* Solution Section */}
-      <section className="py-24 bg-gradient-to-b from-[#0F172A] to-[#1E293B]">
+      <section className="py-24 bg-gradient-to-b from-[#1E293B] to-[#0F172A]">
         <div className="container mx-auto px-6 max-w-6xl">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-[#F1F5F9] mb-6">
@@ -149,51 +285,6 @@ export default function ForAnonymousPage() {
                 Consistency, recognition, and audience connection—without personal exposure.
               </p>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* How It Works */}
-      <section className="py-24 bg-[#1E293B]">
-        <div className="container mx-auto px-6 max-w-4xl">
-          <h2 className="text-4xl font-bold text-[#F1F5F9] mb-16 text-center">
-            How It Works
-          </h2>
-
-          <div className="space-y-12">
-            {[
-              {
-                step: 1,
-                icon: Users,
-                title: 'Choose Your Avatar',
-                description: 'Select from our library of AI presenters.',
-              },
-              {
-                step: 2,
-                icon: FileText,
-                title: 'Write Your Script',
-                description: 'Your voice, your ideas, your message.',
-              },
-              {
-                step: 3,
-                icon: Download,
-                title: 'Generate & Publish',
-                description: 'Professional video, zero personal exposure.',
-              },
-            ].map((item) => (
-              <div key={item.step} className="flex items-start gap-6">
-                <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#00F0D9] to-[#3B1FE2] flex items-center justify-center flex-shrink-0">
-                  <span className="text-white text-xl font-bold">{item.step}</span>
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <item.icon className="w-6 h-6 text-[#00F0D9]" />
-                    <h3 className="text-[#F1F5F9] text-xl font-semibold">{item.title}</h3>
-                  </div>
-                  <p className="text-[#94A3B8] text-lg">{item.description}</p>
-                </div>
-              </div>
-            ))}
           </div>
         </div>
       </section>
