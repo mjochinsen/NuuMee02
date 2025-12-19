@@ -34,25 +34,87 @@ export default function ForBusinessPage() {
 
   return (
     <main className="bg-[#0F172A]">
-      {/* Hero Section */}
+      {/* Video Demo Section - PRIMARY HERO */}
       <section className="relative min-h-[90vh] flex items-center overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-[#0F172A] via-[#1E293B] to-[#0F172A]">
           <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#00F0D9]/20 rounded-full blur-3xl" />
           <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[#3B1FE2]/20 rounded-full blur-3xl" />
         </div>
 
-        <div className="container mx-auto px-6 relative z-10 text-center py-20">
+        <div className="container mx-auto px-6 relative z-10">
+          <div className="text-center mb-12">
+            <Badge className="mb-6 bg-[#00F0D9]/10 text-[#00F0D9] border-[#00F0D9]/20 px-4 py-2">
+              ✨ Trusted by 10,000+ creators worldwide
+            </Badge>
+
+            <h1 className="text-[#F1F5F9] mb-6 text-5xl md:text-6xl lg:text-7xl max-w-5xl mx-auto leading-tight font-bold">
+              Replace Any Character in Any Video
+              <span className="block mt-2 bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] bg-clip-text text-transparent">
+                With AI-Powered Precision
+              </span>
+            </h1>
+
+            <p className="text-[#94A3B8] text-lg md:text-xl max-w-3xl mx-auto mb-10">
+              Transform your videos in minutes with cutting-edge AI. No reshoots, no expensive equipment,
+              just stunning results that can look completely natural, or not. Your choice.
+            </p>
+
+            {/* Split-screen video comparison */}
+            <div className="max-w-5xl md:max-w-[70%] lg:max-w-[65%] mx-auto mb-10">
+              <div className="relative border-2 border-[#334155] rounded-2xl overflow-hidden bg-[#1E293B]">
+                <video
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  className="w-full h-auto"
+                >
+                  <source src="/hero-comparison-2.mp4" type="video/mp4" />
+                </video>
+
+                <div className="absolute top-4 left-4">
+                  <Badge className="bg-black/50 text-white border-white/20">
+                    Original
+                  </Badge>
+                </div>
+                <div className="absolute top-4 right-4">
+                  <Badge className="bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] text-white border-none">
+                    AI Generated
+                  </Badge>
+                </div>
+              </div>
+            </div>
+
+            <Button
+              size="lg"
+              onClick={handleCTA}
+              className="bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] hover:opacity-90 text-white text-lg px-10 py-6"
+            >
+              <Play className="w-5 h-5 mr-2" />
+              Start Creating Free
+            </Button>
+
+            <p className="text-[#94A3B8] mt-6 text-sm">
+              No credit card required
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Page-Specific Hero Section */}
+      <section className="py-24 bg-gradient-to-b from-[#0F172A] to-[#1E293B]">
+        <div className="container mx-auto px-6 text-center">
           <Badge className="bg-[#00F0D9]/10 text-[#00F0D9] border-[#00F0D9]/30 mb-6 px-4 py-2">
             <Building2 className="w-4 h-4 mr-2" />
-            Trusted by marketing teams at 500+ companies
+            For Marketing Teams
           </Badge>
 
-          <h1 className="text-5xl md:text-7xl font-bold text-[#F1F5F9] mb-6 max-w-5xl mx-auto leading-tight">
+          <h2 className="text-4xl md:text-5xl font-bold text-[#F1F5F9] mb-6 max-w-5xl mx-auto leading-tight">
             Professional Video at Scale.{' '}
             <span className="bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] text-transparent bg-clip-text">
               Without the Production Cost.
             </span>
-          </h1>
+          </h2>
 
           <p className="text-xl text-[#94A3B8] mb-10 max-w-2xl mx-auto">
             NuuMee helps marketing teams create personalized, on-brand video content 10x faster than traditional production—at a fraction of the cost.
@@ -73,52 +135,8 @@ export default function ForBusinessPage() {
         </div>
       </section>
 
-      {/* Video Demo Section */}
-      <section className="py-24 bg-[#0F172A]">
-        <div className="container mx-auto px-6">
-          <div className="text-center mb-12">
-            <h2 className="text-[#F1F5F9] text-4xl md:text-5xl mb-4 font-bold">
-              Replace Any Character in Any Video
-              <span className="block mt-2 bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] bg-clip-text text-transparent">
-                With AI-Powered Precision
-              </span>
-            </h2>
-            <p className="text-[#94A3B8] text-lg md:text-xl max-w-3xl mx-auto mt-6">
-              Transform your videos in minutes with cutting-edge AI. No reshoots, no expensive equipment,
-              just stunning results that can look completely natural, or not. Your choice.
-            </p>
-          </div>
-
-          {/* Split-screen video comparison */}
-          <div className="max-w-5xl md:max-w-[70%] lg:max-w-[65%] mx-auto">
-            <div className="relative border-2 border-[#334155] rounded-2xl overflow-hidden bg-[#1E293B]">
-              <video
-                autoPlay
-                loop
-                muted
-                playsInline
-                className="w-full h-auto"
-              >
-                <source src="/hero-comparison-2.mp4" type="video/mp4" />
-              </video>
-
-              <div className="absolute top-4 left-4">
-                <Badge className="bg-black/50 text-white border-white/20">
-                  Original
-                </Badge>
-              </div>
-              <div className="absolute top-4 right-4">
-                <Badge className="bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] text-white border-none">
-                  AI Generated
-                </Badge>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* How It Works - Visual */}
-      <section className="py-24 bg-gradient-to-b from-[#0F172A] to-[#1E293B]">
+      <section className="py-24 bg-[#1E293B]">
         <div className="container mx-auto px-6">
           <div className="text-center mb-16">
             <h2 className="text-[#F1F5F9] text-4xl md:text-5xl mb-4 font-bold">
@@ -213,7 +231,7 @@ export default function ForBusinessPage() {
       </section>
 
       {/* Problem Section */}
-      <section className="py-24 bg-[#1E293B]">
+      <section className="py-24 bg-[#0F172A]">
         <div className="container mx-auto px-6 max-w-4xl">
           <h2 className="text-4xl font-bold text-[#F1F5F9] mb-6 text-center">
             Video Works. But It's Expensive.
@@ -231,7 +249,7 @@ export default function ForBusinessPage() {
             ].map((pain) => (
               <div
                 key={pain}
-                className="flex items-start gap-4 p-6 rounded-xl bg-[#0F172A]/50 border border-[#334155]"
+                className="flex items-start gap-4 p-6 rounded-xl bg-[#1E293B]/50 border border-[#334155]"
               >
                 <div className="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center flex-shrink-0">
                   <X className="w-4 h-4 text-red-400" />
@@ -244,7 +262,7 @@ export default function ForBusinessPage() {
       </section>
 
       {/* Solution Section */}
-      <section className="py-24 bg-gradient-to-b from-[#1E293B] to-[#0F172A]">
+      <section className="py-24 bg-gradient-to-b from-[#0F172A] to-[#1E293B]">
         <div className="container mx-auto px-6 max-w-6xl">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-[#F1F5F9] mb-6">
@@ -290,7 +308,7 @@ export default function ForBusinessPage() {
       </section>
 
       {/* Use Cases */}
-      <section className="py-24 bg-[#0F172A]">
+      <section className="py-24 bg-[#1E293B]">
         <div className="container mx-auto px-6 max-w-6xl">
           <h2 className="text-4xl font-bold text-[#F1F5F9] mb-6 text-center">
             Built for Marketing Teams
@@ -324,7 +342,7 @@ export default function ForBusinessPage() {
             ].map((useCase) => (
               <div
                 key={useCase.title}
-                className="border border-[#334155] rounded-xl p-6 bg-[#1E293B] text-center"
+                className="border border-[#334155] rounded-xl p-6 bg-[#0F172A] text-center"
               >
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#00F0D9]/20 to-[#3B1FE2]/20 flex items-center justify-center mx-auto mb-4">
                   <useCase.icon className="w-6 h-6 text-[#00F0D9]" />
@@ -338,7 +356,7 @@ export default function ForBusinessPage() {
       </section>
 
       {/* Testimonial */}
-      <section className="py-24 bg-gradient-to-b from-[#0F172A] to-[#1E293B]">
+      <section className="py-24 bg-[#0F172A]">
         <div className="container mx-auto px-6 max-w-3xl">
           <div className="border border-[#334155] rounded-2xl p-10 bg-[#1E293B] text-center">
             <Quote className="w-12 h-12 text-[#00F0D9]/50 mx-auto mb-6" />
@@ -351,7 +369,7 @@ export default function ForBusinessPage() {
       </section>
 
       {/* Final CTA */}
-      <section className="py-24 bg-[#0F172A]">
+      <section className="py-24 bg-gradient-to-b from-[#0F172A] to-[#1E293B]">
         <div className="container mx-auto px-6 max-w-3xl text-center">
           <h2 className="text-4xl md:text-5xl font-bold text-[#F1F5F9] mb-6">
             Scale Your Video Marketing
