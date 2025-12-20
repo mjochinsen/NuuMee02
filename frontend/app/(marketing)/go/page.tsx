@@ -221,7 +221,7 @@ function GoPageContent() {
             </div>
 
             {/* CTAs */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-6">
               <Button
                 size="lg"
                 onClick={handleStartCreating}
@@ -231,6 +231,11 @@ function GoPageContent() {
               </Button>
               <p className="text-[#94A3B8] text-sm">No credit card required</p>
             </div>
+
+            {/* Inspiration prompt */}
+            <p className="text-[#64748B] text-sm max-w-xl mx-auto mb-8">
+              Not sure what to create? Try a fun intro, reaction video, or playful skit — you&apos;ll have a video in minutes.
+            </p>
 
             {/* Honest value props instead of fake stats */}
             <div className="flex flex-wrap justify-center gap-8 mt-8 text-center">
@@ -289,7 +294,8 @@ function GoPageContent() {
             <h2 className="text-[#F1F5F9] text-4xl md:text-5xl mb-4 font-bold">
               How It Works
             </h2>
-            <p className="text-[#94A3B8] text-lg">Three simple steps to your video</p>
+            <p className="text-[#94A3B8] text-lg mb-2">Three simple steps to your video</p>
+            <p className="text-[#64748B] text-sm">Create stylized, creative videos — not photorealistic footage.</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
