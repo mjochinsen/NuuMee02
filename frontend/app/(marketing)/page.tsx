@@ -193,7 +193,7 @@ export default function HomePage() {
                   <Sparkles className="w-6 h-6 text-[#00F0D9]" />
                   Free to try
                 </div>
-                <div className="text-[#94A3B8] text-sm">5 credits on signup</div>
+                <div className="text-[#94A3B8] text-sm">25 credits on signup</div>
               </div>
             </div>
           </div>
@@ -586,7 +586,7 @@ export default function HomePage() {
               <ul className="space-y-3 mb-8">
                 <li className="flex items-start gap-2 text-[#94A3B8]">
                   <Check className="w-5 h-5 text-[#00F0D9] flex-shrink-0 mt-0.5" />
-                  <span>5 credits</span>
+                  <span>25 credits</span>
                 </li>
                 <li className="flex items-start gap-2 text-[#94A3B8]">
                   <Check className="w-5 h-5 text-[#00F0D9] flex-shrink-0 mt-0.5" />

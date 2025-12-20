@@ -37,7 +37,7 @@ export default function ComparisonPage() {
         { name: 'Setup Time', newme: '< 5 minutes', competitor: 'Hours' },
       ],
       pricing: {
-        newme: [{ tier: 'Free', price: '$0', credits: '5 credits' }, { tier: 'Creator', price: '$29/mo', credits: '50 credits' }, { tier: 'Studio', price: '$99/mo', credits: '200 credits' }, { tier: 'Enterprise', price: 'Custom', credits: 'Custom' }],
+        newme: [{ tier: 'Free', price: '$0', credits: '25 credits' }, { tier: 'Creator', price: '$29/mo', credits: '50 credits' }, { tier: 'Studio', price: '$99/mo', credits: '200 credits' }, { tier: 'Enterprise', price: 'Custom', credits: 'Custom' }],
         competitor: [{ tier: 'No free tier', price: '-', credits: '-' }, { tier: 'Starter', price: '$99/mo', credits: '50 videos' }, { tier: 'Pro', price: '$299/mo', credits: '200 videos' }, { tier: 'Enterprise', price: 'Custom', credits: 'Custom' }],
       },
       whyNewme: ['70% lower cost per video', 'Free tier to test before buying', 'Simple, developer-friendly API', 'Fast setup (< 5 minutes)', 'No long-term contracts'],

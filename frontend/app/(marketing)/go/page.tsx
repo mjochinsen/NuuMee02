@@ -251,7 +251,7 @@ function GoPageContent() {
                   <Sparkles className="w-6 h-6 text-[#00F0D9]" />
                   Free to try
                 </div>
-                <div className="text-[#94A3B8] text-sm">5 credits on signup</div>
+                <div className="text-[#94A3B8] text-sm">25 credits on signup</div>
               </div>
             </div>
           </div>
