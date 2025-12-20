@@ -91,7 +91,7 @@ export default function HomePage() {
     {
       quote: "This tool saved my content calendar. I can now create variations of my videos in minutes instead of days of reshooting. Game changer.",
       author: "Sarah Chen",
-      role: "YouTube (2.3M subscribers)",
+      role: "YouTube Creator",
       rating: 5,
     },
     {
@@ -122,10 +122,6 @@ export default function HomePage() {
 
         <div className="container mx-auto px-6 relative z-10">
           <div className="text-center mb-12">
-            <Badge className="mb-6 bg-[#00F0D9]/10 text-[#00F0D9] border-[#00F0D9]/20 px-4 py-2">
-              ✨ Trusted by 10,000+ creators worldwide
-            </Badge>
-
             <h1 className="text-[#F1F5F9] mb-6 text-5xl md:text-6xl lg:text-7xl max-w-5xl mx-auto leading-tight font-bold">
               Replace Any Character in Any Video
               <span className="block mt-2 bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] bg-clip-text text-transparent">
@@ -167,35 +163,37 @@ export default function HomePage() {
             </div>
 
             {/* CTAs */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-6">
               <Button
                 size="lg"
                 onClick={handleStartCreating}
                 className="bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] hover:opacity-90 text-white px-8 py-6 text-lg shadow-lg shadow-[#00F0D9]/20"
               >
-                🎬 Start Creating Free
+                Start Creating Free
               </Button>
               <p className="text-[#94A3B8] text-sm">No credit card required</p>
             </div>
 
-            <Button
-              variant="link"
-              className="text-[#00F0D9] hover:text-[#00F0D9]/80"
-            >
-              Watch Demo <Play className="w-4 h-4 ml-2" />
-            </Button>
+            {/* Inspiration prompt */}
+            <p className="text-[#64748B] text-sm max-w-xl mx-auto mb-8">
+              Not sure what to create? Try a fun intro, reaction video, or playful skit — you&apos;ll have a video in minutes.
+            </p>
 
-            {/* Stats */}
-            <div className="flex flex-wrap justify-center gap-8 mt-12 text-center">
+            {/* Honest value props instead of fake stats */}
+            <div className="flex flex-wrap justify-center gap-8 mt-8 text-center">
               <div>
-                <div className="text-2xl md:text-3xl text-[#F1F5F9] mb-1">⚡ 1M+</div>
-                <div className="text-[#94A3B8] text-sm">Videos Generated</div>
+                <div className="text-2xl md:text-3xl text-[#F1F5F9] mb-1 flex items-center justify-center gap-2">
+                  <Zap className="w-6 h-6 text-[#00F0D9]" />
+                  2-10 min
+                </div>
+                <div className="text-[#94A3B8] text-sm">Average processing time</div>
               </div>
               <div>
-                <div className="text-2xl md:text-3xl text-[#F1F5F9] mb-1 flex items-center justify-center gap-1">
-                  ★★★★★
+                <div className="text-2xl md:text-3xl text-[#F1F5F9] mb-1 flex items-center justify-center gap-2">
+                  <Sparkles className="w-6 h-6 text-[#00F0D9]" />
+                  Free to try
                 </div>
-                <div className="text-[#94A3B8] text-sm">4.9/5 from 10K+ creators</div>
+                <div className="text-[#94A3B8] text-sm">5 credits on signup</div>
               </div>
             </div>
           </div>
@@ -223,6 +221,7 @@ export default function HomePage() {
             <h2 className="text-[#F1F5F9] text-4xl md:text-5xl mb-4 font-bold">
               See the magic in 3 simple steps
             </h2>
+            <p className="text-[#64748B] text-sm">Create stylized, creative videos — not photorealistic footage.</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
@@ -406,7 +405,7 @@ export default function HomePage() {
         <div className="container mx-auto px-6">
           <div className="text-center mb-16">
             <h2 className="text-[#F1F5F9] text-4xl md:text-5xl mb-4 font-bold">
-              Loved by 10,000+ Creators Worldwide
+              Loved by Creators
             </h2>
           </div>
 
@@ -436,7 +435,7 @@ export default function HomePage() {
                   instead of days of reshooting. Game changer.&quot;
                 </p>
                 <p className="text-[#94A3B8]">
-                  — Sarah Chen, YouTube (2.3M subscribers)
+                  — Sarah Chen, YouTube Creator
                 </p>
               </div>
             </div>
@@ -704,7 +703,7 @@ export default function HomePage() {
               Ready to Transform Your Videos?
             </h2>
             <p className="text-[#94A3B8] text-xl mb-10">
-              Join 10,000+ creators making magic with AI
+              Join creators making magic with AI
             </p>
 
             <Link href="/signup">
