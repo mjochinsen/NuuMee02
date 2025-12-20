@@ -166,7 +166,8 @@ async def list_users(
                 tier=tier,
                 credits=credits,
                 created_at=created_at,
-                last_active=data.get("last_active"),
+                # Note: users store "updated_at", admin displays as "last_active"
+                last_active=data.get("updated_at"),
                 jobs_count=jobs_count,
             ))
         except Exception as e:
@@ -300,7 +301,8 @@ async def get_user_detail(uid: str) -> Optional[AdminUserDetail]:
         tier=tier,
         credits=credits,
         created_at=created_at,
-        last_active=data.get("last_active"),
+        # Note: users store "updated_at", admin displays as "last_active"
+        last_active=data.get("updated_at"),
         jobs_count=jobs_count,
         subscription=subscription,
         recent_jobs=recent_jobs,
