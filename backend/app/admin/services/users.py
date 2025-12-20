@@ -212,7 +212,8 @@ async def get_user_detail(uid: str) -> Optional[AdminUserDetail]:
                 logger.warning(f"Unknown job status for {job_doc.id}: {status_raw}, defaulting to pending")
                 status = JobStatus.PENDING
             # Defensive int conversion
-            credits_raw = job_data.get("credits_used", 0)
+            # Note: jobs store "credits_charged", but admin displays as "credits_used"
+            credits_raw = job_data.get("credits_charged", 0)
             credits_used = int(credits_raw) if credits_raw is not None else 0
             recent_jobs.append(AdminJobSummary(
                 id=job_doc.id,

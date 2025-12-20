@@ -85,7 +85,8 @@ async def list_jobs(
                 status = JobStatus.PENDING
 
             # Defensive int conversion (Firestore may store as float)
-            credits_raw = data.get("credits_used", 0)
+            # Note: jobs store "credits_charged", but admin displays as "credits_used"
+            credits_raw = data.get("credits_charged", 0)
             credits_used = int(credits_raw) if credits_raw is not None else 0
 
             # Handle created_at timestamp
@@ -146,7 +147,8 @@ async def get_job_detail(job_id: str) -> Optional[AdminJobDetail]:
         status = JobStatus.PENDING
 
     # Defensive int conversion (Firestore may store as float)
-    credits_raw = data.get("credits_used", 0)
+    # Note: jobs store "credits_charged", but admin displays as "credits_used"
+    credits_raw = data.get("credits_charged", 0)
     credits_used = int(credits_raw) if credits_raw is not None else 0
 
     # Handle created_at timestamp
