@@ -21,6 +21,7 @@ from .models import (
     PostProcessResponse,
     PostProcessType,
 )
+from ..metrics import metrics
 from .services import (
     calculate_credits,
     generate_job_id,
@@ -245,6 +246,9 @@ async def create_job(
         except Exception as e:
             logger.error(f"Failed to enqueue job {job_id}: {e}")
             job_status = JobStatus.PENDING
+
+        # Track job creation in metrics
+        metrics.track_job_created()
 
         return JobResponse(
             id=job_id,

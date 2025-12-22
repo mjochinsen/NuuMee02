@@ -15,6 +15,8 @@ from google.auth.transport import requests as google_requests
 import httpx
 
 from ..auth.firebase import get_firestore_client
+from ..metrics import metrics
+from ..notifications import alert_job_failed
 
 logger = logging.getLogger(__name__)
 
@@ -298,6 +300,7 @@ async def process_completion(request: Request):
                 "updated_at": firestore.SERVER_TIMESTAMP,
             })
             logger.info(f"Job {job_id} completed successfully")
+            metrics.track_job_completed()
             return {"status": "completed", "job_id": job_id}
 
         except Exception as e:
@@ -315,6 +318,11 @@ async def process_completion(request: Request):
             "updated_at": firestore.SERVER_TIMESTAMP,
         })
         refund_credits(db, user_id, credits_charged, job_id)
+        metrics.track_job_failed("wavespeed_error")
+
+        # Send alert for job failure
+        alert_job_failed(job_id, error_msg, user_id)
+
         return {"status": "failed", "job_id": job_id, "reason": error_msg}
 
     else:

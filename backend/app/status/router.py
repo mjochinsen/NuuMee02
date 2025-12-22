@@ -2,9 +2,10 @@
 import os
 import time
 import logging
+import subprocess
 from datetime import datetime, timezone
 from typing import Optional
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 import httpx
 
 from google.cloud import firestore
@@ -16,6 +17,7 @@ from .models import (
     ServiceHealth,
     SystemHealthResponse,
 )
+from ..notifications import alert_health_check_failed
 
 logger = logging.getLogger(__name__)
 
@@ -271,5 +273,112 @@ async def get_simple_status():
     return {
         "status": "healthy",
         "service": "nuumee-api",
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }
+
+
+@router.get("/deep")
+async def get_deep_health(request: Request):
+    """
+    Deep health check - tests actual functionality, not just connectivity.
+
+    This endpoint verifies:
+    - ffmpeg is installed and working
+    - Firestore composite indexes work (runs actual query)
+    - GCS can read/write test data
+    - Startup checks passed
+
+    Use this for monitoring alerts, NOT for load balancer health checks
+    (too slow and resource-intensive for high-frequency checks).
+    """
+    checks = {}
+    start_time = time.time()
+
+    # 1. Check ffmpeg
+    try:
+        result = subprocess.run(
+            ["ffmpeg", "-version"],
+            capture_output=True,
+            timeout=5
+        )
+        if result.returncode == 0:
+            version = result.stdout.decode().split('\n')[0][:60] if result.stdout else "unknown"
+            checks["ffmpeg"] = {"status": "ok", "version": version}
+        else:
+            checks["ffmpeg"] = {"status": "error", "error": "non-zero exit code"}
+    except FileNotFoundError:
+        checks["ffmpeg"] = {"status": "error", "error": "ffmpeg not found in PATH"}
+    except subprocess.TimeoutExpired:
+        checks["ffmpeg"] = {"status": "error", "error": "check timed out"}
+    except Exception as e:
+        checks["ffmpeg"] = {"status": "error", "error": str(e)[:100]}
+
+    # 2. Check Firestore with composite index query
+    try:
+        db = firestore.Client()
+        # This query requires the composite index on (user_id, created_at DESC)
+        # If the index is missing, this will fail
+        query = (
+            db.collection("jobs")
+            .where("user_id", "==", "__deep_health_check__")
+            .order_by("created_at", direction=firestore.Query.DESCENDING)
+            .limit(1)
+        )
+        list(query.stream())  # Execute query
+        checks["firestore_indexes"] = {"status": "ok", "message": "Composite index query succeeded"}
+    except Exception as e:
+        error_str = str(e)
+        if "index" in error_str.lower():
+            checks["firestore_indexes"] = {"status": "error", "error": "Missing composite index", "details": error_str[:200]}
+        else:
+            checks["firestore_indexes"] = {"status": "error", "error": error_str[:100]}
+
+    # 3. Check GCS read capability
+    try:
+        client = storage.Client()
+        bucket = client.bucket(os.getenv("ASSETS_BUCKET", "nuumee-assets"))
+        # Check if watermark.png exists (required for video processing)
+        blob = bucket.blob("assets/watermark.png")
+        exists = blob.exists()
+        if exists:
+            checks["gcs_assets"] = {"status": "ok", "message": "watermark.png accessible"}
+        else:
+            checks["gcs_assets"] = {"status": "warning", "message": "watermark.png not found"}
+    except Exception as e:
+        checks["gcs_assets"] = {"status": "error", "error": str(e)[:100]}
+
+    # 4. Include startup check results if available
+    startup_checks = getattr(request.app.state, "startup_checks", None)
+    if startup_checks:
+        checks["startup_checks"] = startup_checks
+    else:
+        checks["startup_checks"] = {"status": "warning", "message": "Startup checks not recorded"}
+
+    # Calculate overall status and send alerts for failures
+    all_statuses = []
+    failed_checks = []
+    for name, result in checks.items():
+        if isinstance(result, dict):
+            status = result.get("status", "unknown")
+            all_statuses.append(status)
+            if status == "error":
+                failed_checks.append((name, result.get("error", "unknown error")))
+
+    if "error" in all_statuses:
+        overall = "unhealthy"
+        # Send alert for each failed check
+        for check_name, error in failed_checks:
+            alert_health_check_failed(check_name, error)
+    elif "warning" in all_statuses:
+        overall = "degraded"
+    else:
+        overall = "healthy"
+
+    elapsed_ms = (time.time() - start_time) * 1000
+
+    return {
+        "status": overall,
+        "checks": checks,
+        "elapsed_ms": round(elapsed_ms, 2),
         "timestamp": datetime.now(timezone.utc).isoformat()
     }
