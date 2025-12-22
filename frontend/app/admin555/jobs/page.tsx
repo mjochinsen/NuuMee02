@@ -173,6 +173,7 @@ function JobsContent() {
                   <th className="text-left py-4 px-6 text-sm font-semibold text-[#F1F5F9]">Job ID</th>
                   <th className="text-left py-4 px-6 text-sm font-semibold text-[#F1F5F9]">User</th>
                   <th className="text-left py-4 px-6 text-sm font-semibold text-[#F1F5F9]">Type</th>
+                  <th className="text-left py-4 px-6 text-sm font-semibold text-[#F1F5F9]">WaveSpeed</th>
                   <th className="text-left py-4 px-6 text-sm font-semibold text-[#F1F5F9]">Status</th>
                   <th className="text-right py-4 px-6 text-sm font-semibold text-[#F1F5F9]">Credits</th>
                   <th className="text-left py-4 px-6 text-sm font-semibold text-[#F1F5F9]">Created</th>
@@ -194,6 +195,21 @@ function JobsContent() {
                     </td>
                     <td className="py-4 px-6 text-sm text-[#94A3B8]">
                       {job.type || 'video'}
+                    </td>
+                    <td className="py-4 px-6 text-sm font-mono">
+                      {job.wavespeed_request_id ? (
+                        <a
+                          href={`https://wavespeed.ai/dashboard/predictions/${job.wavespeed_request_id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="text-[#00F0D9] hover:underline"
+                        >
+                          {truncateId(job.wavespeed_request_id)}
+                        </a>
+                      ) : (
+                        <span className="text-[#64748B]">-</span>
+                      )}
                     </td>
                     <td className="py-4 px-6">
                       <span className={`px-2 py-1 rounded-md text-xs font-medium border ${getStatusBadgeClass(job.status)}`}>
@@ -392,6 +408,21 @@ function JobDetailPanel({
                     <p className="text-[#F1F5F9]">{job.type || 'video'}</p>
                   </div>
                   <div>
+                    <p className="text-sm text-[#94A3B8] mb-1">WaveSpeed ID</p>
+                    {job.wavespeed_request_id ? (
+                      <a
+                        href={`https://wavespeed.ai/dashboard/predictions/${job.wavespeed_request_id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[#00F0D9] hover:underline font-mono text-sm"
+                      >
+                        {job.wavespeed_request_id}
+                      </a>
+                    ) : (
+                      <p className="text-[#64748B]">-</p>
+                    )}
+                  </div>
+                  <div>
                     <p className="text-sm text-[#94A3B8] mb-1">Status</p>
                     <span className={`px-2 py-1 rounded-md text-xs font-medium border ${getStatusBadgeClass(job.status)}`}>
                       {job.status.toUpperCase()}
@@ -463,7 +494,7 @@ function JobDetailPanel({
               )}
 
               {/* Actions Section */}
-              {(job.status === 'failed' || job.status === 'processing') && (
+              {(job.status === 'failed' || job.status === 'processing' || job.status === 'pending') && (
                 <div className="bg-[#0F172A] border border-[#334155] rounded-lg p-6">
                   <h3 className="text-lg font-semibold text-[#F1F5F9] mb-4">Actions</h3>
 
@@ -499,8 +530,8 @@ function JobDetailPanel({
                     )
                   )}
 
-                  {/* Recover Button for Processing Jobs */}
-                  {job.status === 'processing' && (
+                  {/* Recover Button for Processing/Pending Jobs */}
+                  {(job.status === 'processing' || job.status === 'pending') && (
                     <>
                       <p className="text-[#94A3B8] text-sm mb-4">
                         If this job is stuck, recovery will check WaveSpeed for the actual status

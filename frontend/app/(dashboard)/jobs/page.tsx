@@ -107,7 +107,7 @@ function convertApiJob(apiJob: JobResponse): Job {
 }
 
 export default function JobsPage() {
-  const { user } = useAuth();
+  const { user, refreshProfile } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<'all' | JobStatus>('all');
   const [sortBy, setSortBy] = useState('recent');
@@ -245,6 +245,8 @@ export default function JobsPage() {
         resolution: job.resolution as Resolution,
         seed: job.seed,
       });
+      // Refresh profile to update credits balance
+      await refreshProfile();
       // Refresh jobs list to show the new job
       await fetchJobs();
     } catch (err) {

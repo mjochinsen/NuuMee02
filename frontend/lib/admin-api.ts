@@ -132,6 +132,7 @@ export interface AdminJob {
   created_at: string;
   completed_at: string | null;
   error_message: string | null;
+  wavespeed_request_id: string | null;
 }
 
 export interface AdminJobDetail extends AdminJob {

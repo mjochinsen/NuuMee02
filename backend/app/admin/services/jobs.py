@@ -104,6 +104,7 @@ async def list_jobs(
                 created_at=created_at,
                 completed_at=data.get("completed_at"),
                 error_message=data.get("error_message"),
+                wavespeed_request_id=data.get("wavespeed_request_id"),
             ))
         except Exception as e:
             logger.warning(f"Skipping job {doc.id} due to validation error: {e}")

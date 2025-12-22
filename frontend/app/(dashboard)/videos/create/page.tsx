@@ -43,7 +43,7 @@ interface UploadState {
 
 export default function CreateVideoPage() {
   const router = useRouter();
-  const { user, profile, loading } = useAuth();
+  const { user, profile, loading, refreshProfile } = useAuth();
 
   // Redirect non-logged-in users to login
   useEffect(() => {
@@ -391,6 +391,9 @@ export default function CreateVideoPage() {
 
       console.log('Job created:', job);
 
+      // Refresh user profile to update credits balance immediately
+      await refreshProfile();
+
       // Mark demo as completed (hide "Try Me" buttons in future)
       if (demoMode) {
         localStorage.setItem('nuumee_demo_completed', '1');
@@ -435,7 +438,7 @@ export default function CreateVideoPage() {
     } finally {
       setIsGenerating(false);
     }
-  }, [referenceImage, motionVideo, motionVideoDuration, selectedJobForMotion, user, profile, creditCost, resolution, seed, removeImage, removeVideo, demoMode]);
+  }, [referenceImage, motionVideo, motionVideoDuration, selectedJobForMotion, user, profile, creditCost, resolution, seed, removeImage, removeVideo, demoMode, refreshProfile, router]);
 
   return (
     <main className="container mx-auto px-6 py-12 max-w-7xl">
