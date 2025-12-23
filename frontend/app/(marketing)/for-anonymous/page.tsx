@@ -69,7 +69,7 @@ export default function ForAnonymousPage() {
                   playsInline
                   className="w-full h-auto"
                 >
-                  <source src="/hero-comparison-2.mp4" type="video/mp4" />
+                  <source src="/hero-v4.mp4" type="video/mp4" />
                 </video>
 
                 <div className="absolute top-4 left-4">

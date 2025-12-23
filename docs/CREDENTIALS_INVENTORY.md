@@ -504,7 +504,7 @@ Use slash commands for deployment (NOT shell scripts):
 | `apidog` | API documentation, OpenAPI specs | KODY |
 | `gcp` | Cloud Run logs, billing, GCP resources | KODY |
 | `firebase` | Firestore data, Firebase project management | KODY |
-| `google-analytics` | GA4 Data API + Admin API (via ga_admin.py) | MARKY |
+| `google-analytics` | GA4 reports, real-time data, property details | MARKY |
 
 ### Tool Naming Convention
 ```
@@ -522,11 +522,25 @@ Examples:
 - Uses: `GOOGLE_CLOUD_PROJECT=wanapi-prod`
 - Docs: https://firebase.google.com/docs/ai-assistance/mcp-server
 
-**Google Analytics MCP:**
+**Google Analytics MCP (Official):**
+- Package: `analytics-mcp` (via pipx)
 - Service Account: `nuumee-analytics@wanapi-prod.iam.gserviceaccount.com`
 - Key File: `.claude/nuumee-analytics-key.json`
 - Property ID: `514341875` (wanapi-prod GA4)
+- Tools: `get_account_summaries`, `run_report`, `run_realtime_report`, `get_property_details`
 - Admin Script: `backend/scripts/ga_admin.py` (for conversions, audiences)
+
+**Google Ads (No API needed):**
+- Account: H2Op (Customer ID: `7880123674`)
+
+| Method | Purpose | How |
+|--------|---------|-----|
+| **Editor** | Create campaigns | MARKY creates CSV → Import in desktop app |
+| **Scripts** | Automate existing | MARKY writes JS → Paste in Ads UI |
+
+- Editor Download: https://ads.google.com/intl/en_us/home/tools/ads-editor/
+- Scripts URL: https://ads.google.com/aw/bulk/scripts?ocid=7880123674
+- Reference: See `docs/MARKY_REFERENCE.md`
 
 **Stripe MCP:**
 - Test: Uses `sk_test_*` key
@@ -537,7 +551,25 @@ Examples:
 | User | MCP Servers | Purpose |
 |------|-------------|---------|
 | **KODY** | figma, github, stripe-*, playwright, apidog, gcp, firebase | Code & Infrastructure |
-| **MARKY** | google-analytics, stripe-* | Marketing & Revenue Analytics |
+| **MARKY** | google-analytics, stripe-* + Google Ads Scripts | Marketing, Ads & Revenue Analytics |
+
+### MARKY Capabilities (Marketing Automation)
+
+**Google Analytics (Ready ✅):**
+- Run custom reports (traffic, conversions, user behavior)
+- Real-time visitor monitoring
+- Get property details and account summaries
+- List Google Ads links
+
+**Google Ads (Ready ✅):**
+- **Editor:** Create campaigns via CSV import (bulk creation)
+- **Scripts:** Automate existing campaigns (reports, alerts, optimization)
+- No API approval needed
+
+**Stripe (Ready ✅):**
+- List subscriptions and revenue
+- View customer data
+- Analyze payment trends
 
 ---
 

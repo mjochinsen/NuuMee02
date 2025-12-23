@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -16,6 +16,8 @@ import {
   ArrowRight,
   ChevronRight,
   Sparkles,
+  Volume2,
+  VolumeX,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -27,6 +29,15 @@ export default function HomePage() {
   const router = useRouter();
   const { user } = useAuth();
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [isMuted, setIsMuted] = useState(true);
+  const heroVideoRef = useRef<HTMLVideoElement>(null);
+
+  const toggleMute = () => {
+    if (heroVideoRef.current) {
+      heroVideoRef.current.muted = !heroVideoRef.current.muted;
+      setIsMuted(!isMuted);
+    }
+  };
 
   const handleStartCreating = () => {
     if (user) {
@@ -139,13 +150,14 @@ export default function HomePage() {
               <div className="relative border-2 border-[#334155] rounded-2xl overflow-hidden bg-[#1E293B]">
                 {/* Video element */}
                 <video
+                  ref={heroVideoRef}
                   autoPlay
                   loop
                   muted
                   playsInline
                   className="w-full h-auto"
                 >
-                  <source src="/hero-comparison-2.mp4" type="video/mp4" />
+                  <source src="/hero-v4.mp4" type="video/mp4" />
                 </video>
 
                 {/* Overlay badges */}
@@ -159,6 +171,19 @@ export default function HomePage() {
                     AI Generated
                   </Badge>
                 </div>
+
+                {/* Mute/Unmute toggle */}
+                <button
+                  onClick={toggleMute}
+                  className="absolute bottom-4 right-4 p-2 rounded-full bg-black/60 hover:bg-black/80 text-white transition-colors"
+                  aria-label={isMuted ? 'Unmute video' : 'Mute video'}
+                >
+                  {isMuted ? (
+                    <VolumeX className="h-5 w-5" />
+                  ) : (
+                    <Volume2 className="h-5 w-5" />
+                  )}
+                </button>
               </div>
             </div>
 

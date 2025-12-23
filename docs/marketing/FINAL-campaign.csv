@@ -1,0 +1,8 @@
+Row Type,Campaign,Campaign type,Campaign status,Budget,Budget type,Bid strategy type,Ad group,Ad group status,Final URL
+Campaign,NuuMee - Search - Testing,Search,Enabled,15,Daily,Maximize conversions,,,
+Ad group,NuuMee - Search - Testing,,,,,,,Creative,Enabled,https://nuumee.ai/go
+Ad group,NuuMee - Search - Testing,,,,,,,Fun,Enabled,https://nuumee.ai/go?angle=fun
+Ad group,NuuMee - Search - Testing,,,,,,,Shorts,Enabled,https://nuumee.ai/go?angle=shorts
+Ad group,NuuMee - Search - Testing,,,,,,,Wow,Enabled,https://nuumee.ai/go?angle=wow
+Ad group,NuuMee - Search - Testing,,,,,,,Fast,Enabled,https://nuumee.ai/go?angle=fast
+Ad group,NuuMee - Search - Testing,,,,,,,Personal,Enabled,https://nuumee.ai/go?angle=personal

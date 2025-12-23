@@ -147,8 +147,8 @@ async def run_watchdog(request: Request):
 
     logger.info(f"[WATCHDOG] Scanning for stuck jobs (updated before {cutoff_time.isoformat()})")
 
-    # Query jobs that are stuck
-    stuck_jobs = (
+    # Query jobs stuck in "processing" status
+    stuck_processing = (
         db.collection("jobs")
         .where("status", "==", "processing")
         .where("updated_at", "<", cutoff_time)
@@ -156,12 +156,32 @@ async def run_watchdog(request: Request):
         .get()
     )
 
-    stuck_jobs_list = list(stuck_jobs)
-    logger.info(f"[WATCHDOG] Found {len(stuck_jobs_list)} stuck jobs")
+    # Also query jobs stuck in "pending" or "queued" that have a wavespeed_request_id
+    # These are jobs where worker submitted to WaveSpeed but crashed before updating status
+    stuck_pending = (
+        db.collection("jobs")
+        .where("status", "==", "pending")
+        .where("updated_at", "<", cutoff_time)
+        .limit(25)
+        .get()
+    )
+
+    stuck_queued = (
+        db.collection("jobs")
+        .where("status", "==", "queued")
+        .where("updated_at", "<", cutoff_time)
+        .limit(25)
+        .get()
+    )
+
+    # Combine all stuck jobs
+    stuck_jobs_list = list(stuck_processing) + list(stuck_pending) + list(stuck_queued)
+    logger.info(f"[WATCHDOG] Found {len(stuck_jobs_list)} stuck jobs (processing={len(list(stuck_processing))}, pending={len(list(stuck_pending))}, queued={len(list(stuck_queued))})")
 
     results = {
         "scanned": len(stuck_jobs_list),
         "recovered": 0,
+        "requeued": 0,
         "failed": 0,
         "timed_out": 0,
         "still_processing": 0,
@@ -196,15 +216,46 @@ async def run_watchdog(request: Request):
 
             # No request_id means job never got submitted to WaveSpeed
             if not request_id:
-                logger.warning(f"[WATCHDOG] Job {job_id} has no wavespeed_request_id, marking failed")
-                job_doc.reference.update({
-                    "status": "failed",
-                    "error_message": "Job never submitted to WaveSpeed",
-                    "updated_at": firestore.SERVER_TIMESTAMP,
-                })
-                refund_credits(db, user_id, credits_charged, job_id)
-                results["failed"] += 1
-                job_result["action"] = "failed_no_request_id"
+                current_status = job_data.get("status")
+                if current_status in ("pending", "queued"):
+                    # For pending/queued jobs without request_id: re-queue via Cloud Tasks
+                    logger.warning(f"[WATCHDOG] Job {job_id} stuck in {current_status} without wavespeed_request_id, re-queueing")
+                    try:
+                        from ..tasks.queue import enqueue_job
+                        enqueue_job(
+                            job_id=job_id,
+                            user_id=user_id,
+                            job_type=job_data.get("type", "video_generation"),
+                        )
+                        job_doc.reference.update({
+                            "status": "queued",
+                            "updated_at": firestore.SERVER_TIMESTAMP,
+                            "retry_count": job_data.get("retry_count", 0) + 1,
+                        })
+                        results["requeued"] += 1
+                        job_result["action"] = "requeued"
+                        logger.info(f"[WATCHDOG] Job {job_id} re-queued successfully")
+                    except Exception as queue_err:
+                        logger.error(f"[WATCHDOG] Failed to re-queue job {job_id}: {queue_err}")
+                        job_doc.reference.update({
+                            "status": "failed",
+                            "error_message": f"Job stuck and re-queue failed: {queue_err}",
+                            "updated_at": firestore.SERVER_TIMESTAMP,
+                        })
+                        refund_credits(db, user_id, credits_charged, job_id)
+                        results["failed"] += 1
+                        job_result["action"] = "failed_requeue_error"
+                else:
+                    # For processing jobs without request_id: mark as failed
+                    logger.warning(f"[WATCHDOG] Job {job_id} has no wavespeed_request_id, marking failed")
+                    job_doc.reference.update({
+                        "status": "failed",
+                        "error_message": "Job never submitted to WaveSpeed",
+                        "updated_at": firestore.SERVER_TIMESTAMP,
+                    })
+                    refund_credits(db, user_id, credits_charged, job_id)
+                    results["failed"] += 1
+                    job_result["action"] = "failed_no_request_id"
                 results["jobs"].append(job_result)
                 continue
 
@@ -306,6 +357,6 @@ async def run_watchdog(request: Request):
 
         results["jobs"].append(job_result)
 
-    logger.info(f"[WATCHDOG] Complete: recovered={results['recovered']}, failed={results['failed']}, timed_out={results['timed_out']}")
+    logger.info(f"[WATCHDOG] Complete: recovered={results['recovered']}, requeued={results['requeued']}, failed={results['failed']}, timed_out={results['timed_out']}")
 
     return results

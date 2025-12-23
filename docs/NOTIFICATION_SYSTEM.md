@@ -45,6 +45,7 @@ notify.send("job.completed", user_id, payload)
 | `account.welcome_referral` | None (always) | Signup via referral |
 | `job.completed` | `email_on_completion` | Video render finished |
 | `job.failed` | `email_on_failure` | Video render failed |
+| `job.policy_violation` | None (always) | Video rejected for policy violation |
 | `credits.low_warning` | `email_on_low_credits` | Balance < 10 credits |
 | `referral.signup` | None (always) | Someone used your code |
 | `referral.conversion` | None (always) | Referral made purchase |
@@ -196,6 +197,22 @@ NotificationResult(
 - `error_reason`: Why it failed
 - `retry_url`: Link to retry
 - `support_url`: Link to support
+
+### `job.policy_violation`
+- `first_name`: User's display name
+- `video_title`: Name of the video
+- `violation_type`: Reason for rejection (see table below)
+- `dashboard_url`: Link to dashboard
+- `support_url`: Link to support
+
+**Violation Type Values:**
+| Violation | `violation_type` value |
+|-----------|------------------------|
+| Nudity | `Nudity or sexually explicit content detected` |
+| Minor | `Content involving a minor flagged for review` |
+| Violence | `Violent or harmful imagery detected` |
+| Illegal | `Content flagged as potentially illegal` |
+| Other | `Content violates our community guidelines` |
 
 ### `credits.low_warning`
 - `first_name`: User's display name

@@ -194,6 +194,57 @@ Need help? Contact support: {{support_url}}
         "active": True,
     },
 
+    "job.policy_violation": {
+        "subject": "Video rejected: {{video_title}}",
+        "html": wrap_email(f"""
+            <h1 style="color: #dc2626; margin-top: 0;">Content Policy Violation</h1>
+            <p style="font-size: 16px; color: #333;">
+                Hi {{{{first_name}}}},
+            </p>
+            <p style="font-size: 16px; color: #333;">
+                Your video <strong>{{{{video_title}}}}</strong> was rejected because it violates our content policy.
+            </p>
+            <div style="background: #fef2f2; border-left: 4px solid #dc2626; padding: 16px; margin: 24px 0;">
+                <p style="color: #991b1b; margin: 0; font-size: 14px;">
+                    <strong>Violation Type:</strong> {{{{violation_type}}}}
+                </p>
+            </div>
+            <div style="background: #f0fdf4; border-left: 4px solid #16a34a; padding: 16px; margin: 24px 0;">
+                <p style="color: #166534; margin: 0; font-size: 14px;">
+                    <strong>Your credits have been refunded.</strong> You can create a new video with appropriate content.
+                </p>
+            </div>
+            <p style="font-size: 16px; color: #333;">
+                We do not allow content that includes nudity, minors, violence, or illegal activity.
+            </p>
+            <div style="text-align: center; margin: 32px 0;">
+                <a href="{{{{dashboard_url}}}}" style="display: inline-block; background: {BRAND_GRADIENT}; color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: bold;">Create New Video</a>
+            </div>
+            <hr style="margin: 32px 0; border: none; border-top: 1px solid #e0e0e0;">
+            <p style="color: #666;">
+                Questions? <a href="{{{{support_url}}}}" style="color: {BRAND_PRIMARY};">Contact support</a>
+            </p>
+        """),
+        "text": """Content Policy Violation
+
+Hi {{first_name}},
+
+Your video {{video_title}} was rejected because it violates our content policy.
+
+Violation Type: {{violation_type}}
+
+Your credits have been refunded. You can create a new video with appropriate content.
+
+We do not allow content that includes nudity, minors, violence, or illegal activity.
+
+Create a new video: {{dashboard_url}}
+
+Questions? Contact support: {{support_url}}
+""",
+        "variables": ["first_name", "video_title", "violation_type", "dashboard_url", "support_url"],
+        "active": True,
+    },
+
     "credits.low_warning": {
         "subject": "Low credit balance: {{current_balance}} credits remaining",
         "html": wrap_email(f"""
