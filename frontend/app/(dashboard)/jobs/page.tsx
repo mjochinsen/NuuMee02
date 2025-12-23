@@ -349,16 +349,16 @@ export default function JobsPage() {
     );
 
     return (
-      <div key={job.id} className="border border-[#334155] rounded-2xl p-6 bg-[#0F172A] hover:border-[#00F0D9] transition-colors">
-        <div className="flex gap-4">
+      <div key={job.id} className="border border-[#334155] rounded-2xl p-4 md:p-6 bg-[#0F172A] hover:border-[#00F0D9] transition-colors">
+        <div className="flex flex-col md:flex-row gap-4">
           {/* Thumbnails */}
-          <div className="flex gap-3 flex-shrink-0">
+          <div className="flex gap-2 md:gap-3 shrink-0 overflow-x-auto pb-2 md:pb-0 md:overflow-visible">
             {/* Reference Image */}
             <div className="relative group">
               <button
                 onClick={() => jobThumbnails?.reference_image_url && setPreviewMedia({ type: 'image', url: jobThumbnails.reference_image_url, label: 'Reference Image' })}
                 disabled={!jobThumbnails?.reference_image_url}
-                className="w-36 h-36 border-2 border-[#334155] rounded-xl bg-[#1E293B] flex items-center justify-center overflow-hidden group-hover:scale-105 group-hover:border-[#00F0D9] transition-all cursor-pointer disabled:cursor-default disabled:hover:scale-100 disabled:hover:border-[#334155]"
+                className="w-24 h-24 md:w-36 md:h-36 border-2 border-[#334155] rounded-xl bg-[#1E293B] flex items-center justify-center overflow-hidden group-hover:scale-105 group-hover:border-[#00F0D9] transition-all cursor-pointer disabled:cursor-default disabled:hover:scale-100 disabled:hover:border-[#334155] shrink-0"
               >
                 {isLoadingThumb ? (
                   <ThumbnailSkeleton />
@@ -385,7 +385,7 @@ export default function JobsPage() {
                   <button
                     onClick={() => srcUrl && setPreviewMedia({ type: 'video', url: srcUrl, label: 'Source Video' })}
                     disabled={!srcUrl}
-                    className="w-36 h-36 border-2 border-[#334155] rounded-xl bg-[#1E293B] flex items-center justify-center overflow-hidden group-hover:scale-105 group-hover:border-[#00F0D9] transition-all cursor-pointer disabled:cursor-default disabled:hover:scale-100 disabled:hover:border-[#334155]"
+                    className="w-24 h-24 md:w-36 md:h-36 border-2 border-[#334155] rounded-xl bg-[#1E293B] flex items-center justify-center overflow-hidden group-hover:scale-105 group-hover:border-[#00F0D9] transition-all cursor-pointer disabled:cursor-default disabled:hover:scale-100 disabled:hover:border-[#334155] shrink-0"
                   >
                     {isLoadingThumb ? (
                       <ThumbnailSkeleton />
@@ -422,7 +422,7 @@ export default function JobsPage() {
                 <button
                   onClick={() => jobThumbnails?.output_video_url && setPreviewMedia({ type: 'video', url: jobThumbnails.output_video_url, label: 'Output Video' })}
                   disabled={!jobThumbnails?.output_video_url}
-                  className="w-36 h-36 border-2 border-[#00F0D9]/50 rounded-xl bg-[#1E293B] flex items-center justify-center overflow-hidden group-hover:scale-105 group-hover:border-[#00F0D9] transition-all cursor-pointer disabled:cursor-default disabled:hover:scale-100 disabled:border-[#334155]"
+                  className="w-24 h-24 md:w-36 md:h-36 border-2 border-[#00F0D9]/50 rounded-xl bg-[#1E293B] flex items-center justify-center overflow-hidden group-hover:scale-105 group-hover:border-[#00F0D9] transition-all cursor-pointer disabled:cursor-default disabled:hover:scale-100 disabled:border-[#334155] shrink-0"
                 >
                   {isLoadingThumb ? (
                     <ThumbnailSkeleton />
@@ -662,16 +662,16 @@ export default function JobsPage() {
           <h1 className="text-[#F1F5F9]">My Jobs</h1>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 w-full md:w-auto">
           {/* Search */}
-          <div className="relative">
+          <div className="relative flex-1 md:flex-none">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#94A3B8]" />
             <Input
               type="text"
-              placeholder="Search by job ID or status..."
+              placeholder="Search by job ID..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 pr-10 w-80 bg-[#1E293B] border-[#334155] text-[#F1F5F9] placeholder:text-[#94A3B8] focus:border-[#00F0D9] rounded-full"
+              className="pl-10 pr-10 w-full md:w-80 bg-[#1E293B] border-[#334155] text-[#F1F5F9] placeholder:text-[#94A3B8] focus:border-[#00F0D9] rounded-full"
             />
             {searchQuery && (
               <button
@@ -759,10 +759,10 @@ export default function JobsPage() {
           </Button>
         </div>
 
-        <div className="flex items-center gap-3">
-          <span className="text-[#94A3B8] text-sm">Sort:</span>
+        <div className="flex items-center gap-2 md:gap-3">
+          <span className="text-[#94A3B8] text-sm hidden md:inline">Sort:</span>
           <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-48 bg-[#1E293B] border-[#334155] text-[#F1F5F9]">
+            <SelectTrigger className="w-36 md:w-48 bg-[#1E293B] border-[#334155] text-[#F1F5F9]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="bg-[#1E293B] border-[#334155]">
@@ -773,7 +773,7 @@ export default function JobsPage() {
               <SelectItem value="failed-only" className="text-[#F1F5F9]">Failed Only</SelectItem>
             </SelectContent>
           </Select>
-          <span className="text-[#94A3B8] text-sm">
+          <span className="text-[#94A3B8] text-sm hidden md:inline">
             Showing {startIndex + 1}-{Math.min(endIndex, totalJobs)} of {totalJobs}
           </span>
         </div>
