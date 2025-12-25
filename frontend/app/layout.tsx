@@ -4,6 +4,7 @@ import "./globals.css";
 import { AuthProvider } from "@/components/AuthProvider";
 import { organizationJsonLd, websiteJsonLd } from "@/lib/seo";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
+import MicrosoftClarity from "@/components/MicrosoftClarity";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -74,6 +75,7 @@ export default function RootLayout({
           }}
         />
         <GoogleAnalytics />
+        <MicrosoftClarity />
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
