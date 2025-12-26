@@ -126,6 +126,18 @@ export async function checkHealth(): Promise<{ status: string; service: string }
   return response.json();
 }
 
+// Pre-warm the backend (fire-and-forget) - helps reduce cold start latency
+let backendWarmed = false;
+export function warmBackend(): void {
+  if (backendWarmed) return;
+  backendWarmed = true;
+
+  // Fire-and-forget health check to wake up Cloud Run
+  fetch(`${API_BASE}/health`, { method: 'GET' })
+    .then(() => console.log('[API] Backend warmed up'))
+    .catch(() => console.log('[API] Backend warm-up failed (will retry on login)'));
+}
+
 // Credits endpoints
 export interface CreditPackage {
   id: string;

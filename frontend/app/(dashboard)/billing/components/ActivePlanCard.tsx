@@ -40,7 +40,10 @@ export function ActivePlanCard({
         <span className="text-[#F1F5F9] text-2xl capitalize">{currentPlan}</span>
       </div>
       <div className="text-[#94A3B8] text-sm mb-1">{displayPrice}</div>
-      <div className="text-[#94A3B8] text-sm mb-6">Next billing: {nextBillingDate}</div>
+      {isPaidPlan && (
+        <div className="text-[#94A3B8] text-sm mb-6">Next billing: {nextBillingDate}</div>
+      )}
+      {!isPaidPlan && <div className="mb-6" />}
 
       {!isHighestPlan && (
         <Button

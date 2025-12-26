@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { Eye, EyeOff, ArrowRight, ArrowLeft, Check, AlertCircle, Loader2, Lock } from 'lucide-react';
 import { auth, googleProvider, githubProvider } from '@/lib/firebase';
 import { signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, updateProfile, ActionCodeSettings } from 'firebase/auth';
-import { applyReferralCodeWithToken } from '@/lib/api';
+import { applyReferralCodeWithToken, warmBackend } from '@/lib/api';
 import { trackSignup, trackLogin } from '@/lib/analytics';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -63,6 +63,7 @@ function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialMode = searchParams.get('mode') === 'signup' ? 'signup' : 'login';
+  // Note: redirectTo is used as default, but first-time users will be redirected to /videos/create
   const redirectTo = searchParams.get('redirect') || '/billing/';
 
   const [mode, setMode] = useState<PageMode>(initialMode);
@@ -108,6 +109,11 @@ function LoginPageContent() {
 
   const passwordStrength = password ? calculatePasswordStrength(password) : null;
 
+  // Pre-warm backend on page load to reduce cold start latency
+  useEffect(() => {
+    warmBackend();
+  }, []);
+
   // Apply referral code from localStorage (set by /ref/[code] redirect)
   // Token must be passed directly so fetch starts immediately (synchronously)
   const applyStoredReferralCode = (token: string) => {
@@ -134,10 +140,12 @@ function LoginPageContent() {
         const token = await result.user.getIdToken();
         applyStoredReferralCode(token);
         trackSignup(name);
+        // First-time users go to create page to experience the product
+        router.push('/videos/create');
       } else {
         trackLogin(name);
+        router.push(redirectTo);
       }
-      router.push(redirectTo);
     } catch (err: unknown) {
       setError(getFirebaseErrorMessage(err));
     } finally {
@@ -215,7 +223,8 @@ function LoginPageContent() {
       // Apply referral code for new signups (fire-and-forget with keepalive)
       applyStoredReferralCode(token);
       trackSignup('email');
-      router.push(redirectTo);
+      // First-time users go to create page to experience the product
+      router.push('/videos/create');
     } catch (err: unknown) {
       setError(getFirebaseErrorMessage(err));
     } finally {
@@ -641,7 +650,7 @@ function LoginPageContent() {
         </p>
         <p className="text-[#94A3B8] text-sm flex items-center justify-center gap-2">
           <Check className="w-4 h-4 text-green-500" />
-          10,000+ creators trust NuuMee.AI
+          2,000+ creators trust NuuMee.AI
         </p>
       </div>
     </div>

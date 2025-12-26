@@ -11,6 +11,8 @@ import { PostProcessingOptions } from '@/components/PostProcessingOptions';
 import { useAuth } from '@/components/AuthProvider';
 import { getSignedUrl, uploadToGCS, createJob, ApiError, JobResponse, Resolution as ApiResolution } from '@/lib/api';
 import { JobPickerModal } from '@/components/JobPickerModal';
+import { WelcomeModal } from '@/components/WelcomeModal';
+import { DemoStepIndicator } from '@/components/DemoStepIndicator';
 
 // Test mode: Enable via ?test=1 query param or localStorage
 const checkTestMode = (): boolean => {
@@ -77,6 +79,8 @@ export default function CreateVideoPage() {
   const [jobPickerOpen, setJobPickerOpen] = useState(false);
   const [selectedJobForMotion, setSelectedJobForMotion] = useState<JobResponse | null>(null);
   const [selectedJobThumbnailUrl, setSelectedJobThumbnailUrl] = useState<string | null>(null);
+  // Welcome modal state (shows on first visit)
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
 
   const imageInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
@@ -92,6 +96,11 @@ export default function CreateVideoPage() {
     const demoCompleted = rawValue === '1';
     console.log('[Onboarding] localStorage nuumee_demo_completed:', rawValue, '→ hasCompletedDemo:', demoCompleted);
     setHasCompletedDemo(demoCompleted);
+
+    // Show welcome modal for first-time users (never completed demo)
+    if (!demoCompleted) {
+      setShowWelcomeModal(true);
+    }
   }, []);
 
   // Load test files from public directory
@@ -175,6 +184,17 @@ export default function CreateVideoPage() {
   // Can generate if we have: demo mode with both previews loaded, OR (image AND either video file OR selected job)
   const hasMotionSource = motionVideo || selectedJobForMotion || (demoMode && motionVideoPreview);
   const canGenerate = (referenceImage || (demoMode && referenceImagePreview)) && hasMotionSource;
+
+  // Calculate demo step: 1 = no selections, 2 = image selected, 3 = both selected
+  const demoStep: 1 | 2 | 3 = (() => {
+    if (!demoMode && !hasCompletedDemo) return 1; // Not started
+    if (referenceImagePreview && hasMotionSource) return 3; // Ready to generate
+    if (referenceImagePreview) return 2; // Image selected, need video
+    return 1; // Need image
+  })();
+
+  // Check if we're in active demo mode (first-time user going through demo)
+  const isInDemoFlow = hasCompletedDemo === false;
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -443,8 +463,8 @@ export default function CreateVideoPage() {
   return (
     <main className="container mx-auto px-6 py-12 max-w-7xl">
       <div className="mb-8">
-        <h1 className="text-[#F1F5F9] mb-3">AI Character Replacement Studio</h1>
-        <p className="text-[#94A3B8]">Replace the main character in any video with a new one from a single reference image.</p>
+        <h1 className="text-[#F1F5F9] mb-3">AI Character Swap Studio</h1>
+        <p className="text-[#94A3B8]">Swap the main character in any video with a new one from a single reference image.</p>
       </div>
 
       <div className="flex justify-between items-center mb-4">
@@ -466,30 +486,47 @@ export default function CreateVideoPage() {
         )}
         {!testModeEnabled && <div />}
 
-        <div className="inline-flex rounded-lg border border-[#334155] bg-[#0F172A] p-1">
-          <button onClick={() => setViewMode('form')} className={`flex items-center gap-2 px-4 py-2 rounded-md transition-all ${viewMode === 'form' ? 'bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] text-white' : 'text-[#94A3B8] hover:text-[#F1F5F9]'}`}>
-            <LayoutGrid className="w-4 h-4" />Form
-          </button>
-          <button onClick={() => setViewMode('json')} className={`flex items-center gap-2 px-4 py-2 rounded-md transition-all ${viewMode === 'json' ? 'bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] text-white' : 'text-[#94A3B8] hover:text-[#F1F5F9]'}`}>
-            <FileCode className="w-4 h-4" />JSON
-          </button>
-        </div>
+        {/* Hide Form/JSON toggle during demo flow */}
+        {!isInDemoFlow && (
+          <div className="inline-flex rounded-lg border border-[#334155] bg-[#0F172A] p-1">
+            <button onClick={() => setViewMode('form')} className={`flex items-center gap-2 px-4 py-2 rounded-md transition-all ${viewMode === 'form' ? 'bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] text-white' : 'text-[#94A3B8] hover:text-[#F1F5F9]'}`}>
+              <LayoutGrid className="w-4 h-4" />Form
+            </button>
+            <button onClick={() => setViewMode('json')} className={`flex items-center gap-2 px-4 py-2 rounded-md transition-all ${viewMode === 'json' ? 'bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] text-white' : 'text-[#94A3B8] hover:text-[#F1F5F9]'}`}>
+              <FileCode className="w-4 h-4" />JSON
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="border border-[#334155] rounded-2xl p-8 bg-[#0F172A] mb-8">
         <div className="flex items-center gap-2 mb-6">
           <Sparkles className="w-5 h-5 text-[#00F0D9]" />
-          <h2 className="text-[#F1F5F9]">Character Replacement {viewMode === 'json' && '(JSON Mode)'}</h2>
+          <h2 className="text-[#F1F5F9]">Character Swap {viewMode === 'json' && '(JSON Mode)'}</h2>
         </div>
 
         {viewMode === 'form' ? (
           <>
-            {/* Demo Mode Active - subtle indicator at top */}
-            {demoMode && (
+            {/* Step indicator for first-time users */}
+            {isInDemoFlow && (
+              <DemoStepIndicator
+                currentStep={demoStep}
+                onSkip={() => {
+                  setDemoMode(false);
+                  setReferenceImagePreview(null);
+                  setMotionVideoPreview(null);
+                  setHasCompletedDemo(true);
+                  localStorage.setItem('nuumee_demo_completed', '1');
+                }}
+              />
+            )}
+
+            {/* Demo Mode Active - show when demo files loaded but user has completed demo before */}
+            {demoMode && hasCompletedDemo && (
               <div className="mb-4 flex items-center justify-between text-sm">
                 <div className="flex items-center gap-2 text-[#00F0D9]">
                   <FlaskConical className="w-4 h-4" />
-                  <span>Demo loaded — FREE</span>
+                  <span>Demo ready!</span>
                 </div>
                 <button
                   onClick={() => {
@@ -499,7 +536,7 @@ export default function CreateVideoPage() {
                   }}
                   className="text-[#64748B] hover:text-[#94A3B8] text-xs underline"
                 >
-                  Clear demo
+                  Use my own files instead
                 </button>
               </div>
             )}
@@ -541,15 +578,18 @@ export default function CreateVideoPage() {
                         </div>
                       </div>
                     </div>
-                    <p className="text-[#94A3B8] text-sm mb-1">Upload a clear portrait photo</p>
-                    <p className="text-[#64748B] text-xs mb-4">PNG/JPG/WebP • Max 10MB • 9:16 recommended</p>
-                    <Button
-                      variant="outline"
-                      className="border-[#334155] text-[#F1F5F9] hover:border-[#00F0D9]"
-                      onClick={() => imageInputRef.current?.click()}
-                    >
-                      Choose File
-                    </Button>
+                    <p className="text-[#94A3B8] text-sm mb-1">Upload a photo with a face</p>
+                    <p className="text-[#64748B] text-xs mb-4">PNG/JPG/WebP • Max 10MB</p>
+                    {/* Hide Choose File button during demo flow */}
+                    {!isInDemoFlow && (
+                      <Button
+                        variant="outline"
+                        className="border-[#334155] text-[#F1F5F9] hover:border-[#00F0D9]"
+                        onClick={() => imageInputRef.current?.click()}
+                      >
+                        Choose File
+                      </Button>
+                    )}
                     {!referenceImagePreview && hasCompletedDemo === false && (
                       <div className="mt-6 relative">
                         {/* Big bouncing arrow pointing down */}
@@ -558,17 +598,17 @@ export default function CreateVideoPage() {
                             ↓
                           </div>
                         </div>
-                        {/* Glowing CTA button */}
+                        {/* Glowing CTA button - Step 1 */}
                         <button
                           onClick={loadDemoImage}
                           className="relative px-6 py-3 rounded-xl bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] text-white font-bold text-lg shadow-[0_0_20px_rgba(0,240,217,0.5)] hover:shadow-[0_0_30px_rgba(0,240,217,0.7)] hover:scale-105 transition-all"
                         >
                           <span className="flex items-center gap-2">
-                            ✨ Try FREE Example
+                            Step 1: Choose a photo with a face
                             <ArrowRight className="w-5 h-5" />
                           </span>
                         </button>
-                        <p className="text-[#64748B] text-xs mt-2">No credit card required</p>
+                        <p className="text-[#64748B] text-xs mt-2">Click to use our demo actor</p>
                       </div>
                     )}
                   </div>
@@ -645,28 +685,31 @@ export default function CreateVideoPage() {
                         </div>
                       </div>
                     </div>
-                    <p className="text-[#94A3B8] text-sm mb-1">Upload a 9:16 clip for character replacement</p>
+                    <p className="text-[#94A3B8] text-sm mb-1">Upload a video clip for character swap</p>
                     <p className="text-[#64748B] text-xs mb-4">MP4/MOV • Max 500MB • 120s max</p>
-                    <div className="flex gap-3 justify-center">
-                      <Button
-                        variant="outline"
-                        className="border-[#334155] text-[#F1F5F9] hover:border-[#00F0D9] hover:text-[#00F0D9]"
-                        onClick={() => videoInputRef.current?.click()}
-                      >
-                        <Upload className="w-4 h-4 mr-2" />
-                        Upload File
-                      </Button>
-                      <Button
-                        variant="outline"
-                        className="border-[#00F0D9] text-[#00F0D9] hover:bg-[#00F0D9]/10"
-                        onClick={() => setJobPickerOpen(true)}
-                      >
-                        <Film className="w-4 h-4 mr-2" />
-                        From My Jobs
-                      </Button>
-                    </div>
-                    {/* Try Example button for Video (step 2) */}
-                    {!motionVideoPreview && !selectedJobForMotion && hasCompletedDemo === false && (
+                    {/* Hide upload buttons during demo flow */}
+                    {!isInDemoFlow && (
+                      <div className="flex gap-3 justify-center">
+                        <Button
+                          variant="outline"
+                          className="border-[#334155] text-[#F1F5F9] hover:border-[#00F0D9] hover:text-[#00F0D9]"
+                          onClick={() => videoInputRef.current?.click()}
+                        >
+                          <Upload className="w-4 h-4 mr-2" />
+                          Upload File
+                        </Button>
+                        <Button
+                          variant="outline"
+                          className="border-[#00F0D9] text-[#00F0D9] hover:bg-[#00F0D9]/10"
+                          onClick={() => setJobPickerOpen(true)}
+                        >
+                          <Film className="w-4 h-4 mr-2" />
+                          From My Jobs
+                        </Button>
+                      </div>
+                    )}
+                    {/* Step 2 CTA for demo flow - only show when image is selected */}
+                    {!motionVideoPreview && !selectedJobForMotion && hasCompletedDemo === false && referenceImagePreview && (
                       <div className="mt-6 relative">
                         {/* Big bouncing arrow pointing down */}
                         <div className="absolute -top-12 left-1/2 -translate-x-1/2 animate-bounce">
@@ -674,17 +717,17 @@ export default function CreateVideoPage() {
                             ↓
                           </div>
                         </div>
-                        {/* Glowing CTA button */}
+                        {/* Glowing CTA button - Step 2 */}
                         <button
                           onClick={loadDemoVideo}
                           className="relative px-6 py-3 rounded-xl bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] text-white font-bold text-lg shadow-[0_0_20px_rgba(0,240,217,0.5)] hover:shadow-[0_0_30px_rgba(0,240,217,0.7)] hover:scale-105 transition-all"
                         >
                           <span className="flex items-center gap-2">
-                            ✨ Try FREE Example
+                            Step 2: Choose a video
                             <ArrowRight className="w-5 h-5" />
                           </span>
                         </button>
-                        <p className="text-[#64748B] text-xs mt-2">No credit card required</p>
+                        <p className="text-[#64748B] text-xs mt-2">Click to use our demo video</p>
                       </div>
                     )}
                   </div>
@@ -692,40 +735,50 @@ export default function CreateVideoPage() {
               </div>
             </div>
 
-            {/* Options */}
-            <div className="border border-[#334155] rounded-xl p-6 bg-[#1E293B] mb-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <Label className="text-[#94A3B8] mb-2 block">Resolution</Label>
-                  <Select value={resolution} onValueChange={setResolution}>
-                    <SelectTrigger className="bg-[#0F172A] border-[#334155] text-[#F1F5F9]"><SelectValue /></SelectTrigger>
-                    <SelectContent className="bg-[#1E293B] border-[#334155]">
-                      <SelectItem value="480p" className="text-[#F1F5F9]">480p (Faster, Lower Cost)</SelectItem>
-                      <SelectItem value="720p" className="text-[#F1F5F9]">720p (Recommended)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <p className="text-[#64748B] text-xs mt-2">
-                    {resolution === '480p' ? '$0.04/sec • Faster processing' : '$0.08/sec • Better quality'}
-                  </p>
-                </div>
-                <div>
-                  <Label className="text-[#94A3B8] mb-2 block">Seed (Optional)</Label>
-                  <input
-                    type="text"
-                    value={seed}
-                    onChange={(e) => setSeed(e.target.value)}
-                    placeholder="-1 for random"
-                    className="w-full px-3 py-2 bg-[#0F172A] border border-[#334155] rounded-md text-[#F1F5F9] focus:border-[#00F0D9] focus:outline-none"
-                  />
-                  <p className="text-[#64748B] text-xs mt-2">Use -1 for random, or set a number for reproducible results</p>
+            {/* Options - hide during demo flow */}
+            {!isInDemoFlow && (
+              <div className="border border-[#334155] rounded-xl p-6 bg-[#1E293B] mb-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <Label className="text-[#94A3B8] mb-2 block">Resolution</Label>
+                    <Select value={resolution} onValueChange={setResolution}>
+                      <SelectTrigger className="bg-[#0F172A] border-[#334155] text-[#F1F5F9]"><SelectValue /></SelectTrigger>
+                      <SelectContent className="bg-[#1E293B] border-[#334155]">
+                        <SelectItem value="480p" className="text-[#F1F5F9]">480p (Faster, Lower Cost)</SelectItem>
+                        <SelectItem value="720p" className="text-[#F1F5F9]">720p (Recommended)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-[#64748B] text-xs mt-2">
+                      {resolution === '480p' ? '$0.04/sec • Faster processing' : '$0.08/sec • Better quality'}
+                    </p>
+                  </div>
+                  <div>
+                    <Label className="text-[#94A3B8] mb-2 block">Seed (Optional)</Label>
+                    <input
+                      type="text"
+                      value={seed}
+                      onChange={(e) => setSeed(e.target.value)}
+                      placeholder="-1 for random"
+                      className="w-full px-3 py-2 bg-[#0F172A] border border-[#334155] rounded-md text-[#F1F5F9] focus:border-[#00F0D9] focus:outline-none"
+                    />
+                    <p className="text-[#64748B] text-xs mt-2">Use -1 for random, or set a number for reproducible results</p>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
-            <div className="flex items-center gap-6 mt-6 mb-6 text-[#94A3B8]">
-              <div className="flex items-center gap-2"><Clock className="w-4 h-4" /><span>Estimated time: {estimatedTime}</span></div>
-              <div className="flex items-center gap-2"><DollarSign className="w-4 h-4" /><span>Cost: {creditCost} credits</span></div>
-            </div>
+            {/* Time/Cost info - simplified during demo flow */}
+            {isInDemoFlow && demoMode ? (
+              <div className="flex items-center justify-center gap-2 mt-6 mb-6 text-[#00F0D9]">
+                <Sparkles className="w-4 h-4" />
+                <span className="font-medium">Demo ready — takes ~30 seconds</span>
+              </div>
+            ) : !isInDemoFlow && (
+              <div className="flex items-center gap-6 mt-6 mb-6 text-[#94A3B8]">
+                <div className="flex items-center gap-2"><Clock className="w-4 h-4" /><span>Estimated time: {estimatedTime}</span></div>
+                <div className="flex items-center gap-2"><DollarSign className="w-4 h-4" /><span>Cost: {creditCost} credits</span></div>
+              </div>
+            )}
 
             {/* Upload Progress */}
             {isGenerating && (
@@ -778,8 +831,8 @@ export default function CreateVideoPage() {
 
             {/* Generate Button with bouncing arrow for demo onboarding only */}
             <div className="relative">
-              {/* Bouncing arrow for Generate button - only show during demo flow (before first demo completed) */}
-              {canGenerate && !isGenerating && hasCompletedDemo === false && demoMode && (
+              {/* Bouncing arrow for Generate button - only show during demo flow step 3 */}
+              {canGenerate && !isGenerating && isInDemoFlow && demoMode && (
                 <div className="absolute -top-12 left-1/2 -translate-x-1/2 animate-bounce z-10">
                   <div className="text-[#00F0D9] text-5xl font-bold drop-shadow-[0_0_15px_rgba(0,240,217,0.9)]">
                     ↓
@@ -789,7 +842,7 @@ export default function CreateVideoPage() {
               <Button
                 onClick={handleGenerate}
                 disabled={!canGenerate || isGenerating}
-                className={`w-full h-14 text-white ${
+                className={`w-full h-14 text-white font-semibold text-lg ${
                   canGenerate && !isGenerating
                     ? 'bg-gradient-to-r from-[#00F0D9] to-[#3B1FE2] hover:opacity-90 cursor-pointer shadow-[0_0_20px_rgba(0,240,217,0.4)]'
                     : 'bg-gray-600 opacity-50 cursor-not-allowed'
@@ -804,9 +857,11 @@ export default function CreateVideoPage() {
                   <>
                     <Video className="w-5 h-5 mr-2" />
                     {canGenerate
-                      ? demoMode
-                        ? 'Generate Demo — FREE'
-                        : `Generate Video — Cost ${creditCost} credits`
+                      ? demoMode && isInDemoFlow
+                        ? 'Step 3: Generate Video!'
+                        : demoMode
+                        ? 'Generate Demo'
+                        : `Generate Video — ${creditCost} credits`
                       : 'Select image and video to generate'}
                   </>
                 )}
@@ -825,11 +880,28 @@ export default function CreateVideoPage() {
         )}
       </div>
 
-      {/* Post-Processing Options (A. B. C. D. E. F.) */}
-      <div className="mb-8">
-        <h2 className="text-[#F1F5F9] text-xl font-semibold mb-4">Post-Processing Options</h2>
-        <PostProcessingOptions />
-      </div>
+      {/* Post-Processing Options - hide during demo flow */}
+      {!isInDemoFlow && (
+        <div className="mb-8">
+          <h2 className="text-[#F1F5F9] text-xl font-semibold mb-4">Post-Processing Options</h2>
+          <PostProcessingOptions />
+        </div>
+      )}
+
+      {/* Welcome Modal for first-time users */}
+      <WelcomeModal
+        open={showWelcomeModal}
+        onClose={() => {
+          // Skip demo: close modal and mark demo as completed
+          setShowWelcomeModal(false);
+          setHasCompletedDemo(true);
+          localStorage.setItem('nuumee_demo_completed', '1');
+        }}
+        onStartDemo={() => {
+          setShowWelcomeModal(false);
+          // Demo flow is already active for first-time users
+        }}
+      />
 
       {/* Job Picker Modal */}
       <JobPickerModal

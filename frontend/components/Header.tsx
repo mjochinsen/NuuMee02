@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { ChevronDown, Zap, Plus, User, CreditCard, Key, Briefcase, HelpCircle, Settings, LogOut, Gift } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -13,8 +14,13 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/components/AuthProvider';
+import { warmBackend } from '@/lib/api';
 
 export function Header() {
+  // Pre-warm backend on any page load to reduce login cold start latency
+  useEffect(() => {
+    warmBackend();
+  }, []);
   const pathname = usePathname();
   const { user, profile, loading, signOut } = useAuth();
 
@@ -49,7 +55,7 @@ export function Header() {
             Home
           </Link>
           <Link
-            href="/videos/create"
+            href={user ? "/videos/create" : "/login?redirect=/videos/create"}
             className={`hover:text-[#00F0D9] transition-colors ${
               isActive('/videos/create') ? 'text-[#F1F5F9]' : 'text-[#94A3B8]'
             }`}
