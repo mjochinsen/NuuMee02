@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -24,6 +24,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ImageWithFallback } from '@/components/ui/ImageWithFallback';
 import { useAuth } from '@/components/AuthProvider';
+import { useExperiment } from '@/lib/ab-testing';
 
 export default function HomePage() {
   const router = useRouter();
@@ -31,6 +32,9 @@ export default function HomePage() {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [isMuted, setIsMuted] = useState(true);
   const heroVideoRef = useRef<HTMLVideoElement>(null);
+
+  // A/B Test: Hero video variant
+  const { variant: heroVideoSrc, variantKey: heroVariant, trackConversion } = useExperiment('hero_video');
 
   const toggleMute = () => {
     if (heroVideoRef.current) {
@@ -40,6 +44,9 @@ export default function HomePage() {
   };
 
   const handleStartCreating = () => {
+    // Track A/B test conversion
+    trackConversion('click');
+
     if (user) {
       router.push('/videos/create');
     } else {
@@ -156,8 +163,9 @@ export default function HomePage() {
                   muted
                   playsInline
                   className="w-full h-auto"
+                  key={heroVideoSrc} // Force re-render when variant changes
                 >
-                  <source src="/hero-v4.mp4" type="video/mp4" />
+                  <source src={heroVideoSrc} type="video/mp4" />
                 </video>
 
                 {/* Overlay badges */}
@@ -335,8 +343,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Use Cases Showcase */}
-      <section className="py-24 bg-[#0F172A]">
+      {/* Use Cases Showcase - Hidden until we have real video examples */}
+      {false && <section className="py-24 bg-[#0F172A]">
         <div className="container mx-auto px-6">
           <div className="text-center mb-12">
             <h2 className="text-[#F1F5F9] text-4xl md:text-5xl mb-4 font-bold">
@@ -423,7 +431,7 @@ export default function HomePage() {
             </div>
           </div>
         </div>
-      </section>
+      </section>}
 
       {/* Testimonials Section */}
       <section className="py-24 bg-gradient-to-b from-[#1E293B] to-[#0F172A]">
