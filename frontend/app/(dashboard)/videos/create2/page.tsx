@@ -384,10 +384,9 @@ export default function Create2Page() {
               }}
               inputRef={imageInputRef}
               isLoading={isExtractingFrame}
-              // Frame selection props - videoSrc for thumbnails (decoupled)
+              // Frame selection props - FULLY DECOUPLED from trim
               videoSrc={videoPreview || ''}
-              trimStart={trimStart}
-              trimEnd={trimEnd}
+              videoDuration={videoDuration || 0}
               framePosition={framePosition}
               onFramePositionChange={setFramePosition}
             />
@@ -1105,18 +1104,17 @@ function formatTimeShort(seconds: number): string {
 }
 
 // ============ Frame Selector Component ============
+// FULLY DECOUPLED from trim - uses full video duration
 interface FrameSelectorProps {
-  videoSrc: string; // Use video source for hidden video (decoupled thumbnails)
-  trimStart: number;
-  trimEnd: number;
+  videoSrc: string;
+  videoDuration: number; // Full video duration - NO trim dependency
   framePosition: number;
   onFramePositionChange: (position: number) => void;
 }
 
 function FrameSelector({
   videoSrc,
-  trimStart,
-  trimEnd,
+  videoDuration,
   framePosition,
   onFramePositionChange
 }: FrameSelectorProps) {
@@ -1125,14 +1123,13 @@ function FrameSelector({
   const [thumbnails, setThumbnails] = useState<string[]>([]);
   const [isGeneratingThumbnails, setIsGeneratingThumbnails] = useState(false);
 
-  const trimDuration = trimEnd - trimStart;
-  const thumbnailCount = Math.min(10, Math.max(3, Math.ceil(trimDuration / 3)));
+  // Thumbnails for FULL video (not trim selection)
+  const thumbnailCount = Math.min(10, Math.max(3, Math.ceil(videoDuration / 3)));
 
-  // Generate thumbnails using a hidden video element (decoupled from main player)
+  // Generate thumbnails for FULL video - NO trim dependency
   useEffect(() => {
-    if (!videoSrc || trimDuration <= 0) return;
+    if (!videoSrc || videoDuration <= 0) return;
 
-    // Create a separate video element just for thumbnail extraction
     const video = document.createElement('video');
     video.src = videoSrc;
     video.muted = true;
@@ -1142,7 +1139,6 @@ function FrameSelector({
     const generateThumbnails = async () => {
       setIsGeneratingThumbnails(true);
 
-      // Wait for video metadata to load
       await new Promise<void>((resolve) => {
         if (video.readyState >= 1) {
           resolve();
@@ -1159,10 +1155,10 @@ function FrameSelector({
       canvas.height = 45;
 
       const newThumbnails: string[] = [];
-      const interval = trimDuration / thumbnailCount;
+      const interval = videoDuration / thumbnailCount;
 
       for (let i = 0; i < thumbnailCount; i++) {
-        const time = trimStart + (i * interval);
+        const time = i * interval; // Start from 0, not trimStart
         try {
           video.currentTime = time;
           await new Promise<void>((resolve) => {
@@ -1190,23 +1186,21 @@ function FrameSelector({
 
     generateThumbnails();
 
-    // Cleanup
     return () => {
       video.src = '';
       video.load();
     };
-  }, [videoSrc, trimStart, trimEnd, trimDuration, thumbnailCount]);
+  }, [videoSrc, videoDuration, thumbnailCount]); // NO trimStart/trimEnd!
 
-  // Convert pixel position to time within trim bounds
+  // Convert pixel position to time (0 to videoDuration)
   const positionToTime = useCallback((clientX: number): number => {
-    if (!timelineRef.current) return trimStart;
+    if (!timelineRef.current) return 0;
     const rect = timelineRef.current.getBoundingClientRect();
     const x = clientX - rect.left;
     const percentage = Math.max(0, Math.min(1, x / rect.width));
-    return trimStart + (percentage * trimDuration);
-  }, [trimStart, trimDuration]);
+    return percentage * videoDuration; // Full video range
+  }, [videoDuration]);
 
-  // Handle drag start
   const handleDragStart = (e: React.MouseEvent | React.TouchEvent) => {
     e.preventDefault();
     setIsDragging(true);
@@ -1214,7 +1208,6 @@ function FrameSelector({
     onFramePositionChange(positionToTime(clientX));
   };
 
-  // Handle drag move and end
   useEffect(() => {
     if (!isDragging) return;
 
@@ -1240,21 +1233,19 @@ function FrameSelector({
     };
   }, [isDragging, positionToTime, onFramePositionChange]);
 
-  // Calculate indicator position as percentage within trim bounds
-  const indicatorPercent = trimDuration > 0
-    ? ((framePosition - trimStart) / trimDuration) * 100
+  // Position as percentage of FULL video
+  const indicatorPercent = videoDuration > 0
+    ? (framePosition / videoDuration) * 100
     : 0;
 
   return (
     <div className="space-y-2">
-      {/* Mini timeline with thumbnails */}
       <div
         ref={timelineRef}
         className="relative h-12 rounded-lg overflow-hidden cursor-pointer select-none bg-[#1E293B]"
         onMouseDown={handleDragStart}
         onTouchStart={handleDragStart}
       >
-        {/* Thumbnail strip */}
         <div className="absolute inset-0 flex">
           {isGeneratingThumbnails ? (
             <div className="w-full h-full animate-pulse flex items-center justify-center">
@@ -1276,14 +1267,12 @@ function FrameSelector({
           )}
         </div>
 
-        {/* Position indicator */}
         <div
           className={`absolute top-0 bottom-0 w-1 transform -translate-x-1/2 transition-colors ${
             isDragging ? 'bg-white' : 'bg-[#00F0D9]'
           }`}
           style={{ left: `${Math.max(0, Math.min(100, indicatorPercent))}%` }}
         >
-          {/* Handle */}
           <div className={`absolute -top-1 left-1/2 transform -translate-x-1/2 w-3 h-3 rounded-full shadow-lg ${
             isDragging ? 'bg-white scale-125' : 'bg-[#00F0D9]'
           }`} />
@@ -1293,11 +1282,11 @@ function FrameSelector({
         </div>
       </div>
 
-      {/* Time markers */}
+      {/* Time markers: 0:00 to full duration */}
       <div className="flex justify-between text-xs text-[#64748B]">
-        <span>{formatTimeShort(trimStart)}</span>
+        <span>0:00</span>
         <span className="text-[#00F0D9] font-medium">{formatTimeShort(framePosition)}</span>
-        <span>{formatTimeShort(trimEnd)}</span>
+        <span>{formatTimeShort(videoDuration)}</span>
       </div>
     </div>
   );
@@ -1311,10 +1300,9 @@ interface FaceImageSelectorProps {
   onCustomUpload: (file: File) => void;
   inputRef: React.RefObject<HTMLInputElement | null>;
   isLoading: boolean;
-  // Frame selection props
-  videoSrc: string; // Video source for FrameSelector thumbnails (decoupled)
-  trimStart: number;
-  trimEnd: number;
+  // Frame selection props - FULLY DECOUPLED from trim
+  videoSrc: string;
+  videoDuration: number; // Full video duration, NOT trim bounds
   framePosition: number;
   onFramePositionChange: (position: number) => void;
 }
@@ -1328,14 +1316,13 @@ function FaceImageSelector({
   inputRef,
   isLoading,
   videoSrc,
-  trimStart,
-  trimEnd,
+  videoDuration,
   framePosition,
   onFramePositionChange
 }: FaceImageSelectorProps) {
   const hasVideoFrame = !!extractedFrame;
   const isCustomSelected = selectedImage && !aiImages.includes(selectedImage) && selectedImage !== extractedFrame;
-  const hasTrimSelection = trimEnd > trimStart;
+  const hasVideo = videoDuration > 0;
 
   return (
     <div className="space-y-4">
@@ -1377,14 +1364,13 @@ function FaceImageSelector({
               )}
             </button>
 
-            {/* Frame Selector Timeline */}
-            {hasTrimSelection && videoSrc && (
+            {/* Frame Selector Timeline - DECOUPLED from trim */}
+            {hasVideo && videoSrc && (
               <div className="flex-1 min-w-0">
                 <p className="text-[#64748B] text-xs mb-2">Drag to select frame:</p>
                 <FrameSelector
                   videoSrc={videoSrc}
-                  trimStart={trimStart}
-                  trimEnd={trimEnd}
+                  videoDuration={videoDuration}
                   framePosition={framePosition}
                   onFramePositionChange={onFramePositionChange}
                 />
