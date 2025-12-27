@@ -73,6 +73,9 @@ export default function Create2Page() {
   const [trimStart, setTrimStart] = useState(0);
   const [trimEnd, setTrimEnd] = useState(0);
 
+  // Frame selection state (for face image)
+  const [framePosition, setFramePosition] = useState<number>(0);
+
   // Face detection state
   const [extractedFrame, setExtractedFrame] = useState<string | null>(null);
   const [faceDetected, setFaceDetected] = useState<boolean | null>(null);
@@ -114,15 +117,25 @@ export default function Create2Page() {
   // Extract a frame when video is loaded for face preview
   const [isExtractingFrame, setIsExtractingFrame] = useState(false);
 
+  // Initialize frame position when video loads or trim changes
+  useEffect(() => {
+    if (videoDuration && videoDuration > 0) {
+      // Default to 1 second into trim selection (or middle if too short)
+      const defaultFrame = Math.min(trimStart + 1, trimStart + (trimEnd - trimStart) / 2);
+      setFramePosition(Math.max(trimStart, Math.min(trimEnd, defaultFrame)));
+    }
+  }, [videoDuration, trimStart, trimEnd]);
+
+  // Extract frame when framePosition changes
   useEffect(() => {
     const video = videoRef.current;
     if (!video || !videoDuration || videoDuration <= 0) return;
 
     const extractFrame = async () => {
       setIsExtractingFrame(true);
-      // Extract a frame from 1 second into the trim selection (or start if too short)
-      const frameTime = Math.min(trimStart + 1, videoDuration - 0.5);
-      const frame = await extractFrameAtTime(video, frameTime);
+      // Clamp frame position within trim bounds
+      const clampedPosition = Math.max(trimStart, Math.min(trimEnd - 0.1, framePosition));
+      const frame = await extractFrameAtTime(video, clampedPosition);
 
       if (frame) {
         setExtractedFrame(frame);
@@ -133,7 +146,7 @@ export default function Create2Page() {
     };
 
     extractFrame();
-  }, [videoDuration, trimStart]);
+  }, [videoDuration, framePosition, trimStart, trimEnd]);
 
   // Calculate available credits and max trim
   const userCredits = profile?.credits_balance ?? 0;
@@ -309,6 +322,7 @@ export default function Create2Page() {
                     setVideoDuration(null);
                     setTrimStart(0);
                     setTrimEnd(0);
+                    setFramePosition(0);
                     setExtractedFrame(null);
                     setFaceDetected(null);
                   }}
@@ -366,6 +380,12 @@ export default function Create2Page() {
               }}
               inputRef={imageInputRef}
               isLoading={isExtractingFrame}
+              // Frame selection props
+              videoRef={videoRef}
+              trimStart={trimStart}
+              trimEnd={trimEnd}
+              framePosition={framePosition}
+              onFramePositionChange={setFramePosition}
             />
           </section>
 
@@ -1052,6 +1072,184 @@ function formatTimeShort(seconds: number): string {
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
 
+// ============ Frame Selector Component ============
+interface FrameSelectorProps {
+  videoRef: React.RefObject<HTMLVideoElement | null>;
+  trimStart: number;
+  trimEnd: number;
+  framePosition: number;
+  onFramePositionChange: (position: number) => void;
+}
+
+function FrameSelector({
+  videoRef,
+  trimStart,
+  trimEnd,
+  framePosition,
+  onFramePositionChange
+}: FrameSelectorProps) {
+  const timelineRef = useRef<HTMLDivElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [thumbnails, setThumbnails] = useState<string[]>([]);
+  const [isGeneratingThumbnails, setIsGeneratingThumbnails] = useState(false);
+
+  const trimDuration = trimEnd - trimStart;
+  const thumbnailCount = Math.min(10, Math.max(3, Math.ceil(trimDuration / 3)));
+
+  // Generate thumbnails for the trim selection area
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || trimDuration <= 0) return;
+
+    const generateThumbnails = async () => {
+      setIsGeneratingThumbnails(true);
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      canvas.width = 80;
+      canvas.height = 45;
+
+      const newThumbnails: string[] = [];
+      const interval = trimDuration / thumbnailCount;
+
+      for (let i = 0; i < thumbnailCount; i++) {
+        const time = trimStart + (i * interval);
+        try {
+          video.currentTime = time;
+          await new Promise<void>((resolve) => {
+            const handleSeeked = () => {
+              video.removeEventListener('seeked', handleSeeked);
+              resolve();
+            };
+            video.addEventListener('seeked', handleSeeked);
+            setTimeout(() => {
+              video.removeEventListener('seeked', handleSeeked);
+              resolve();
+            }, 500);
+          });
+
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          newThumbnails.push(canvas.toDataURL('image/jpeg', 0.5));
+        } catch {
+          newThumbnails.push('');
+        }
+      }
+
+      setThumbnails(newThumbnails);
+      setIsGeneratingThumbnails(false);
+      video.currentTime = framePosition;
+    };
+
+    generateThumbnails();
+  }, [videoRef, trimStart, trimEnd, trimDuration, thumbnailCount]);
+
+  // Convert pixel position to time within trim bounds
+  const positionToTime = useCallback((clientX: number): number => {
+    if (!timelineRef.current) return trimStart;
+    const rect = timelineRef.current.getBoundingClientRect();
+    const x = clientX - rect.left;
+    const percentage = Math.max(0, Math.min(1, x / rect.width));
+    return trimStart + (percentage * trimDuration);
+  }, [trimStart, trimDuration]);
+
+  // Handle drag start
+  const handleDragStart = (e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    onFramePositionChange(positionToTime(clientX));
+  };
+
+  // Handle drag move and end
+  useEffect(() => {
+    if (!isDragging) return;
+
+    const handleMove = (e: MouseEvent | TouchEvent) => {
+      const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+      onFramePositionChange(positionToTime(clientX));
+    };
+
+    const handleUp = () => {
+      setIsDragging(false);
+    };
+
+    document.addEventListener('mousemove', handleMove);
+    document.addEventListener('mouseup', handleUp);
+    document.addEventListener('touchmove', handleMove);
+    document.addEventListener('touchend', handleUp);
+
+    return () => {
+      document.removeEventListener('mousemove', handleMove);
+      document.removeEventListener('mouseup', handleUp);
+      document.removeEventListener('touchmove', handleMove);
+      document.removeEventListener('touchend', handleUp);
+    };
+  }, [isDragging, positionToTime, onFramePositionChange]);
+
+  // Calculate indicator position as percentage within trim bounds
+  const indicatorPercent = trimDuration > 0
+    ? ((framePosition - trimStart) / trimDuration) * 100
+    : 0;
+
+  return (
+    <div className="space-y-2">
+      {/* Mini timeline with thumbnails */}
+      <div
+        ref={timelineRef}
+        className="relative h-12 rounded-lg overflow-hidden cursor-pointer select-none bg-[#1E293B]"
+        onMouseDown={handleDragStart}
+        onTouchStart={handleDragStart}
+      >
+        {/* Thumbnail strip */}
+        <div className="absolute inset-0 flex">
+          {isGeneratingThumbnails ? (
+            <div className="w-full h-full animate-pulse flex items-center justify-center">
+              <Loader2 className="w-4 h-4 text-[#94A3B8] animate-spin" />
+            </div>
+          ) : thumbnails.length > 0 ? (
+            thumbnails.map((thumb, i) => (
+              <div
+                key={i}
+                className="flex-1 h-full bg-cover bg-center border-r border-[#0F172A]/30 last:border-r-0"
+                style={{
+                  backgroundImage: thumb ? `url(${thumb})` : undefined,
+                  backgroundColor: thumb ? undefined : '#334155'
+                }}
+              />
+            ))
+          ) : (
+            <div className="w-full h-full bg-[#334155]" />
+          )}
+        </div>
+
+        {/* Position indicator */}
+        <div
+          className={`absolute top-0 bottom-0 w-1 transform -translate-x-1/2 transition-colors ${
+            isDragging ? 'bg-white' : 'bg-[#00F0D9]'
+          }`}
+          style={{ left: `${Math.max(0, Math.min(100, indicatorPercent))}%` }}
+        >
+          {/* Handle */}
+          <div className={`absolute -top-1 left-1/2 transform -translate-x-1/2 w-3 h-3 rounded-full shadow-lg ${
+            isDragging ? 'bg-white scale-125' : 'bg-[#00F0D9]'
+          }`} />
+          <div className={`absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-3 h-3 rounded-full shadow-lg ${
+            isDragging ? 'bg-white scale-125' : 'bg-[#00F0D9]'
+          }`} />
+        </div>
+      </div>
+
+      {/* Time markers */}
+      <div className="flex justify-between text-xs text-[#64748B]">
+        <span>{formatTimeShort(trimStart)}</span>
+        <span className="text-[#00F0D9] font-medium">{formatTimeShort(framePosition)}</span>
+        <span>{formatTimeShort(trimEnd)}</span>
+      </div>
+    </div>
+  );
+}
+
 interface FaceImageSelectorProps {
   extractedFrame: string | null;
   aiImages: string[];
@@ -1060,6 +1258,12 @@ interface FaceImageSelectorProps {
   onCustomUpload: (file: File) => void;
   inputRef: React.RefObject<HTMLInputElement | null>;
   isLoading: boolean;
+  // Frame selection props
+  videoRef: React.RefObject<HTMLVideoElement | null>;
+  trimStart: number;
+  trimEnd: number;
+  framePosition: number;
+  onFramePositionChange: (position: number) => void;
 }
 
 function FaceImageSelector({
@@ -1069,36 +1273,71 @@ function FaceImageSelector({
   onSelect,
   onCustomUpload,
   inputRef,
-  isLoading
+  isLoading,
+  videoRef,
+  trimStart,
+  trimEnd,
+  framePosition,
+  onFramePositionChange
 }: FaceImageSelectorProps) {
   const hasVideoFrame = !!extractedFrame;
   const isCustomSelected = selectedImage && !aiImages.includes(selectedImage) && selectedImage !== extractedFrame;
+  const hasTrimSelection = trimEnd > trimStart;
 
   return (
     <div className="space-y-4">
-      {/* Extracted Frame Preview */}
+      {/* Extracted Frame Preview with Selector */}
       {hasVideoFrame && (
         <div className="mb-4">
-          <p className="text-[#94A3B8] text-sm mb-2">Frame from your video:</p>
-          <button
-            onClick={() => onSelect(extractedFrame)}
-            className={`relative rounded-xl overflow-hidden border-2 transition-all ${
-              selectedImage === extractedFrame
-                ? 'border-[#00F0D9] ring-2 ring-[#00F0D9]/30'
-                : 'border-[#334155] hover:border-[#00F0D9]/50'
-            }`}
-          >
-            <img
-              src={extractedFrame}
-              alt="Extracted frame from video"
-              className="w-full max-w-[300px] h-auto object-cover"
-            />
-            {selectedImage === extractedFrame && (
-              <div className="absolute top-2 right-2 bg-[#00F0D9] rounded-full p-1">
-                <CheckCircle className="w-4 h-4 text-white" />
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-[#94A3B8] text-sm">Frame from your video:</p>
+            <span className="text-[#64748B] text-xs">
+              {formatTimeShort(framePosition)}
+            </span>
+          </div>
+
+          {/* Frame Preview + Selection Button */}
+          <div className="flex gap-4 items-start">
+            <button
+              onClick={() => onSelect(extractedFrame)}
+              className={`relative rounded-xl overflow-hidden border-2 transition-all flex-shrink-0 ${
+                selectedImage === extractedFrame
+                  ? 'border-[#00F0D9] ring-2 ring-[#00F0D9]/30'
+                  : 'border-[#334155] hover:border-[#00F0D9]/50'
+              }`}
+            >
+              {isLoading ? (
+                <div className="w-[200px] h-[120px] bg-[#1E293B] flex items-center justify-center">
+                  <Loader2 className="w-6 h-6 text-[#00F0D9] animate-spin" />
+                </div>
+              ) : (
+                <img
+                  src={extractedFrame}
+                  alt="Extracted frame from video"
+                  className="w-[200px] h-auto object-cover"
+                />
+              )}
+              {selectedImage === extractedFrame && !isLoading && (
+                <div className="absolute top-2 right-2 bg-[#00F0D9] rounded-full p-1">
+                  <CheckCircle className="w-4 h-4 text-white" />
+                </div>
+              )}
+            </button>
+
+            {/* Frame Selector Timeline */}
+            {hasTrimSelection && (
+              <div className="flex-1 min-w-0">
+                <p className="text-[#64748B] text-xs mb-2">Drag to select frame:</p>
+                <FrameSelector
+                  videoRef={videoRef}
+                  trimStart={trimStart}
+                  trimEnd={trimEnd}
+                  framePosition={framePosition}
+                  onFramePositionChange={onFramePositionChange}
+                />
               </div>
             )}
-          </button>
+          </div>
         </div>
       )}
 
