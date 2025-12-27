@@ -117,36 +117,40 @@ export default function Create2Page() {
   // Extract a frame when video is loaded for face preview
   const [isExtractingFrame, setIsExtractingFrame] = useState(false);
 
-  // Initialize frame position when video loads or trim changes
+  // Initialize frame position ONLY when video first loads (not on trim changes)
   useEffect(() => {
-    if (videoDuration && videoDuration > 0) {
-      // Default to 1 second into trim selection (or middle if too short)
-      const defaultFrame = Math.min(trimStart + 1, trimStart + (trimEnd - trimStart) / 2);
-      setFramePosition(Math.max(trimStart, Math.min(trimEnd, defaultFrame)));
+    if (videoDuration && videoDuration > 0 && framePosition === 0) {
+      // Default to 1 second into the video
+      setFramePosition(Math.min(1, videoDuration - 0.5));
     }
-  }, [videoDuration, trimStart, trimEnd]);
+  }, [videoDuration]); // Only depend on videoDuration, not trim
 
-  // Extract frame when framePosition changes
+  // Extract frame AND sync main video when framePosition changes
+  // This is the coupling: FrameSelector → Main Video
   useEffect(() => {
     const video = videoRef.current;
     if (!video || !videoDuration || videoDuration <= 0) return;
 
     const extractFrame = async () => {
       setIsExtractingFrame(true);
-      // Clamp frame position within trim bounds
-      const clampedPosition = Math.max(trimStart, Math.min(trimEnd - 0.1, framePosition));
+
+      // Clamp position within video bounds (not trim bounds - fully decoupled from trim)
+      const clampedPosition = Math.max(0, Math.min(videoDuration - 0.1, framePosition));
+
+      // Sync main video to show selected frame (the coupling user wants)
+      video.currentTime = clampedPosition;
+
       const frame = await extractFrameAtTime(video, clampedPosition);
 
       if (frame) {
         setExtractedFrame(frame);
-        // For now, we don't have face detection, so no warning
         setFaceWarning(null);
       }
       setIsExtractingFrame(false);
     };
 
     extractFrame();
-  }, [videoDuration, framePosition, trimStart, trimEnd]);
+  }, [videoDuration, framePosition]); // NO dependency on trimStart/trimEnd
 
   // Calculate available credits and max trim
   const userCredits = profile?.credits_balance ?? 0;
