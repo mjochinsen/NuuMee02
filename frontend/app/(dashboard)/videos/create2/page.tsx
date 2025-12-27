@@ -328,7 +328,7 @@ export default function Create2Page() {
                   }}
                 />
 
-                {videoDuration && (
+                {videoDuration && videoPreview && (
                   <TrimControls
                     duration={videoDuration}
                     trimStart={trimStart}
@@ -340,7 +340,7 @@ export default function Create2Page() {
                     }}
                     estimatedCredits={estimatedCredits}
                     userCredits={userCredits}
-                    videoRef={videoRef}
+                    videoSrc={videoPreview}
                   />
                 )}
               </div>
@@ -781,7 +781,7 @@ interface TrimControlsProps {
   onTrimChange: (start: number, end: number) => void;
   estimatedCredits: number;
   userCredits: number;
-  videoRef: React.RefObject<HTMLVideoElement | null>;
+  videoSrc: string; // Use video source URL - decoupled from main player
 }
 
 function TrimControls({
@@ -792,7 +792,7 @@ function TrimControls({
   onTrimChange,
   estimatedCredits,
   userCredits,
-  videoRef
+  videoSrc
 }: TrimControlsProps) {
   const trimDuration = trimEnd - trimStart;
   const isValid = trimDuration >= 4 && trimDuration <= 120 && estimatedCredits <= userCredits;
@@ -813,14 +813,14 @@ function TrimControls({
         </span>
       </div>
 
-      {/* Visual Timeline */}
+      {/* Visual Timeline - uses its own hidden video element */}
       <VideoTimeline
         duration={duration}
         trimStart={trimStart}
         trimEnd={trimEnd}
         maxTrimSeconds={maxTrimSeconds}
         onTrimChange={onTrimChange}
-        videoRef={videoRef}
+        videoSrc={videoSrc}
       />
 
       {/* Time display */}
@@ -848,7 +848,7 @@ interface VideoTimelineProps {
   trimEnd: number;
   maxTrimSeconds: number;
   onTrimChange: (start: number, end: number) => void;
-  videoRef: React.RefObject<HTMLVideoElement | null>;
+  videoSrc: string; // Use video source URL instead of ref - decouples from main player
 }
 
 function VideoTimeline({
@@ -857,9 +857,10 @@ function VideoTimeline({
   trimEnd,
   maxTrimSeconds,
   onTrimChange,
-  videoRef
+  videoSrc
 }: VideoTimelineProps) {
   const timelineRef = useRef<HTMLDivElement>(null);
+  const hiddenVideoRef = useRef<HTMLVideoElement | null>(null);
   const [thumbnails, setThumbnails] = useState<string[]>([]);
   const [isDragging, setIsDragging] = useState<'start' | 'end' | null>(null);
   const [hoverTime, setHoverTime] = useState<number | null>(null);
@@ -868,13 +869,30 @@ function VideoTimeline({
   // Number of thumbnails based on duration (1 per 2 seconds, max 30)
   const thumbnailCount = Math.min(30, Math.max(5, Math.ceil(duration / 2)));
 
-  // Generate thumbnails from video
+  // Create hidden video element for thumbnail generation (decoupled from main player)
   useEffect(() => {
-    const video = videoRef.current;
-    if (!video || duration <= 0) return;
+    if (!videoSrc || duration <= 0) return;
+
+    // Create a separate video element just for thumbnail extraction
+    const video = document.createElement('video');
+    video.src = videoSrc;
+    video.muted = true;
+    video.playsInline = true;
+    video.preload = 'metadata';
+    hiddenVideoRef.current = video;
 
     const generateThumbnails = async () => {
       setIsGeneratingThumbnails(true);
+
+      // Wait for video metadata to load
+      await new Promise<void>((resolve) => {
+        if (video.readyState >= 1) {
+          resolve();
+        } else {
+          video.onloadedmetadata = () => resolve();
+        }
+      });
+
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
@@ -896,6 +914,11 @@ function VideoTimeline({
               resolve();
             };
             video.addEventListener('seeked', handleSeeked);
+            // Timeout fallback
+            setTimeout(() => {
+              video.removeEventListener('seeked', handleSeeked);
+              resolve();
+            }, 500);
           });
 
           ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
@@ -908,12 +931,17 @@ function VideoTimeline({
 
       setThumbnails(newThumbnails);
       setIsGeneratingThumbnails(false);
-      // Reset video to trim start
-      video.currentTime = trimStart;
     };
 
     generateThumbnails();
-  }, [videoRef, duration, thumbnailCount]);
+
+    // Cleanup: remove video element when component unmounts or src changes
+    return () => {
+      video.src = '';
+      video.load();
+      hiddenVideoRef.current = null;
+    };
+  }, [videoSrc, duration, thumbnailCount]);
 
   // Convert pixel position to time
   const positionToTime = useCallback((clientX: number): number => {
