@@ -380,8 +380,8 @@ export default function Create2Page() {
               }}
               inputRef={imageInputRef}
               isLoading={isExtractingFrame}
-              // Frame selection props
-              videoRef={videoRef}
+              // Frame selection props - videoSrc for thumbnails (decoupled)
+              videoSrc={videoPreview || ''}
               trimStart={trimStart}
               trimEnd={trimEnd}
               framePosition={framePosition}
@@ -1102,7 +1102,7 @@ function formatTimeShort(seconds: number): string {
 
 // ============ Frame Selector Component ============
 interface FrameSelectorProps {
-  videoRef: React.RefObject<HTMLVideoElement | null>;
+  videoSrc: string; // Use video source for hidden video (decoupled thumbnails)
   trimStart: number;
   trimEnd: number;
   framePosition: number;
@@ -1110,7 +1110,7 @@ interface FrameSelectorProps {
 }
 
 function FrameSelector({
-  videoRef,
+  videoSrc,
   trimStart,
   trimEnd,
   framePosition,
@@ -1124,13 +1124,29 @@ function FrameSelector({
   const trimDuration = trimEnd - trimStart;
   const thumbnailCount = Math.min(10, Math.max(3, Math.ceil(trimDuration / 3)));
 
-  // Generate thumbnails for the trim selection area
+  // Generate thumbnails using a hidden video element (decoupled from main player)
   useEffect(() => {
-    const video = videoRef.current;
-    if (!video || trimDuration <= 0) return;
+    if (!videoSrc || trimDuration <= 0) return;
+
+    // Create a separate video element just for thumbnail extraction
+    const video = document.createElement('video');
+    video.src = videoSrc;
+    video.muted = true;
+    video.playsInline = true;
+    video.preload = 'metadata';
 
     const generateThumbnails = async () => {
       setIsGeneratingThumbnails(true);
+
+      // Wait for video metadata to load
+      await new Promise<void>((resolve) => {
+        if (video.readyState >= 1) {
+          resolve();
+        } else {
+          video.onloadedmetadata = () => resolve();
+        }
+      });
+
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
@@ -1166,11 +1182,16 @@ function FrameSelector({
 
       setThumbnails(newThumbnails);
       setIsGeneratingThumbnails(false);
-      video.currentTime = framePosition;
     };
 
     generateThumbnails();
-  }, [videoRef, trimStart, trimEnd, trimDuration, thumbnailCount]);
+
+    // Cleanup
+    return () => {
+      video.src = '';
+      video.load();
+    };
+  }, [videoSrc, trimStart, trimEnd, trimDuration, thumbnailCount]);
 
   // Convert pixel position to time within trim bounds
   const positionToTime = useCallback((clientX: number): number => {
@@ -1287,7 +1308,7 @@ interface FaceImageSelectorProps {
   inputRef: React.RefObject<HTMLInputElement | null>;
   isLoading: boolean;
   // Frame selection props
-  videoRef: React.RefObject<HTMLVideoElement | null>;
+  videoSrc: string; // Video source for FrameSelector thumbnails (decoupled)
   trimStart: number;
   trimEnd: number;
   framePosition: number;
@@ -1302,7 +1323,7 @@ function FaceImageSelector({
   onCustomUpload,
   inputRef,
   isLoading,
-  videoRef,
+  videoSrc,
   trimStart,
   trimEnd,
   framePosition,
@@ -1353,11 +1374,11 @@ function FaceImageSelector({
             </button>
 
             {/* Frame Selector Timeline */}
-            {hasTrimSelection && (
+            {hasTrimSelection && videoSrc && (
               <div className="flex-1 min-w-0">
                 <p className="text-[#64748B] text-xs mb-2">Drag to select frame:</p>
                 <FrameSelector
-                  videoRef={videoRef}
+                  videoSrc={videoSrc}
                   trimStart={trimStart}
                   trimEnd={trimEnd}
                   framePosition={framePosition}
